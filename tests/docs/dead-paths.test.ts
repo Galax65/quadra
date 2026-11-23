@@ -48,7 +48,7 @@ const CONSENTITI = new Set<string>([
   'index.html', // nome del sorgente di OGNI tool (src/tools/<tool>/index.html), non un file a root
   // Bundle HTML a root: GENERATI da `npm run build:web`, mai committati (vedi
   // .gitignore) — su un checkout pulito non esistono finché non si builda.
-  'Quadra.html', 'Amministrazione.html', 'Computo.html', 'Contabilita.html',
+  'Quadra.html', 'Lavoro.html', 'Amministrazione.html', 'Computo.html', 'Contabilita.html',
 ])
 
 /**
