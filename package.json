@@ -57,7 +57,7 @@
     "jsdom": "^31.0.1",
     "jszip": "^3.10.1",
     "opentype.js": "^2.0.0",
-    "stylelint": "^16.26.1",
+    "stylelint": "^18.1.0",
     "typescript": "^7.0.2",
     "vite": "^8.2.1",
     "vite-node": "^6.0.0",
