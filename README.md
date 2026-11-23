@@ -209,7 +209,7 @@ CDN, niente rete.
 Le release si costruiscono da sole su GitHub Actions a ogni tag `v*`.
 
 <!-- VERSIONS:START — auto-generato da versions.js (`npm run sync:readme`). NON editare a mano. -->
-**Quadra v0.14.0**
+**Quadra v0.15.0**
 <!-- VERSIONS:END -->
 
 ---
