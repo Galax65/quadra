@@ -1,0 +1,6 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Quadra app icon">
+  <svg x="112" y="112" width="800" height="800" viewBox="40 40 920 920" preserveAspectRatio="xMidYMid meet">
+    <path d="M230 80H650A150 150 0 0 1 800 230V650A150 150 0 0 1 650 800H230A150 150 0 0 1 80 650V230A150 150 0 0 1 230 80ZM240 185A55 55 0 0 0 185 240V640A55 55 0 0 0 240 695H640A55 55 0 0 0 695 640V240A55 55 0 0 0 640 185ZM424 185H456V695H424ZM185 424H695V456H185ZM692.4 607.6L892.4 807.6L807.6 892.4L607.6 692.4Z" fill="#0c0f14" stroke="#ffffff" stroke-width="10" paint-order="stroke" stroke-linejoin="round"/>
+    <circle cx="862" cy="862" r="88" fill="#e5484d" stroke="#ffffff" stroke-width="10" paint-order="stroke"/>
+  </svg>
+</svg>

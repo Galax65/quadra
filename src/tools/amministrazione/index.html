@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="it" data-tool="amministrazione" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- CSP — nessuno schema http:/https: compare in questa policy: la suite non può
+     caricare nulla dalla rete né spedire nulla fuori, e non è più solo una promessa
+     del codice. 'unsafe-inline'/'unsafe-eval' servono perché i bundle sono file
+     unici (tutto inlinato) e pdf.js/JSZip usano eval al proprio interno; la via
+     d'esecuzione JS dei PDF ostili è chiusa alla fonte con isEvalSupported:false. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; script-src 'self' file: blob: 'unsafe-inline' 'unsafe-eval'; style-src 'self' file: data: 'unsafe-inline'; img-src 'self' file: data: blob:; font-src 'self' file: data:; connect-src 'self' file: data: blob:; worker-src 'self' file: blob:; frame-src 'self' file: blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Amministrazione — Centro di controllo dell'hub</title>
+<!-- Design system condiviso: token + componenti; Amministrazione tiene solo i propri specifici.
+     Accento NEUTRO nero/bianco per tema (data-tool="amministrazione"), non un colore fisso:
+     è il centro di controllo, fuori dalla palette "prodotto" degli altri tool. -->
+<link rel="stylesheet" href="../../shared/ui/tokens.css">
+<link rel="stylesheet" href="../../shared/ui/components.css">
+<link rel="stylesheet" href="./styles/alfa.css">
+</head>
+<body>
+
+<header class="ehb-hdr" data-tool="amministrazione">
+  <div class="ehb-hdr__brand">
+    <div class="ehb-logo" data-tool="amministrazione"><span class="ehb-logo__glyph"><svg class="ehb-glyph-svg" viewBox="0 -800 600 1000" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M62 -492H538A22 22 0 0 1 560 -470V-470A22 22 0 0 1 538 -448H62A22 22 0 0 1 40 -470V-470A22 22 0 0 1 62 -492ZM120 -470A70 70 0 1 1 260 -470A70 70 0 1 1 120 -470ZM62 -322H538A22 22 0 0 1 560 -300V-300A22 22 0 0 1 538 -278H62A22 22 0 0 1 40 -300V-300A22 22 0 0 1 62 -322ZM340 -300A70 70 0 1 1 480 -300A70 70 0 1 1 340 -300ZM62 -152H538A22 22 0 0 1 560 -130V-130A22 22 0 0 1 538 -108H62A22 22 0 0 1 40 -130V-130A22 22 0 0 1 62 -152ZM190 -130A70 70 0 1 1 330 -130A70 70 0 1 1 190 -130Z" fill="currentColor"/></svg></span></div>
+    <div class="ehb-hdr__brand-txt">
+      <span class="ehb-hdr__brand-name">Amministrazione</span>
+      <span class="ehb-hdr__brand-sub">centro di controllo dell'hub</span>
+    </div>
+  </div>
+  <nav class="ehb-tabs" role="tablist" aria-label="Viste Amministrazione">
+    <button id="aTabPanoramica" class="ehb-tab is-active" role="tab" aria-selected="true" onclick="showView('panoramica')">Panoramica</button>
+    <button id="aTabUtenti" class="ehb-tab" role="tab" aria-selected="false" onclick="showView('utenti')">Utenti</button>
+    <button id="aTabAzienda" class="ehb-tab" role="tab" aria-selected="false" onclick="showView('azienda')">Azienda</button>
+    <button id="aTabModelli" class="ehb-tab" role="tab" aria-selected="false" onclick="showView('modelli')">Modelli</button>
+    <button id="aTabBackup" class="ehb-tab" role="tab" aria-selected="false" onclick="showView('backup')">Backup</button>
+  </nav>
+  <div class="ehb-hdr__spacer"></div>
+  <div class="ehb-hdr__actions">
+    <button id="btnTheme" class="ehb-icon-btn" onclick="toggleTheme()" title="Cambia tema (chiaro/scuro) di questo tool">☀</button>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- Vista: PANORAMICA — statistiche live -->
+  <section id="viewPanoramica" class="a-view">
+    <div id="aStatsGrid" class="a-stats-grid"></div>
+  </section>
+
+  <!-- Vista: UTENTI -->
+  <section id="viewUtenti" class="a-view" hidden>
+    <div class="a-sec-head"><h2>Utenti</h2><span class="adm-sec-count" id="aUsersCount"></span></div>
+    <p class="a-sec-lead">Gestione degli utenti aziendali: ruolo, attivazione, aggiunta e rimozione.</p>
+    <div class="adm-users-bar">
+      <input id="aUsersFilter" type="search" class="adm-users-filter" placeholder="Cerca utente…" autocomplete="off" oninput="filterUsers()">
+    </div>
+    <div class="adm-users" id="aUsers"></div>
+  </section>
+
+  <!-- Vista: AZIENDA -->
+  <section id="viewAzienda" class="a-view" hidden>
+    <div class="a-sec-head"><h2>Azienda</h2></div>
+    <p class="a-sec-lead">I dati del tuo studio: compaiono nella barra laterale e nell'intestazione dei documenti stampati.</p>
+    <div id="aCompany"></div>
+  </section>
+
+  <!-- Vista: MODELLI di struttura del computo -->
+  <section id="viewModelli" class="a-view" hidden>
+    <div class="a-sec-head"><h2>Modelli di struttura</h2><span class="adm-sec-count" id="aModelliCount"></span></div>
+    <p class="a-sec-lead">Categorie (Supercategoria › Categoria › Subcategoria) e nodi WBS da riusare nei progetti.
+      Si creano dal Computo (☰ Struttura → Modelli → «Salva la struttura di questo progetto come modello») e lì si applicano.</p>
+    <div class="adm-backup">
+      <button type="button" class="ehb-btn ehb-btn--accent-soft" onclick="esportaModelli()">Esporta tutti</button>
+      <button type="button" class="ehb-btn" onclick="document.getElementById('aModelliFile').click()">Importa…</button>
+      <input type="file" id="aModelliFile" accept=".json,application/json" hidden>
+    </div>
+    <div id="aModelli" class="adm-modelli"></div>
+  </section>
+
+  <!-- Vista: BACKUP -->
+  <section id="viewBackup" class="a-view" hidden>
+    <div class="a-sec-head"><h2>Backup / Ripristino</h2></div>
+    <p class="a-sec-lead">Esporta o reimporta la configurazione (utenti e impostazioni) in un file.</p>
+    <div class="adm-backup">
+      <button type="button" class="ehb-btn ehb-btn--accent-soft" onclick="exportConfig()">Esporta configurazione</button>
+      <button type="button" class="ehb-btn" onclick="importConfigClick()">Importa…</button>
+      <button type="button" class="ehb-btn" onclick="exportDiagnostics()">Esporta report diagnostico</button>
+      <input type="file" id="aConfigFile" accept=".json,application/json" hidden>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" class="ehb-toast" hidden></div>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>

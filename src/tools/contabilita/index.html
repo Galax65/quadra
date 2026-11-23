@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="it" data-tool="contabilita" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- CSP — nessuno schema http:/https: compare in questa policy: la suite non può
+     caricare nulla dalla rete né spedire nulla fuori, e non è più solo una promessa
+     del codice. 'unsafe-inline'/'unsafe-eval' servono perché i bundle sono file
+     unici (tutto inlinato) e pdf.js/JSZip usano eval al proprio interno; la via
+     d'esecuzione JS dei PDF ostili è chiusa alla fonte con isEvalSupported:false. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; script-src 'self' file: blob: 'unsafe-inline' 'unsafe-eval'; style-src 'self' file: data: 'unsafe-inline'; img-src 'self' file: data: blob:; font-src 'self' file: data:; connect-src 'self' file: data: blob:; worker-src 'self' file: blob:; frame-src 'self' file: blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Contabilità — Contabilità dei lavori pubblici</title>
+<!-- Design system condiviso: token + componenti; Contabilità tiene solo i propri specifici.
+     Accento porpora (data-tool="contabilita"). -->
+<!-- Manifest dei prezzari interni (i dataset si caricano poi a richiesta, come nel Computo). -->
+<script src="prezzari/_bundle/manifest.js"></script>
+<link rel="stylesheet" href="../../shared/ui/tokens.css">
+<link rel="stylesheet" href="../../shared/ui/components.css">
+<link rel="stylesheet" href="../../shared/ui/stampe.css">
+<link rel="stylesheet" href="./styles/beta.css">
+</head>
+<body>
+
+<header class="ehb-hdr" data-tool="contabilita">
+  <div class="ehb-hdr__brand">
+    <div class="ehb-logo" data-tool="contabilita"><span class="ehb-logo__glyph"><svg class="ehb-glyph-svg" viewBox="0 -800 600 1000" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M110 -570H490A40 40 0 0 1 530 -530V-70A40 40 0 0 1 490 -30H110A40 40 0 0 1 70 -70V-530A40 40 0 0 1 110 -570ZM150 -570V-30H172V-570ZM225 -470V-440H465V-470ZM225 -390V-360H465V-390ZM225 -310V-280H465V-310ZM225 -230V-200H465V-230ZM225 -150V-120H365V-150Z" fill="currentColor"/></svg></span></div>
+    <div class="ehb-hdr__brand-txt">
+      <span class="ehb-hdr__brand-name">Contabilità</span>
+      <span class="ehb-hdr__brand-sub">contabilità dei lavori pubblici · a corpo e a misura</span>
+    </div>
+  </div>
+  <div class="ehb-hdr__spacer"></div>
+  <div class="ehb-hdr__actions">
+    <button id="btnTheme" class="ehb-btn ehb-btn--ghost ehb-btn--icon" onclick="toggleTheme()" title="Cambia tema (chiaro/scuro) di questo tool">☾</button>
+    <button id="btnGuide" class="ehb-guide-btn" onclick="toggleGuida()" title="Guida alla contabilità dei lavori pubblici">? Guida</button>
+  </div>
+</header>
+
+<!-- IL GUSCIO: una fase al centro, l'elenco prezzi a fianco. Niente pannelli
+     di contorno, niente muro di schede: la navigazione sta nell'albero della
+     sidebar, e qui si lavora. -->
+<main class="b-work">
+  <section id="bPagina" class="b-page">
+    <div class="b-page__bar ehb-testata">
+      <div id="bPaginaT" class="ehb-testata__tit"></div>
+      <div id="bPaginaAct" class="ehb-testata__act"></div>
+    </div>
+    <div id="bPaginaBody" class="b-page__body"></div>
+  </section>
+
+  <!-- L'elenco prezzi non è una finestra che si apre: sta sempre lì, a destra,
+       e da lì le voci entrano nella fase aperta (doppio clic o trascinamento). -->
+  <aside id="bDrawer" class="b-drawer" hidden></aside>
+</main>
+
+<!-- Contenitore per le finestre modali (dati appalto, import) iniettate da main.ts -->
+<div id="bModalHost"></div>
+<input type="file" id="bLogoFile" accept="image/*" hidden>
+<input type="file" id="bXpweFile" accept=".xpwe,.xml" hidden>
+
+<div id="toast" class="ehb-toast" hidden></div>
+
+<script type="module" src="./main.ts"></script>
+</body>
+</html>

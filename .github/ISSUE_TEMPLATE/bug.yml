@@ -1,0 +1,51 @@
+name: Segnalazione di un problema
+description: Qualcosa non funziona come dovrebbe
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Se il problema è una **vulnerabilità di sicurezza**, non aprire una issue:
+        segui [SECURITY.md](../blob/main/SECURITY.md), così resta privata finché non c'è
+        una correzione.
+  - type: textarea
+    id: cosa-succede
+    attributes:
+      label: Cosa succede
+      description: E cosa ti aspettavi che succedesse.
+    validations:
+      required: true
+  - type: textarea
+    id: passi
+    attributes:
+      label: Come si riproduce
+      description: |
+        I passi, dall'apertura dell'app in poi. Se serve un file per innescarlo
+        (prezzario, XPWE, progetto `.quadra`), allegalo — ma **controlla prima che non contenga
+        dati di un progetto reale**: bastano poche righe di esempio.
+      placeholder: |
+        1. Apro Lavoro e importo il computo …
+        2. Apro il SAL n. 1 …
+        3. …
+    validations:
+      required: true
+  - type: input
+    id: tool
+    attributes:
+      label: Quale tool
+      placeholder: Lavoro — computo · Lavoro — contabilità · stampe · prezzari · XPWE · Amministrazione
+  - type: input
+    id: versione
+    attributes:
+      label: Versione di Quadra
+      description: La trovi in basso nell'hub, o in `versions.js`.
+      placeholder: 0.13.0
+    validations:
+      required: true
+  - type: input
+    id: ambiente
+    attributes:
+      label: Sistema operativo e modo d'uso
+      placeholder: macOS 15 — app Electron · Windows 11 — installer · browser via npm run serve
+    validations:
+      required: true

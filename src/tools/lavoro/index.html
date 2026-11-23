@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="it" data-tool="computo" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- CSP: la stessa degli altri strumenti — niente rete, né in entrata né in uscita. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' file: data: blob:; script-src 'self' file: blob: 'unsafe-inline' 'unsafe-eval'; style-src 'self' file: data: 'unsafe-inline'; img-src 'self' file: data: blob:; font-src 'self' file: data:; connect-src 'self' file: data: blob:; worker-src 'self' file: blob:; frame-src 'self' file: blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Lavoro — dal progetto alla contabilità</title>
+<!-- LAVORO: lo strumento unico di Docs/07-Un-lavoro-un-modulo.md. Ogni tappa del
+     lavoro (computo, contratto, SAL, perizia) si apre in questa stessa pagina;
+     l'accento segue la FASE (data-tool lo cambia main.ts). -->
+<!-- Manifest dei prezzari installati col programma (i dati si caricano a richiesta). -->
+<script src="prezzari/_bundle/manifest.js"></script>
+<link rel="stylesheet" href="../../shared/ui/tokens.css">
+<link rel="stylesheet" href="../../shared/ui/components.css">
+<link rel="stylesheet" href="../../shared/ui/stampe.css">
+<link rel="stylesheet" href="./styles/lavoro.css">
+</head>
+<body>
+
+<!-- Niente testata dello strumento: il nome del lavoro e la tappa aperta stanno
+     nella testata di fase della pagina, la navigazione nella sidebar dell'hub. -->
+<main class="lv-work">
+  <div id="lv-app" class="lv-app"></div>
+</main>
+
+<input type="file" id="lv-file" accept=".xpwe,.xml" hidden onchange="lvFileXpwe(this)">
+<input type="file" id="lv-file-pz" accept=".xml,.xpwe,.xlsx,.xls,.csv" hidden onchange="lvFilePrezzario(this)">
+<input type="file" id="lv-file-ehub" accept=".ehub,.json" hidden onchange="lvFileAltro(this)">
+<div id="lv-toast" class="ehb-toast" hidden></div>
+
+<script type="module" src="./main.ts"></script>
+</body>
+</html>
