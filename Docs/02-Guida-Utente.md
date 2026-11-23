@@ -75,7 +75,7 @@ al primo salvataggio.
 
 <!-- AUTO:tools:list:START -->
 <!-- ⚙️ generato da `npm run sync:docs` (fonte: src/hub/data/registry.ts) — NON editare a mano -->
-Strumenti: **2** (Quadra v0.15.0).
+Strumenti: **2** (Quadra v0.15.1).
 
 - **Lavoro** — Dal progetto alla contabilità, in una schermata sola _(beta)_
 - **Amministrazione** — Centro di controllo dell'hub _(stabile)_
