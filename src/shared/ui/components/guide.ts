@@ -34,11 +34,6 @@ export function closeGuide(): void {
   openEl = null
 }
 
-/** true se il visore è aperto. */
-export function isGuideOpen(): boolean {
-  return !!openEl
-}
-
 /**
  * Apre il visore sull'intero registro. Se `focusSection` è passata, scorre a
  * quella sezione. Se il registro è vuoto non fa nulla.

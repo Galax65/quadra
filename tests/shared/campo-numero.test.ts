@@ -4,7 +4,7 @@
  * separatori di un paese invece che con quelli del sistema.
  */
 import { describe, it, expect } from 'vitest'
-import { leggiNumeroCampo, leggiNumeroTesto, separatoriDiSistema } from '../../src/shared/campo-numero'
+import { leggiNumeroTesto, separatoriDiSistema } from '../../src/shared/campo-numero'
 
 describe('numero scritto in un campo', () => {
   it('in un campo di testo valgono i separatori di sistema: italiano', () => {
@@ -15,21 +15,6 @@ describe('numero scritto in un campo', () => {
   it('in un campo di testo valgono i separatori di sistema: inglese', () => {
     expect(leggiNumeroTesto('5.086', 'en-US')).toBe(5.086)
     expect(leggiNumeroTesto('1,234.56', 'en-US')).toBe(1234.56)
-  })
-  it('un campo numerico torna sempre canonico, in ogni lingua: 5.086 è cinque virgola zero ottantasei', () => {
-    expect(leggiNumeroCampo('5.086')).toBe(5.086)
-    expect(leggiNumeroCampo('0.5')).toBe(0.5)
-    expect(leggiNumeroCampo('102843.01')).toBe(102843.01)
-  })
-  it('se il browser restituisce il testo digitato, la virgola resta decimale', () => {
-    expect(leggiNumeroCampo('5,086')).toBe(5.086)
-    expect(leggiNumeroCampo('1.234,56')).toBe(1234.56)
-  })
-  it('campo vuoto o non numerico: nessun valore, non zero', () => {
-    expect(leggiNumeroCampo('')).toBe(null)
-    expect(leggiNumeroCampo(null)).toBe(null)
-    expect(leggiNumeroCampo('abc')).toBe(null)
-    expect(leggiNumeroTesto('', 'it-IT')).toBe(null)
   })
   it('i separatori si leggono dal sistema', () => {
     expect(separatoriDiSistema('it-IT').decimale).toBe(',')

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { leggiCampo, impostaCampo, formulaPerSchermo, risolviVediVoce, vociCheRichiamano, misureATesto, testoAMisure, spostaRiga, copiaRighe } from '../../src/shared/compositore/misure-edit'
+import { leggiCampo, impostaCampo, formulaPerSchermo, risolviVediVoce, misureATesto, testoAMisure, spostaRiga, copiaRighe } from '../../src/shared/compositore/misure-edit'
 import type { MisurazioneRiga } from '../../src/shared/compositore/misurazioni'
 
 describe('campi di misura con formule', () => {
@@ -27,20 +27,6 @@ describe('campi di misura con formule', () => {
 })
 
 describe('vedi voce', () => {
-  it('richiama la quantità di un\'altra voce, anche a catena', () => {
-    const qty: any = {
-      a: { qty: 10, misurazioni: [{ l1: 10, quantita: 10 }] },
-      b: { qty: 0, misurazioni: [{ descrizione: 'metà della A', n: 0.5, vediVoce: 'a', quantita: 0 }] },
-      c: { qty: 0, misurazioni: [{ vediVoce: 'b', quantita: 0 }, { l1: 1, quantita: 1 }] },
-    }
-    expect(risolviVediVoce(qty).sort()).toEqual(['b', 'c'])
-    expect(qty.b.qty).toBe(5)
-    expect(qty.c.qty).toBe(6)
-    qty.a.misurazioni[0].l1 = 20; qty.a.misurazioni[0].quantita = 20; qty.a.qty = 20
-    risolviVediVoce(qty)
-    expect(qty.c.qty).toBe(11)
-    expect(vociCheRichiamano(qty, 'a')).toEqual(['b'])
-  })
   it('un ciclo non blocca', () => {
     const qty: any = { a: { qty: 0, misurazioni: [{ vediVoce: 'b', quantita: 0 }] }, b: { qty: 0, misurazioni: [{ vediVoce: 'a', quantita: 0 }] } }
     expect(() => risolviVediVoce(qty)).not.toThrow()
@@ -71,21 +57,3 @@ describe('copia e incolla', () => {
   })
 })
 
-describe('misure da un altro computo', () => {
-  it('da un progetto Quadra', async () => {
-    const { vociConMisure } = await import('../../src/shared/compositore/misure-edit')
-    const prj = JSON.stringify({ tools: { 'computo': {
-      qty: { k1: { qty: 6, um: 'm²', misurazioni: [{ descrizione: 'muro', l1: 2, h: 3, quantita: 6, vediVoce: 'k2' }] }, k2: { qty: 3 } },
-      custom: [['k1', { codice: 'A.01', desc_short: 'Intonaco' }]], ordine: ['k2', 'k1'],
-    } } })
-    const v = vociConMisure(prj, () => [])
-    expect(v).toHaveLength(1)
-    expect(v[0]).toMatchObject({ codice: 'A.01', descrizione: 'Intonaco', um: 'm²', qty: 6 })
-    expect(v[0].misurazioni[0].vediVoce).toBeUndefined()
-  })
-  it('da un XPWE', async () => {
-    const { vociConMisure } = await import('../../src/shared/compositore/misure-edit')
-    const v = vociConMisure('<?xml?><x/>', () => [{ codice: 'B', desc_short: 'Scavo', um: 'm³', qty: 2, misurazioni: [{ l1: 2, quantita: 2 }] }, { codice: 'C' }])
-    expect(v.map((x) => x.codice)).toEqual(['B'])
-  })
-})

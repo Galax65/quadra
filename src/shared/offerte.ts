@@ -71,16 +71,6 @@ export function valutaOfferte(offerte: Offerta[], voci: VoceComputo[]): EsitoOff
   return esiti
 }
 
-/** Le voci del computo con il prezzo dell'offerta aggiudicataria (prezzoOfferto). */
-export function vociConOfferta(voci: VoceComputo[], o: Offerta | null | undefined): VoceComputo[] {
-  if (!o) return voci
-  return voci.map((v) => {
-    if (v.sicurezza) return v
-    const p = prezzoOfferto(o, v)
-    return p == null ? v : { ...v, prezzoOfferto: p }
-  })
-}
-
 /**
  * Legge una colonna di prezzi incollata da Excel (una riga per voce, nell'ordine delle
  * voci; accetta «1.234,56», «1234.56», «€ 12,5»). Le righe vuote o non numeriche → null.

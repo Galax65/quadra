@@ -74,13 +74,6 @@ export function findUser(users: HubUser[], companyId: string, username: string):
   return users.find(u => u.companyId === companyId && u.username.toLowerCase() === q) || null
 }
 
-/** Trova un utente senza azienda per username (case-insensitive). */
-export function findUserNoCompany(users: HubUser[], username: string): HubUser | null {
-  const q = (username || '').trim().toLowerCase()
-  if (!q) return null
-  return users.find(u => u.companyId === null && u.username.toLowerCase() === q) || null
-}
-
 /** Crea un nuovo utente con id univoco e default sensati. `companyId` null = profilo senza azienda. */
 export function makeUser(companyId: string | null, name: string, username: string): HubUser {
   const uname = (username || '').trim() || (name || '').trim().toLowerCase().replace(/\s+/g, '.')

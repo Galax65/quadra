@@ -3,8 +3,8 @@
 import { bundleProgettoQuadra, contaToolDelProgetto, parseProgettoQuadra } from '../../shared/progetto-quadra'
 import { openModal } from '../../shared/ui/components/modal'
 import { APP_REGISTRY } from '../data/registry'
-import { emptySharedPlan, ensureProjectId, normalizeSharedPlan, setProjectIdentity } from '../engine/index'
-import { _dxfMissing, ensureDxfText, fullSharedPlan, hubState, persistHubState, relayToFrames, setHubState } from './bus.js'
+import { ensureProjectId, setProjectIdentity } from '../engine/index'
+import { hubState, persistHubState, relayToFrames, setHubState } from './bus.js'
 import { goHome, launchApp, loadedFrames } from './frames.js'
 import { hubToast } from './shell.js'
 import { azzeraAlbero } from './revisioni-nav.js'
@@ -67,10 +67,10 @@ export function dlHub(content, name, type) {
 
 /* Chiede lo stato pieno a tutti i frame caricati; risolve quando tutti hanno
    risposto o allo scadere del timeout (i tool senza supporto non rispondono). */
-/* Timeout generoso: 500 ms bastano coi tool leggeri, ma un tool che serializza
-   una tavola DXF vera (megabyte di layer/blocchi/testi) risponde dopo, e il
-   .ehub finirebbe scritto SENZA quel tool. C'è comunque l'early-finish quando
-   tutti i frame hanno risposto: il timeout lungo paga solo se un tool è muto. */
+/* Timeout generoso: un lavoro grande (molte voci, misure e atti) si serializza in
+   più tempo, e il file finirebbe scritto SENZA quel tool. C'è comunque
+   l'early-finish quando tutti i frame hanno risposto: il timeout lungo paga solo
+   se un tool è muto. */
 export function collectFullState(timeoutMs = 8000) {
   return new Promise(resolve => {
     const expected = Object.keys(loadedFrames);
@@ -103,11 +103,7 @@ async function contenutoProgetto() {
   // Il progetto corrente ha un'identità stabile (id) e un nome → nel bundle.
   setHubState(ensureProjectId(hubState, genProjectId));
   persistHubState();
-  // XREF: assicura il testo (dalla cache o riletto dal ref) e passalo al bundle;
-  // se c'è un `ref` i byte NON finiscono nel file (solo il riferimento), altrimenti
-  // (fallback web) vengono incorporati.
-  await ensureDxfText();
-  const bundle = bundleProgettoQuadra(states, { now: Date.now(), name: hubState.name || undefined, sharedPlan: fullSharedPlan() });
+  const bundle = bundleProgettoQuadra(states, { now: Date.now(), name: hubState.name || undefined });
   return { content: JSON.stringify(bundle, null, 2), n: contaToolDelProgetto(bundle) };
 }
 
@@ -197,7 +193,7 @@ export async function confirmDiscardUnsaved(title) {
    condiviso da «Nuovo progetto» e dal logout: niente stato di un utente
    visibile al successivo su una macchina condivisa. */
 export function resetProjectSession() {
-  setHubState(ensureProjectId(setProjectIdentity({ ...hubState, tools: {}, sharedPlan: emptySharedPlan() }, null, null), genProjectId));
+  setHubState(ensureProjectId(setProjectIdentity({ ...hubState, tools: {} }, null, null), genProjectId));
   persistHubState();
   for (const k in pendingRestore) delete pendingRestore[k];
   azzeraAlbero(); // l'albero è del progetto: uno nuovo parte senza rami
@@ -255,26 +251,13 @@ export async function applyProgettoQuadra(bundle) {
   }
   // Aprire un .ehub stabilisce l'ISTANZA del progetto corrente (nuova identità + nome).
   // Lo stato per-appId riparte pulito: i tool ripubblicano il proprio progetto al ripristino.
-  // Planimetria UNICA di Progetto: ripristinata a livello project-global (non è
-  // sotto `tools`), poi relayata ai tool già aperti; quelli lanciati dopo la
-  // ricevono via pushStateToFrame al load.
-  setHubState(ensureProjectId(setProjectIdentity({ ...hubState, tools: {}, sharedPlan: normalizeSharedPlan(bundle.sharedPlan) }, null, bundle.name || null), genProjectId));
+  setHubState(ensureProjectId(setProjectIdentity({ ...hubState, tools: {} }, null, bundle.name || null), genProjectId));
   persistHubState();
   azzeraAlbero(); // i rami li ripubblicano gli strumenti, al ripristino
   // Appena caricato = allineato al file: non "non salvato". Sopprime gli update
   // indotti dal ripristino (un tool che ripubblica il proprio stato) per ~2.5s.
   _suppressDirtyUntil = Date.now() + 2500;
   markProjectSaved();
-  // XREF: se lo sfondo è un riferimento, controlla che il file sia ancora al suo posto.
-  // Se non esiste più → avviso esplicito (niente più sparizione in silenzio).
-  ensureDxfText().then(() => {
-    if (_dxfMissing) {
-      const d = hubState.sharedPlan && hubState.sharedPlan.dxf;
-      const nm = (d && (d.name || d.ref)) || 'planimetria';
-      hubToast(`Planimetria di progetto non trovata: ${nm}. Le geometrie sono al loro posto — reimporta il DXF.`, { warn: true });
-    }
-    relayToFrames({ type: 'hub:shared-plan', plan: fullSharedPlan() });
-  });
   for (const id of ids) {
     if (loadedFrames[id]) {
       try { loadedFrames[id].contentWindow.postMessage({ type: 'hub:restore-state', appId: id, state: tools[id] }, '*'); } catch (e) {}

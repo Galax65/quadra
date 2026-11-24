@@ -55,7 +55,7 @@ describe('coerenza UI — i pulsanti vivono SOLO nel design system condiviso', (
 
   it('components.css definisce le primitive canoniche (.ehb-btn* / .ehb-icon-btn)', () => {
     const c = readFileSync(resolve(ROOT, 'src/shared/ui/components.css'), 'utf8')
-    for (const cls of ['.ehb-btn {', '.ehb-btn--sm', '.ehb-btn--ghost', '.ehb-btn--accent-soft', '.ehb-btn--danger', '.ehb-icon-btn {', '.ehb-btn__count', '.ehb-tab {', '.ehb-tabs {', '.ehb-flash {', '.ehb-view-enter {', '.ehb-skeleton {', '.ehb-toast--undo {', '.ehb-toast__undo {']) {
+    for (const cls of ['.ehb-btn {', '.ehb-btn--sm', '.ehb-btn--ghost', '.ehb-btn--accent-soft', '.ehb-btn--danger', '.ehb-icon-btn {', '.ehb-btn__count', '.ehb-tab {', '.ehb-tabs {']) {
       expect(c, cls).toContain(cls)
     }
   })

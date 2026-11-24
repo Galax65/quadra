@@ -83,11 +83,6 @@ export function risolviVediVoce(qty: Record<string, QtyVoce | undefined>): strin
   return [...cambiate]
 }
 
-/** Le voci che richiamano `chiave` (per avvisare prima di eliminarla). */
-export function vociCheRichiamano(qty: Record<string, QtyVoce | undefined>, chiave: string): string[] {
-  return Object.entries(qty).filter(([k, q]) => k !== chiave && q?.misurazioni?.some((m) => m.vediVoce === chiave)).map(([k]) => k)
-}
-
 // ── COPIA / INCOLLA ────────────────────────────────────────────────────────
 
 const fmtIt = (n: number | null | undefined): string => (n == null ? '' : String(n).replace('.', ','))
@@ -158,34 +153,3 @@ export function spostaRiga<T>(righe: T[], i: number, delta: number): number {
 
 export interface VoceConMisure { codice: string; descrizione: string; um: string; qty: number; misurazioni: MisurazioneRiga[] }
 
-/**
- * Voci con righe di misura da un altro computo: file XPWE o progetto Quadra
- * (.quadra / .ehub, stato del Computo). Le voci senza righe di misura si scartano.
- */
-export function vociConMisure(testo: string, xpweToVoci: (xml: string) => { codice?: string; desc_short?: string; declaratoria?: string; um?: string; qty?: number; misurazioni?: MisurazioneRiga[] }[]): VoceConMisure[] {
-  const t = String(testo ?? '').replace(/^﻿/, '').trimStart()
-  if (t.startsWith('<')) {
-    return xpweToVoci(t).filter((v) => v.misurazioni?.length).map((v) => ({
-      codice: v.codice || '', descrizione: v.desc_short || v.declaratoria || '', um: v.um || '', qty: v.qty || 0, misurazioni: copiaRighe(v.misurazioni!),
-    }))
-  }
-  const o = JSON.parse(t) as { tools?: Record<string, unknown> }
-  const st = (o.tools?.computo ?? o.tools?.['miu-price-list'] ?? Object.values(o.tools || {}).find((s) => (s as { qty?: unknown })?.qty)) as
-    { qty?: Record<string, { qty?: number; um?: string; misurazioni?: MisurazioneRiga[] }>; custom?: [string, { codice?: string; desc_short?: string; declaratoria?: string; um?: string }][]; rows?: { codice?: string; desc_short?: string; declaratoria?: string; um?: string }[]; ordine?: string[] } | undefined
-  if (!st?.qty) throw new Error('Il progetto non contiene un computo')
-  const custom = new Map(st.custom || [])
-  const chiavi = Object.keys(st.qty)
-  const pos = new Map((st.ordine || []).map((k, i) => [k, i]))
-  chiavi.sort((a, b) => (pos.get(a) ?? 1e9) - (pos.get(b) ?? 1e9))
-  const out: VoceConMisure[] = []
-  for (const k of chiavi) {
-    const q = st.qty[k]
-    if (!q?.misurazioni?.length) continue
-    const c = custom.get(k) || (st.rows || []).find((r) => k.includes(String(r.codice || '\u0000'))) || {}
-    out.push({
-      codice: c.codice || k.replace(/^.*?::/, ''), descrizione: c.desc_short || c.declaratoria || '', um: q.um || c.um || '', qty: q.qty || 0,
-      misurazioni: copiaRighe(q.misurazioni).map((m) => { const r = { ...m }; delete r.vediVoce; return r }),
-    })
-  }
-  return out
-}

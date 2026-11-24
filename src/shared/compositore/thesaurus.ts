@@ -94,12 +94,6 @@ export function stemText(s: string): string {
 /** Coppia di piani di matching: raw (normQuery+normMisure) e stemmato. */
 export interface MatchText { raw: string; stem: string }
 
-/** Pipeline completa di normalizzazione per il matching testuale. */
-export function normMatch(s: unknown): MatchText {
-  const raw = normMisure(normQuery(s))
-  return { raw, stem: stemText(raw) }
-}
-
 export interface ExpandedQuery {
   /** famiglie riconosciute nella query (in ordine di specificità) */
   famiglie: Famiglia[]

@@ -16,7 +16,7 @@
 
 import { expandQuery, normQuery, normMisure, stemText, type ExpandedQuery, type Famiglia } from '../../../shared/compositore/thesaurus'
 import { variantiParola } from '../../../shared/compositore/sinonimi-parola'
-import { textIndexFor, buildTextIndex, buildTextIndexAsync, candidatesForTerm, intersectCandidates, unionCandidates, type TextIndex } from './text-index'
+import { textIndexFor,   candidatesForTerm, intersectCandidates, unionCandidates, type TextIndex } from './text-index'
 import { macrocategorieFor } from '../../../shared/compositore/macrocategorie'
 import type { PriceRow } from './types'
 
@@ -271,42 +271,6 @@ const STOPWORDS = new Set([
   'tra', 'fra', 'tipo',
 ])
 
-/**
- * Ricerca con ranking: filtra (score>0) e ordina per rilevanza (ordinamento
- * stabile: a parità di score resta l'ordine del prezzario). Query vuota ⇒
- * rows invariato; query senza famiglie ⇒ filtro AND storico, senza riordino.
- *
- * MIRATA MA FLESSIBILE (fix ricerca naturale, tutte le macrocategorie): con
- * famiglia riconosciuta i token liberi descrittivi (stopword escluse) tornano
- * a essere un AND come nella ricerca storica — «punto luce interrotto a vista»
- * restituisce solo le voci che contengono davvero «interrotto» e «vista», non
- * l'intera famiglia. Se l'AND svuota il set (voci scarne che non contengono
- * tutte le parole digitate) si ripiega sul solo ranking: mai zero risultati
- * quando la famiglia esiste nel prezzario.
- */
-// Testo su cui è costruito l'indice trigrammi: ENTRAMBI i piani di hitTerm
-// (raw + stem, ciascuno paddato) — il lato stem indicizzato per esteso rende i
-// candidati selettivi anche per le frasi-sinonimo flesse. Cambiare questo
-// testo richiede di rivedere la losslessness di candidatesForTerm.
-function indexTextOf(r: PriceRow): string {
-  const h = hayOf(r)
-  return ' ' + h.full + ' |' + h.fullStem + ' '
-}
-
-/** Pre-costruisce l'indice trigrammi (SINCRONO: test/CLI, dataset piccoli). */
-export function prewarmSearchIndex(rows: PriceRow[]): void {
-  buildTextIndex(rows, indexTextOf)
-}
-
-/**
- * Pre-costruzione ASINCRONA a chunk per la UI (da chiamare in idle dopo il
- * load del prezzario): il thread resta libero, le ricerche nel frattempo
- * scansionano come oggi e l'indice entra in gioco appena pronto.
- */
-export async function prewarmSearchIndexAsync(rows: PriceRow[]): Promise<void> {
-  await buildTextIndexAsync(rows, indexTextOf)
-}
-
 // Prefiltro candidati per il ramo RANKIZZATO: AND tra i gruppi-famiglia, OR
 // (unione) dentro il gruppo. null ⇒ nessun prefiltro possibile → scansione.
 // MAI filtrare su liberi/vincolanti: il fallback vuole l'intero set scored.
@@ -443,15 +407,6 @@ export function isManodoperaRow(r: Pick<PriceRow, 'um' | 'desc_short' | 'codice'
 }
 
 /**
- * Ricerca ristretta alle sole righe di manodopera: stesso motore di
- * ranking di `searchRows`, applicato a un pool già filtrato — niente più
- * "scavo" o altre voci non a tariffa oraria tra i risultati della manodopera.
- */
-export function searchManodoperaRows(rows: PriceRow[], q: unknown): PriceRow[] {
-  return searchRows(rows.filter(isManodoperaRow), q)
-}
-
-/**
  * NOLI (sezione C dell'Analisi Prezzi): righe di noleggio mezzi/attrezzature.
  * Segnale testuale in testa alla descrizione («NOLO …», «NOLEGGIO …») — nei
  * prezzari reali il capitolo noli usa queste diciture in apertura; una voce di
@@ -465,11 +420,6 @@ export function isNoloRow(r: Pick<PriceRow, 'desc_short'> & Partial<Pick<PriceRo
   // apprestamenti) sono l'equivalente dei noli anche senza «NOLO» in testa
   if (/^RISORSA STRUMENTALE/i.test(String(r.tipologia || ''))) return true
   return NOLO_RE.test(String(r.desc_short || '').trim())
-}
-
-/** Ricerca ristretta ai soli NOLI: stesso ranking di searchRows su pool filtrato. */
-export function searchNoloRows(rows: PriceRow[], q: unknown): PriceRow[] {
-  return searchRows(rows.filter(isNoloRow), q)
 }
 
 /**
@@ -563,61 +513,3 @@ export function isMaterialeRow(r: Pick<PriceRow, 'um' | 'desc_short' | 'codice' 
   return !OPERA_COMPIUTA_RE.test(testo)
 }
 
-/**
- * True se la riga è un'OPERA COMPIUTA: fornitura E posa, finita e a regola d'arte.
- *
- * È ciò che serve a una distinta di CAVI: un computo non mette a prezzo il rame nudo a piè
- * d'opera — mette il cavo **fornito e posato**, con manodopera, accessori e sfridi dentro.
- * Agganciare un cavo a un costo elementare di materiale è un errore di computo: il prezzo
- * esce basso e la voce non è appaltabile.
- */
-export function isOperaCompiutaRow(
-  r: Pick<PriceRow, 'um' | 'desc_short' | 'codice' | 'declaratoria'> & Partial<Pick<PriceRow, 'tipologia' | 'liv1'>>,
-): boolean {
-  const dichiarata = naturaDichiarata(r)
-  if (dichiarata !== null) return !dichiarata
-  if (isManodoperaRow(r) || isNoloRow(r)) return false
-  return OPERA_COMPIUTA_RE.test(`${r.desc_short || ''} ${r.declaratoria || ''}`)
-}
-
-/** Ricerca ristretta ai soli MATERIALI elementari: ranking di searchRows su pool filtrato. */
-export function searchMaterialeRows(rows: PriceRow[], q: unknown): PriceRow[] {
-  return searchRows(rows.filter(isMaterialeRow), q)
-}
-
-/**
- * Parole del capitolo manodopera che indicano la categoria DISCIPLINARE (non
- * generica) per macrocategoria di impianto — es. "OPERAIO QUALIFICATO
- * ELETTRICISTA" per gli impianti elettrici, "OPERAIO QUALIFICATO IMPIANTISTICA
- * TERMOIDRAULICA"/"IGIENICO-SANITARIA" per i meccanici (visti nel capitolo
- * manodopera reale, es. Veneto). Nessuna sigla di livello fissa (quelle
- * cambiano da prezzario a prezzario, es. Lombardia le chiama B1/C2) — solo
- * parole di ricerca sul catalogo manodopera già caricato.
- */
-const MACRO_MANODOPERA_KEYWORDS: Record<string, RegExp> = {
-  'IMPIANTI ELETTRICI': /ELETTRIC/i,
-  ILLUMINAZIONE: /ELETTRIC/i,
-  'IMPIANTI MECCANICI': /IDRAULIC|TERMOIDRAULIC|IGIENIC[O0][\s-]*SANITARI/i,
-  'IMPIANTI ANTINCENDIO': /IDRAULIC|ELETTRIC/i,
-  'OPERE EDILI': /EDIL|MURATOR|CARPENTIER|PIASTRELLIST|IMBIANCHIN|PITTORE/i,
-}
-
-/**
- * Propone le righe manodopera più adatte alla macrocategoria di impianto della
- * voce in composizione: prima le categorie DISCIPLINARI del
- * prezzario aperto (es. "operaio qualificato elettricista" per gli impianti
- * elettrici); se il prezzario non ne ha di specifiche per quella disciplina,
- * ripiega sulla coppia base specializzato+qualificato (la "squadra tipo" da 2,
- * livelli generici — mai fabbricati: solo quello che il prezzario ha davvero).
- * Nessun default se il prezzario aperto non ha affatto manodopera.
- */
-export function suggestManodoperaPerMacro(rows: PriceRow[], macro?: string): PriceRow[] {
-  const pool = rows.filter(isManodoperaRow).filter(r => !/sovrapprezzo/i.test(r.desc_short || ''))
-  if (!pool.length) return []
-  const re = macro ? MACRO_MANODOPERA_KEYWORDS[macro] : undefined
-  const disciplinare = re ? pool.filter(r => re.test(r.desc_short || '')) : []
-  if (disciplinare.length) return disciplinare.slice(0, 2)
-  const specializzato = pool.find(r => /SPECIALIZZAT/i.test(r.desc_short || ''))
-  const qualificato = pool.find(r => /QUALIFICAT/i.test(r.desc_short || '') && r !== specializzato)
-  return [specializzato, qualificato].filter((r): r is PriceRow => !!r)
-}

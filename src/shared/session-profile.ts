@@ -47,12 +47,3 @@ export function writeAuth(profile: unknown): void {
   try { store()?.setItem(AUTH_KEY, JSON.stringify(profile)) } catch { /* storage off */ }
 }
 
-export function clearAuth(): void {
-  try { store()?.removeItem(AUTH_KEY) } catch { /* storage off */ }
-}
-
-/** Azienda del profilo corrente (null per admin e profili senza azienda). */
-export function authCompanyId(): string | null {
-  const p = readAuth()
-  return typeof p?.companyId === 'string' ? p.companyId : null
-}

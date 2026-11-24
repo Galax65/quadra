@@ -1,8 +1,7 @@
-/* hub — il bus: stato condiviso fra i tool, planimetria di Progetto,
-   ponte appunti verso Electron e listener dei messaggi dai frame. */
+/* hub — il bus: stato condiviso fra i tool e listener dei messaggi dai frame. */
 import { valida } from '../../shared/memoria-studio'
 import { APP_REGISTRY } from '../data/registry'
-import { emptyHubProjectState, ensureProjectId, projectStateMessages, setSharedDxf, setToolProject, sourceForApp, upsertShared } from '../engine/index'
+import { emptyHubProjectState, ensureProjectId, projectStateMessages, setToolProject, sourceForApp } from '../engine/index'
 import { loadUsers, refreshToolVisibility } from './auth.js'
 import { goHome, hideOverlay, launchApp, loadedFrames } from './frames.js'
 import { _collector, markProjectDirty } from './progetto.js'
@@ -27,42 +26,9 @@ hubState = ensureProjectId(emptyHubProjectState(),
   () => 'p-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8));
 try { localStorage.removeItem('hub:state'); } catch(e) {}
 
-// ── Planimetria di Progetto come XREF ──────────────────────────────────────
-// Sul bus viaggia SOLO L'IDENTITÀ della planimetria (percorso/nome/dimensione), MAI i
-// byte del DXF. Prima li trasportava: l'hub li teneva in cache e li rimandava a ogni
-// tool, che li riparsava. Con le tavole vere dello studio (240 MB) significa una copia
-// da 240 MB per tool attraverso `postMessage` — non è lento, è impossibile. Adesso chi
-// importa un file lo legge da sé, in locale, e sul canale annuncia solo QUALE
-// planimetria è attiva. Su disco (.ehub/localStorage) non è mai cambiato nulla: lì il
-// riferimento c'era già.
-export let _dxfMissing = false;    // true = c'è un `ref` XREF ma il file non è più al suo posto
-export function dxfKey(dxf) { return dxf ? (dxf.ref || `${dxf.name}:${dxf.size || 0}`) : null; }
-export function dxfMetaOnly(dxf) { if (!dxf) return null; const { text, ...rest } = dxf; void text; return rest; }
-// Verifica che l'xref sia ancora al suo posto — con uno `stat`, non leggendo il file
-// (la vecchia versione si portava a casa 240 MB solo per sapere se esisteva).
-export async function ensureDxfText() {
-  _dxfMissing = false;
-  const dxf = hubState.sharedPlan && hubState.sharedPlan.dxf;
-  if (!dxf || !dxf.ref) return;
-  if (!window.ehubNative || typeof window.ehubNative.statDxf !== 'function') return;
-  try {
-    const r = await window.ehubNative.statDxf(dxf.ref);
-    _dxfMissing = !(r && r.exists);
-  } catch(e) { _dxfMissing = true; }
-}
-// Planimetria condivisa per relay/replay ai tool: metadati dello sfondo, mai i byte.
-export function fullSharedPlan() {
-  const sp = hubState.sharedPlan;
-  if (!sp || !sp.dxf) return sp;
-  return { ...sp, dxf: { ...dxfMetaOnly(sp.dxf), missing: _dxfMissing && !!sp.dxf.ref } };
-}
-// Planimetria "leggera" (solo metadati sfondo): per gli aggiornamenti di sola
-// geometria e per la persistenza (mai i byte del DXF).
-export function lightSharedPlan(sp) { return sp ? { ...sp, dxf: dxfMetaOnly(sp.dxf) } : sp; }
 export function persistHubState() {
   try {
-    const light = { ...hubState, sharedPlan: lightSharedPlan(hubState.sharedPlan) };
-    localStorage.setItem('hub:state', JSON.stringify(light));
+    localStorage.setItem('hub:state', JSON.stringify(hubState));
   } catch(e) {}
 }
 export function relayToFrames(msg, exceptWindow) {
@@ -72,14 +38,10 @@ export function relayToFrames(msg, exceptWindow) {
   });
 }
 // Invia lo stato condiviso corrente a un singolo frame (al suo caricamento) — GENERICO per appId.
-export async function pushStateToFrame(frame) {
+export function pushStateToFrame(frame) {
   for (const m of projectStateMessages(hubState)) {
     try { frame.contentWindow.postMessage(m, '*'); } catch(e) {}
   }
-  // Planimetria UNICA di Progetto: assicura il testo DXF (xref → rilettura da
-  // disco) e invia lo sfondo + cavidotti/circuiti condivisi.
-  await ensureDxfText();
-  try { frame.contentWindow.postMessage({ type: 'hub:shared-plan', plan: fullSharedPlan(), replay: true }, '*'); } catch(e) {}
 }
 
 /* ══════════════════════════════════════════════
@@ -145,38 +107,8 @@ window.addEventListener('message', event => {
       try {
         // Replica lo stato di OGNI tool (i consumatori filtrano per `source`/`appId`).
         for (const m of projectStateMessages(hubState)) event.source.postMessage(m, '*');
-        // Planimetria UNICA di Progetto (project-global): un solo messaggio, col
-        // testo DXF assicurato dalla cache/xref.
-        const src = event.source;
-        ensureDxfText().then(() => { try { src.postMessage({ type: 'hub:shared-plan', plan: fullSharedPlan(), replay: true }, '*'); } catch(e) {} });
       } catch(e) {}
       break;
-
-    /* Planimetria UNICA di Progetto: un tool importa un DXF o aggiorna i propri
-       cavidotti/circuiti → l'hub aggiorna il campo project-global e lo ritrasmette
-       a tutti gli altri tool (NON gated su APP_REGISTRY: è project-global). */
-    case 'app:shared-plan-update': {
-      if (!msg.origin) break;
-      markProjectDirty();
-      const hadDxf = ('dxf' in msg && msg.dxf !== undefined);
-      if (hadDxf) {
-        _dxfMissing = false;                                     // appena importato: il file c'è
-        hubState = setSharedDxf(hubState, dxfMetaOnly(msg.dxf)); // solo ref/metadati (xref)
-      }
-      // POOL UNICO: upsert per id + delete espliciti (mai clobber su omissione).
-      hubState = upsertShared(hubState, { cavidotti: msg.cavidotti, circuiti: msg.circuiti, scale: msg.scale, deleted: msg.deleted });
-      persistHubState();
-      const plan = hadDxf ? fullSharedPlan() : lightSharedPlan(hubState.sharedPlan);
-      const relayMsg = { type: 'hub:shared-plan', plan };
-      if (msg.deleted) relayMsg.deleted = msg.deleted; // delete cross-tool (anche nativi)
-      // IMPORT UNIFICATO: quando arriva un DXF nuovo lo si rimanda a TUTTI, incluso
-      // chi l'ha importato → un'unica via di visualizzazione (adozione dal canale
-      // condiviso). Gli aggiornamenti di sola geometria escludono il mittente
-      // (ha già i propri; riceve solo i «foreign» degli altri).
-      if (hadDxf) relayToFrames(relayMsg);
-      else relayToFrames(relayMsg, event.source);
-      break;
-    }
   }
 });
 

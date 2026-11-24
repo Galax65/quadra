@@ -20,10 +20,9 @@ const TOOL_INPUT: Record<string, Record<string, string>> = {
 
 // Catalogo compositore del Computo — Quadra non porta dataset di marchi/prodotti
 // proprietari: lo studio importa il proprio catalogo dall'app (vedi engine/
-// catalog-source.ts). Il bundle parte sempre dallo stub vuoto.
+// catalog-data-empty.ts). Il bundle parte sempre dallo stub vuoto.
 const COMPOSITORE_CATALOG_STUB = resolve(__dirname, 'src/shared/compositore/catalog-data-empty.ts')
 const COMPOSITORE_CATALOG_ALIAS = {
-  'compositore-catalog:marchi': COMPOSITORE_CATALOG_STUB,
   'compositore-catalog:libreria': COMPOSITORE_CATALOG_STUB,
   'compositore-catalog:sinonimi-parola': COMPOSITORE_CATALOG_STUB,
   'compositore-catalog:tematiche': COMPOSITORE_CATALOG_STUB,

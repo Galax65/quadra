@@ -27,20 +27,6 @@ export function separatoriDiSistema(locale?: string): { decimale: string; miglia
 const pulisci = (v: string | null | undefined): string => String(v ?? '').trim().replace(/[\s  ]/g, '')
 
 /**
- * Valore di un campo `<input type="number">`: canonico, punto decimale, in ogni
- * lingua. Null se vuoto o non numerico — un campo vuoto e un campo a zero sono
- * due cose diverse in contabilità.
- */
-export function leggiNumeroCampo(v: string | null | undefined): number | null {
-  const s = pulisci(v)
-  if (!s) return null
-  // qualche browser (o un incollaggio) restituisce il testo digitato
-  const canon = s.includes(',') ? s.replace(/\./g, '').replace(',', '.') : s
-  const n = Number(canon)
-  return Number.isFinite(n) ? n : null
-}
-
-/**
  * Valore di un campo di TESTO in cui si scrive un numero: qui valgono i
  * separatori della lingua di sistema, perché è così che l'utente li digita ed è
  * così che il programma glieli ha mostrati.

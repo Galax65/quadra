@@ -46,9 +46,6 @@ export function toolKeyOf(id) {
   const app = APP_REGISTRY.find(a => a.id === id);
   return (LOGO_MAP[(app || {}).logoType] || {}).tool || 'hub';
 }
-/* Modo effettivo (light/dark): UNICO per la suite. Il parametro è ignorato —
-   mantenuto per compatibilità con i call-site esistenti (load/cambio frame). */
-export function effectiveTheme() { return suiteTheme.mode; }
 export function effectivePalette() { return suiteTheme.palette; }
 export function currentTheme() {
   return document.documentElement.getAttribute('data-theme') || suiteTheme.mode;

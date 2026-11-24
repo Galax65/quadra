@@ -58,14 +58,3 @@ export interface StatoAccordoQuadro {
   utilizzoPct: number | null
   superato: boolean
 }
-export function statoAccordoQuadro(appalto: Appalto): StatoAccordoQuadro | null {
-  const aq = appalto.accordoQuadro
-  if (!aq) return null
-  const importoMassimo = r2(aq.importoMassimo || 0)
-  const impegnato = r2((aq.applicativi || []).reduce((s, c) => s + (c.importo || 0), 0))
-  return {
-    importoMassimo, impegnato, residuo: r2(importoMassimo - impegnato),
-    utilizzoPct: importoMassimo ? Math.round(impegnato / importoMassimo * 1e4) / 100 : null,
-    superato: importoMassimo > 0 && impegnato > importoMassimo,
-  }
-}

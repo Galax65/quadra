@@ -23,7 +23,7 @@
 import { escHtml } from '../../../shared/doc/doc'
 import { eur } from '../../../shared/format'
 import { addDaysIt, giorniTra, itToISO, oggiISO } from '../../../shared/date-it'
-import type { Riserva, Sal, FirmaEsecutore } from './types'
+import type { Riserva, Sal } from './types'
 
 /** Giorni per esplicitare una riserva già iscritta (art. 7 c. 2 All. II.14). */
 export const GIORNI_ESPLICITAZIONE = 15
@@ -123,12 +123,6 @@ export function riserveRegistroHTML(riserve: Riserva[] | undefined, oggiIso?: st
       </tbody>
     </table>
     <p class="note">Le riserve iscritte vanno esplicitate entro ${GIORNI_ESPLICITAZIONE} giorni dall'iscrizione, con domande e quantificazione, e <b>confermate alla firma del conto finale</b> (entro ${GIORNI_FIRMA_CONTO_FINALE} giorni dall'invito del RUP): quelle non confermate si hanno per abbandonate. Il termine di ${GIORNI_ESPLICITAZIONE} giorni e la conferma sono a pena di decadenza, salvo le riserve già definite in via conciliativa.</p>`
-}
-
-export const FIRMA_LABEL: Record<FirmaEsecutore, string> = {
-  senzaRiserve: 'sottoscritto senza riserve',
-  conRiserva: 'sottoscritto con riserva',
-  rifiutata: 'sottoscrizione rifiutata',
 }
 
 /**

@@ -32,12 +32,6 @@ export function persistUsers() {
   try { localStorage.setItem(USERS_KEY, JSON.stringify(hubUsers)); } catch (e) {}
 }
 
-/* Utente company loggato (se c'è), dal registro utenti locale. */
-export function currentHubUser() {
-  return (authProfile && authProfile.companyId)
-    ? findUser(hubUsers, authProfile.companyId, authProfile.utente)
-    : null;
-}
 /* Logica PURA in src/hub/engine/visibility.ts (testata): tutti i tool sono
    visibili di default, l'unico gate è `adminOnly` (solo admin). */
 export function isToolEnabledForCurrentUser(id) {

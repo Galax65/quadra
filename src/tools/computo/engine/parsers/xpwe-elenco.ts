@@ -7,11 +7,6 @@
 import type { XpweDoc } from '../../../../shared/xpwe/xpwe'
 import type { PriceRow } from '../types'
 
-/** Vero se l'XPWE è un elenco prezzi (nessuna voce di computo, almeno un articolo). */
-export function isElencoXpwe(doc: XpweDoc): boolean {
-  return doc.voci.length === 0 && doc.elencoPrezzi.length > 0
-}
-
 /** Regione/edizione dal nome del file d'origine: l'anno, e se è un listino editoriale. */
 export function edizioneDaNome(nome: string): { regione: string | null; anno: string | null } {
   const base = String(nome || '').split(/[\\/]/).pop() || ''

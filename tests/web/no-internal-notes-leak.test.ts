@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 /**
@@ -22,7 +22,9 @@ const SENSITIVE_PATTERNS: [RegExp, string][] = [
 
 const PUBLIC_HTML_FILES = [
   'src/hub/index.html',
-  ...readdirSync(resolve(ROOT, 'src/tools')).map((tool) => `src/tools/${tool}/index.html`),
+  ...readdirSync(resolve(ROOT, 'src/tools'))
+    .map((tool) => `src/tools/${tool}/index.html`)
+    .filter((rel) => existsSync(resolve(ROOT, rel))), // computo/ e contabilita/ hanno solo il motore
 ]
 
 describe('nessun junk interno nelle pagine pubbliche (view-source/DevTools)', () => {

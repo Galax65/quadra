@@ -524,7 +524,7 @@
 :root[data-shadow="soft"] { --shadow-intensity: 0.55; }
 :root[data-shadow="deep"] { --shadow-intensity: 1.6; }
 
-.prose, .ehb-prose { font-family: var(--prose); font-weight: var(--fw-prose); line-height: 1.55; }
+.prose { font-family: var(--prose); font-weight: var(--fw-prose); line-height: 1.55; }
 
 /* Tema di SUITE: quando l'hub cambia tema lo applica a tutta la chrome e a tutti
    i frame; questa classe (aggiunta per ~320ms dal cambio) fa sfumare il passaggio

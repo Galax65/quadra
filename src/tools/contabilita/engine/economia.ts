@@ -45,12 +45,6 @@ export function economiaATuttoSal(liste: ListaEconomia[] | undefined, salNumero:
   return round2(listeATuttoSal(liste, salNumero).reduce((s, l) => s + valorizzaLista(l).totale, 0))
 }
 
-/** Factory: nuova lista in economia con id e numero progressivo. */
-export function nuovaLista(salNumero: number | undefined, data: string, esistenti: ListaEconomia[], id: string): ListaEconomia {
-  const numero = (esistenti || []).length + 1
-  return { id, numero, data, salNumero, operai: [], mezzi: [], provviste: [] }
-}
-
 /* ── Documento stampabile: la lista settimanale in economia ──────────────── */
 function operaiHTML(righe: RigaOperaio[]): string {
   if (!righe.length) return ''

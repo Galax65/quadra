@@ -78,7 +78,7 @@ firmate** (vedi §8): la release ne riporta l'avviso.
 
 C'è **UN SOLO numero di versione per tutta la suite**: i tool non hanno numeri propri. Vive
 in [versions.js](../versions.js) (fonte unica), replicato in `package.json` e nel lockfile. I
-nomi file sono stabili (`Amministrazione.html`, `Computo.html`, …): la versione **non** sta nel nome.
+nomi file sono stabili (`Amministrazione.html`, `Lavoro.html`, …): la versione **non** sta nel nome.
 
 ```
    X . Y . Z
@@ -175,6 +175,7 @@ Tutti i comandi disponibili, generati da [package.json](../package.json):
 | Qualità | `npm run test:watch` | `vitest` |
 | Build | `npm run build` | `npm run build:web` |
 | Build | `npm run build:web` | `node scripts/build-web.mjs` |
+| Build | `npm run build:lavoro` | `TOOL=lavoro vite build && node scripts/place-builds.mjs` |
 | Build | `npm run build:amministrazione` | `TOOL=amministrazione vite build && node scripts/place-builds.mjs` |
 | Build | `npm run build:hub` | `TOOL=hub vite build && node scripts/place-builds.mjs` |
 | Build | `npm run build:prezzari` | `vite-node scripts/build-prezzari.ts` |

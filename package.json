@@ -25,6 +25,7 @@
     "prebuild": "npm run test",
     "build": "npm run build:web",
     "build:web": "node scripts/build-web.mjs",
+    "build:lavoro": "TOOL=lavoro vite build && node scripts/place-builds.mjs",
     "build:amministrazione": "TOOL=amministrazione vite build && node scripts/place-builds.mjs",
     "build:hub": "TOOL=hub vite build && node scripts/place-builds.mjs",
     "build:prezzari": "vite-node scripts/build-prezzari.ts",

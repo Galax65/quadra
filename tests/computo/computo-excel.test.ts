@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computoMetricoAOA, computoMetricoFileName } from '../../src/tools/computo/engine'
+import { computoMetricoAOA } from '../../src/tools/computo/engine/computo-excel'
 import type { ComputoExcelRiga } from '../../src/tools/computo/engine/computo-excel'
 
 const righe: ComputoExcelRiga[] = [
@@ -40,9 +40,3 @@ describe('computoMetricoAOA', () => {
   })
 })
 
-describe('computoMetricoFileName', () => {
-  it('include la data ISO', () => {
-    const name = computoMetricoFileName(new Date('2026-08-11T10:00:00Z'))
-    expect(name).toBe('computo-metrico-2026-08-11.xlsx')
-  })
-})

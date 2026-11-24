@@ -36,10 +36,4 @@ export function pctEsatta(n: number | null | undefined, max = 5): string {
   return n.toLocaleString('it-IT', { minimumFractionDigits: 0, maximumFractionDigits: max }) + '%'
 }
 
-/** Percentuale con segno esplicito (+/−) — utile per scarti/variazioni. */
-export function pctSigned(n: number | null | undefined, decimals = 1): string {
-  if (n == null || !Number.isFinite(n)) return '—'
-  return (n > 0 ? '+' : '') + pct(n, decimals)
-}
-
 export { round2 }

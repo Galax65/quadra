@@ -1,10 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import {
-  frontespizioHTML, giornaleHTML, librettoHTML, registroHTML, sommarioHTML, salHTML, certificatoHTML, contoFinaleHTML, relazioneFinaleHTML,
-  verbaleHTML, nuovoVerbale, VERBALE_LABEL, VERBALE_TIPI, listaEconomiaHTML,
-} from '../../src/tools/contabilita/engine'
-import { importaAMisura, importaACorpo } from '../../src/tools/contabilita/engine/import'
+import { frontespizioHTML, giornaleHTML, librettoHTML, registroHTML, sommarioHTML, salHTML, certificatoHTML, contoFinaleHTML, relazioneFinaleHTML, verbaleHTML, VERBALE_LABEL, listaEconomiaHTML } from '../../src/tools/contabilita/engine'
 import type { Appalto, Partita, Sal, Verbale, ListaEconomia } from '../../src/tools/contabilita/engine/types'
+import { partiteDiProva, verbaliDiProva } from './_fixture'
 
 const appalto: Appalto = {
   oggetto: 'Manutenzione straordinaria scuola', cup: 'C11', cig: 'Z0A',
@@ -13,20 +10,14 @@ const appalto: Appalto = {
   rup: 'Ing. Rossi', direttoreLavori: 'Arch. Bianchi', articoloCapitolato: '12',
   baseAsta: 100000, importoOfferta: 80000, oneriSicurezza: 2000, ivaPct: 10, modalita: 'misto',
 }
-const partite: Partita[] = [
-  ...importaAMisura([{ codice: 'M1', desc_short: 'Scavo', um: 'mc', prezzo: 10, qty: 100, categoria: 'Opere edili' }]),
-  ...importaACorpo([{ codice: 'C1', desc_short: 'Impianto', prezzo: 100, qty: 20, categoria: 'Impianti' }]),
-]
+const partite: Partita[] = partiteDiProva()
 const sals: Sal[] = [{ numero: 1, data: '01/06/2026', righe: [
   { partitaId: partite[0].id, quantitaProgressiva: 50 },
   { partitaId: partite[1].id, quotaPct: 30 },
 ] }]
 
 // Un verbale per ogni tipo (id/numero deterministici), per verificare tutti gli atti.
-const verbali: Verbale[] = VERBALE_TIPI.map((t, i) => {
-  const v = nuovoVerbale(t, `0${i + 1}/06/2026`, [], `v${i}`)
-  return { ...v, oggetto: `Oggetto ${t}`, testo: 'Primo paragrafo.\nSecondo paragrafo.' }
-})
+const verbali: Verbale[] = verbaliDiProva()
 
 const tutti: Record<string, string> = {
   frontespizio: frontespizioHTML(appalto, partite),
@@ -74,28 +65,6 @@ describe('Contabilità documenti — contenuti chiave', () => {
   })
 })
 
-describe('Contabilità libretto — storno e tracciabilità (niente cancellazioni)', () => {
-  const pm = importaAMisura([{ codice: 'M1', desc_short: 'Scavo', um: 'mc', prezzo: 10, qty: 100, categoria: 'Opere' }])[0]
-  it('una voce soppressa resta a verbale con lo storno e importo azzerato', () => {
-    const soppressa: Partita = { ...pm, soppressaSal: 1 }
-    const sal: Sal = { numero: 1, data: '01/06/2026', righe: [{ partitaId: soppressa.id, quantitaProgressiva: 100 }] }
-    const html = librettoHTML(appalto, [soppressa], sal)
-    expect(html).toContain('portata in detrazione al SAL n. 1')
-    // il libretto è un atto di sole quantità: lo storno si legge nei negativi, non come importo
-    expect(html).toContain('100,00')
-    expect(html).not.toContain('&euro;')
-    expect(html).not.toContain('\u20ac')
-  })
-  it('un nuovo prezzo introdotto al SAL 2 NON compare nel libretto del SAL 1', () => {
-    const np: Partita = { ...pm, id: 'np', codice: 'NP.01', descrizione: 'Nuovo prezzo', introdottaSal: 2 }
-    const sal1: Sal = { numero: 1, data: '01/06/2026', righe: [{ partitaId: np.id, quantitaProgressiva: 5 }] }
-    const html1 = librettoHTML(appalto, [np], sal1)
-    expect(html1).not.toContain('NP.01')
-    const sal2: Sal = { numero: 2, data: '01/07/2026', righe: [{ partitaId: np.id, quantitaProgressiva: 5 }] }
-    expect(librettoHTML(appalto, [np], sal2)).toContain('NP.01')
-  })
-})
-
 describe('Contabilità lavori in economia — documenti', () => {
   const l: ListaEconomia = {
     id: 'l1', numero: 1, data: '05/06/2026', salNumero: 1,
@@ -114,18 +83,6 @@ describe('Contabilità lavori in economia — documenti', () => {
     expect(html).toContain('bt-firme')
     expect(html.toLowerCase()).toContain('art. 181')
   })
-  it('il libretto del SAL mostra la sezione «Lavorazioni in economia» col totale', () => {
-    const pm = importaAMisura([{ codice: 'M1', desc_short: 'Scavo', um: 'mc', prezzo: 10, qty: 100, categoria: 'Opere' }])
-    const sal: Sal = { numero: 1, data: '01/06/2026', righe: [{ partitaId: pm[0].id, quantitaProgressiva: 50 }] }
-    const html = librettoHTML(appalto, pm, sal, [l])
-    expect(html).toContain('Lavorazioni in economia')
-    // nel libretto le economie stanno per risorse impiegate (8 ore di operaio),
-    // non per valore: la valorizzazione (600,00) è atto del registro di contabilità
-    expect(html).toContain('8,00')
-    expect(html).not.toContain('600,00')
-    // senza liste, nessuna sezione economia
-    expect(librettoHTML(appalto, pm, sal)).not.toContain('Lavorazioni in economia')
-  })
 })
 
 describe('Contabilità verbali e comunicazioni del DL', () => {
@@ -140,15 +97,6 @@ describe('Contabilità verbali e comunicazioni del DL', () => {
   it('il verbale di consegna espone gli accertamenti in contraddittorio', () => {
     const c = verbali.find((v) => v.tipo === 'consegna')!
     expect(verbaleHTML(appalto, c)).toContain('libera da persone e cose')
-  })
-  it('nuovoVerbale numera progressivamente per tipo', () => {
-    const list: Verbale[] = []
-    const a = nuovoVerbale('ordine', '01/06/2026', list, 'a'); list.push(a)
-    const b = nuovoVerbale('ordine', '05/06/2026', list, 'b'); list.push(b)
-    const s = nuovoVerbale('sospensione', '06/06/2026', list, 's')
-    expect(a.numero).toBe(1)
-    expect(b.numero).toBe(2)
-    expect(s.numero).toBe(1) // numerazione indipendente per tipo
   })
   it('la relazione finale elenca i verbali come allegati', () => {
     expect(tutti.relazione).toContain('Allegati al conto finale')

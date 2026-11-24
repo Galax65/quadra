@@ -36,14 +36,6 @@ export function valoreMostrato(m: MisurazioneRiga | undefined, campo: CampoMisur
   return v == null ? '' : String(+Number(v).toFixed(4)).replace('.', ',')
 }
 
-/** Valore da correggere: la FORMULA se c'è, altrimenti il numero. */
-export function valoreModificabile(m: MisurazioneRiga | undefined, campo: CampoMisura): string {
-  if (!m) return ''
-  if (campo === 'descrizione') return m.descrizione || ''
-  const f = m.formule?.[campo as Exclude<CampoMisura, 'descrizione'>]
-  return f ? formulaPerSchermo(f) : valoreMostrato(m, campo)
-}
-
 /** I pezzi di codice che ogni tool mette negli attributi onX (già con i suoi id). */
 export interface AzioniMisure {
   /** onchange di un campo (riga, campo) */

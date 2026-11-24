@@ -57,30 +57,6 @@ describe('anticipazione (art. 125)', () => {
 })
 function round(n: number): number { return Math.round(n * 100) / 100 }
 
-import { periziaDaVoci } from '../../src/tools/contabilita/engine'
-describe('perizia da un computo di variante (XPWE)', () => {
-  const contratto: Partita[] = [
-    { id: 'a', modalita: 'misura', codice: 'A.01', descrizione: 'Scavo', categoria: 'Lotto · Percorsi', um: 'm3', prezzoUnitario: 10, qtyProgetto: 100 },
-    { id: 'b', modalita: 'misura', codice: 'B.01', descrizione: 'Getto', categoria: 'Lotto · Percorsi', um: 'm3', prezzoUnitario: 150, qtyProgetto: 1 },
-    { id: 'b2', modalita: 'misura', codice: 'B.01', descrizione: 'Getto', categoria: 'Lotto · Impianti', um: 'm3', prezzoUnitario: 150, qtyProgetto: 4 },
-    { id: 'c', modalita: 'misura', codice: 'C.01', descrizione: 'Cartello', categoria: 'Lotto · Segnaletica', um: 'cad', prezzoUnitario: 50, qtyProgetto: 4 },
-  ]
-  it('stessa voce = codice, categoria e prezzo; assenti a zero; nuove dal SAL della perizia', () => {
-    const e = periziaDaVoci(contratto, [
-      { codice: 'A.01', categoria: 'Lotto · Percorsi', prezzo: 10, qty: 120 },
-      { codice: 'B.01', categoria: 'Lotto · Percorsi', prezzo: 150, qty: 1 },
-      { codice: 'B.01', categoria: 'Lotto · Impianti', prezzo: 150, qty: 0 },
-      { codice: 'NP.03', categoria: 'Lotto · Percorsi', prezzo: 260, qty: 8, um: 'cad' },
-    ], 1, 3)
-    expect(e.perizia.voci).toEqual([{ partitaId: 'a', qty: 120 }, { partitaId: 'b2', qty: 0 }, { partitaId: 'c', qty: 0 }])
-    expect(e.soppresse).toBe(1)
-    expect(e.nuove).toHaveLength(1)
-    expect(e.nuove[0]).toMatchObject({ codice: 'NP.03', qtyProgetto: 8, introdottaSal: 3 })
-    const q = quadroComparativo([...contratto, ...e.nuove], [e.perizia], e.perizia)
-    expect(q.differenza).toBe(200 - 600 - 200 + 2080)
-  })
-})
-
 describe('quadro comparativo in PDF', () => {
   it('si genera con i totali della perizia', async () => {
     const lib = await import('pdf-lib')

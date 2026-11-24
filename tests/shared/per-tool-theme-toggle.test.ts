@@ -4,7 +4,6 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { initTheme } from '../../src/shared/theme'
 import { parseHubMessage } from '../../src/shared/bus'
-import { computoSource } from '../computo/computo-src'
 import { hubSource } from '../hub/hub-src'
 
 /**
@@ -25,32 +24,12 @@ function read(rel: string): string {
   return readFileSync(resolve(SRC, rel), 'utf8')
 }
 
-/** Sorgenti per tool (html + script) e default tema atteso. I tool il cui script è
- *  spezzato in più moduli espongono un helper `extra` che li concatena tutti: Computo ha
- *  legacy/*.js (estratto da index.html), altri hanno ui/*.js (split di main.js). */
-const TOOLS: Record<string, { files: string[]; defaultTheme: 'light' | 'dark'; extra?: () => string }> = {
-  'Computo': { files: [], defaultTheme: 'light', extra: computoSource },
-}
-
-describe('tema per-tool — toggle locale ripristinato', () => {
-  for (const [tool, { files, extra }] of Object.entries(TOOLS)) {
-    const blob = files.map(read).join('\n') + (extra ? '\n' + extra() : '')
-
-    it(`${tool}: espone un button toggle tema nell'header`, () => {
-      expect(blob).toMatch(/id="(theme-toggle|btnTheme)"/)
-    })
-
-    it(`${tool}: definisce una funzione toggleTheme()`, () => {
-      expect(blob).toMatch(/function\s+toggleTheme\b/)
-    })
-
-    it(`${tool}: gestisce sia hub:set-theme (push hub) sia hub:set-palette (palette)`, () => {
-      expect(blob).toContain('hub:set-theme')
-      // direttamente ('hub:set-palette' nel proprio onHubMessage) oppure via
-      // l'helper condiviso applySuiteAesthetics (shared/theme.ts), che la gestisce.
-      expect(blob).toMatch(/hub:set-palette|applySuiteAesthetics/)
-    })
-  }
+describe('tema di suite — i tool lo ricevono dall\'hub', () => {
+  it('Lavoro: gestisce sia hub:set-theme (push hub) sia hub:set-palette (palette)', () => {
+    const src = read('src/tools/lavoro/main.ts')
+    expect(src).toContain('hub:set-theme')
+    expect(src).toMatch(/hub:set-palette|applySuiteAesthetics/)
+  })
 
   it('modo UNICO: l\'hub inietta il data-theme di suite nello srcdoc di ogni tool', () => {
     const hub = hubSource()
@@ -58,20 +37,19 @@ describe('tema per-tool — toggle locale ripristinato', () => {
     expect(hub).toMatch(/injectSuiteThemeIntoHtml/)
     expect(hub).toMatch(/injectAttr\([^)]*['"]data-theme['"]/)
   })
-
-  it('nessun tool hardcoda il modo al boot: ONORA il data-theme iniettato', () => {
-    expect(computoSource()).toMatch(/dataset\.theme|getAttribute\(['"]data-theme['"]\)/)
-  })
 })
 
 /**
  * La scorciatoia 'T' è cablata nell'hub SOLO per la sua chrome (sidebar/home):
  * un tool vive nel proprio iframe, il keydown non risale al padre — ogni tool
- * deve legarla da sé (bindThemeShortcut condiviso, o l'equivalente inline per
- * Computo che non è un modulo ES). Bug corretto: nessun tool la legava prima.
+ * deve legarla da sé (bindThemeShortcut condiviso). Bug corretto: nessun tool la
+ * legava prima.
  */
 describe('scorciatoia T del tema — legata in OGNI tool (non solo nell\'hub)', () => {
   const MODULE_TOOLS = ['amministrazione']
+  it('lavoro: chiama bindThemeShortcut', () => {
+    expect(read('src/tools/lavoro/main.ts')).toMatch(/bindThemeShortcut\s*\(/)
+  })
   for (const tool of MODULE_TOOLS) {
     it(`${tool}: chiama bindThemeShortcut(toggleTheme)`, () => {
       const src = read(`src/tools/${tool}/main.js`)
@@ -79,11 +57,6 @@ describe('scorciatoia T del tema — legata in OGNI tool (non solo nell\'hub)', 
       expect(src).toMatch(/bindThemeShortcut\s*\(\s*toggleTheme\s*\)/)
     })
   }
-  it('Computo (script non-modulo): lega un keydown locale su \'t\' che chiama toggleTheme', () => {
-    const src = computoSource()
-    expect(src).toMatch(/keydown/)
-    expect(src).toMatch(/e\.key\.toLowerCase\(\)\s*[!=]==\s*'t'/)
-  })
 })
 
 describe('bus — hub:set-palette è un messaggio valido e disaccoppiato dal tema', () => {

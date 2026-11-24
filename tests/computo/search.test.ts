@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { searchRows, isManodoperaRow, isNoloRow, isMaterialeRow, searchManodoperaRows, suggestManodoperaPerMacro, isOperaCompiutaRow } from '../../src/tools/computo/engine/search'
+import { searchRows, isManodoperaRow, isNoloRow, isMaterialeRow } from '../../src/tools/computo/engine/search'
 import type { PriceRow } from '../../src/tools/computo/engine/types'
 
 const row = (o: Partial<PriceRow>): PriceRow => ({
@@ -153,46 +153,6 @@ describe('isManodoperaRow / searchManodoperaRows', () => {
   it('esclude una voce che CONTIENE "operaio" ma non è la tariffa base (il ruolo deve aprire la descrizione)', () => {
     expect(isManodoperaRow(infoLavoratori)).toBe(false)
   })
-  it('searchManodoperaRows su "o": trova subito gli operai, MAI lo scavo/uso attrezzi', () => {
-    const out = searchManodoperaRows([scavo, scavoOrario, scalpelloOrario, operaioSpecializzato, operaioComune, noloOrario], 'o')
-    expect(out.map(r => r.codice)).toContain('VEN25-RU.01.02.a')
-    expect(out.map(r => r.codice)).toContain('VEN25-RU.01.04.a')
-    expect(out.map(r => r.codice)).not.toContain('VEN25-01.02.03')
-    expect(out.map(r => r.codice)).not.toContain('VEN25-NOL.02.01')
-    expect(out.map(r => r.codice)).not.toContain('VEN25-01.41.13.00')
-    expect(out.map(r => r.codice)).not.toContain('VEN25-04.01.23.a')
-  })
-})
-
-// Manodopera proposta per DISCIPLINA (macrocategoria impianto), mai
-// sigle di livello fisse (quelle, es. B1/C2, cambiano da prezzario a prezzario).
-const opGenericoSpec = row({ codice: 'VEN25-RU.01.02.a', desc_short: 'OPERAIO SPECIALIZZATO EDILE', um: 'h', prezzo: 33.03 })
-const opGenericoQual = row({ codice: 'VEN25-RU.01.03.a', desc_short: 'OPERAIO QUALIFICATO EDILE', um: 'h', prezzo: 30.57 })
-const opElettricista = row({ codice: 'VEN25-RU.01.05.a', desc_short: 'OPERAIO QUALIFICATO ELETTRICISTA', um: 'h', prezzo: 31.2 })
-const opTermoidraulico = row({ codice: 'VEN25-RU.01.07.a', desc_short: 'OPERAIO QUALIFICATO IMPIANTISTICA TERMOIDRAULICA', um: 'h', prezzo: 31.5 })
-const sovrapprezzoNotturno = row({ codice: 'VEN25-RU.01.02.c', desc_short: 'OPERAIO SPECIALIZZATO EDILE - sovrapprezzo lavoro notturno', um: 'h', prezzo: 1.53 })
-const pool = [opGenericoSpec, opGenericoQual, opElettricista, opTermoidraulico, sovrapprezzoNotturno, scavo]
-
-describe('suggestManodoperaPerMacro', () => {
-  it('impianti elettrici → propone la categoria ELETTRICISTA (disciplinare), non il generico', () => {
-    const out = suggestManodoperaPerMacro(pool, 'IMPIANTI ELETTRICI')
-    expect(out.map(r => r.codice)).toEqual(['VEN25-RU.01.05.a'])
-  })
-  it('impianti meccanici → propone la categoria TERMOIDRAULICA', () => {
-    const out = suggestManodoperaPerMacro(pool, 'IMPIANTI MECCANICI')
-    expect(out.map(r => r.codice)).toEqual(['VEN25-RU.01.07.a'])
-  })
-  it('nessuna macro o macro senza categoria disciplinare → coppia base specializzato+qualificato', () => {
-    const out = suggestManodoperaPerMacro(pool, undefined)
-    expect(out.map(r => r.codice)).toEqual(['VEN25-RU.01.02.a', 'VEN25-RU.01.03.a'])
-  })
-  it('esclude sempre le voci di sovrapprezzo (notturno/festivo) dai suggerimenti', () => {
-    const out = suggestManodoperaPerMacro(pool, undefined)
-    expect(out.map(r => r.codice)).not.toContain('VEN25-RU.01.02.c')
-  })
-  it('prezzario senza manodopera → nessun suggerimento fabbricato', () => {
-    expect(suggestManodoperaPerMacro([scavo], 'IMPIANTI ELETTRICI')).toEqual([])
-  })
 })
 
 // ── Lombardia: RISORSE elementari sotto le OPERE COMPIUTE (rilievo utente) ──
@@ -246,51 +206,6 @@ describe('isOperaCompiutaRow · una distinta di CAVI vuole opere compiute, non m
   const r = (desc: string, extra: Record<string, unknown> = {}) =>
     ({ codice: 'X', desc_short: desc, declaratoria: '', um: 'm', ...extra }) as never
 
-  it('un cavo FORNITO E POSATO è un\'opera compiuta', () => {
-    expect(isOperaCompiutaRow(r('Fornitura e posa in opera di cavo FG16OR16 3x2,5 mmq'))).toBe(true)
-    expect(isOperaCompiutaRow(r('Cavo FG16OR16 0,6/1kV 3G2,5 posto in opera entro tubazioni'))).toBe(true)
-  })
-
-  it('il rame nudo a piè d\'opera NON lo è — ed è l\'errore che faceva il matcher dei cavi', () => {
-    // «non devono comparire voci materiale ma solo cavi opere compiute»: agganciare un cavo
-    // a un costo elementare fa uscire un prezzo basso e una voce non appaltabile.
-    expect(isOperaCompiutaRow(r('Cavo unipolare FG16OR16 1x2,5 mmq'))).toBe(false)
-    expect(isOperaCompiutaRow(r('Conduttore in rame flessibile isolato'))).toBe(false)
-  })
-
-  it('manodopera e noli non sono opere compiute', () => {
-    expect(isOperaCompiutaRow(r('Operaio specializzato', { um: 'h' }))).toBe(false)
-    expect(isOperaCompiutaRow(r('Nolo di autocarro con gruista', { um: 'h' }))).toBe(false)
-  })
-
-  it('quando il prezzario DICHIARA la natura della voce, decide lui — e la dichiarano tutti', () => {
-    // Censito sui prezzari veri, non immaginato. Le opere compiute lombarde non scrivono
-    // «in opera» nel testo: l'euristica testuale da sola le perderebbe tutte. E il Veneto
-    // ha un capitolo intero «MATERIALI (escluse spese generali…)» con 8.883 voci, mentre
-    // le sue voci-cavo VERE stanno sotto «OPERE ELETTRICHE» e non dicono mai «in opera».
-    expect(isOperaCompiutaRow(r('Cavo FG16OR16 3G2,5', { tipologia: 'OPERA COMPIUTA' }))).toBe(true)
-    expect(isOperaCompiutaRow(r('Cavo FG16OR16 3G2,5', { tipologia: 'RISORSA MATERIALE' }))).toBe(false)
-    expect(isOperaCompiutaRow(r('LINEA IN CAVO FG16OR16', { liv1: 'OPERE ELETTRICHE' }))).toBe(true)
-    expect(isOperaCompiutaRow(r('CAVO FG16OR16', { liv1: 'MATERIALI (escluse spese generali e utile dell\'impresa)' }))).toBe(false)
-    expect(isMaterialeRow(r('CAVO FG16OR16', { liv1: 'MT01 - MATERIALI' }))).toBe(true)          // Emilia-Romagna
-    expect(isMaterialeRow(r('Cavo 1,5 mm²', { liv1: 'Prezzi elementari' }))).toBe(true)          // Bolzano
-    expect(isMaterialeRow(r('Cavo', { liv1: 'PRODOTTI DA COSTRUZIONE: nel prezzo…' }))).toBe(true) // Calabria
-    expect(isOperaCompiutaRow(r('Cavo', { liv1: 'PARTE D - IMPIANTI ELETTRICI' }))).toBe(true)   // Cratere
-    expect(isOperaCompiutaRow(r('Cavo', { liv1: 'IMPIANTI DI DISTRIBUZIONE DI ENERGIA ELETTRICA' }))).toBe(true) // Friuli
-  })
-
-  it('il Veneto lo dice già nel CODICE: i materiali sono PR-A', () => {
-    // «PR-A è la codifica del materiale del veneto». Tutte e 8.883 le voci del capitolo
-    // MATERIALI hanno codice `VEN26-PR-A.xx.xx.xx`, le opere compiute hanno codici
-    // numerici. Verificato: `PR-A` non compare in nessun altro prezzario — nessuna
-    // collisione possibile.
-    expect(isMaterialeRow(r('OSSIDO DI CALCIO', { codice: 'VEN26-PR-A.01.01.00' }))).toBe(true)
-    expect(isMaterialeRow(r('CAVO FG16OR16', { codice: 'VEN26-PR-A.09.12.00' }))).toBe(true)
-    expect(isOperaCompiutaRow(r('CAVO FG16OR16', { codice: 'VEN26-PR-A.09.12.00' }))).toBe(false)
-    // le opere compiute del Veneto: codice numerico
-    expect(isMaterialeRow(r('LINEA IN CAVO FG16OR16', { codice: 'VEN26-10.01.36.01', liv1: 'OPERE ELETTRICHE' }))).toBe(false)
-  })
-
   it('«materiale» batte «opera» quando il capitolo dice entrambe le cose', () => {
     // trabocchetti veri: «MATERIALI IMPIANTI MECCANICI» contiene anche IMPIANTI, e
     // «MATERIALI IN FORNITURA A PIE' D'OPERA» contiene anche D'OPERA
@@ -298,23 +213,4 @@ describe('isOperaCompiutaRow · una distinta di CAVI vuole opere compiute, non m
     expect(isMaterialeRow(r('Cavo', { liv1: 'MATERIALI IN FORNITURA A PIE\' D\'OPERA' }))).toBe(true)
   })
 
-  it('la Valle d\'Aosta: il titolo di capitolo «MATERIALI» è un\'etichetta di disciplina, non una dichiarazione riga per riga — un\'opera compiuta esplicita nel testo vince sul titolo', () => {
-    // «P60 - MATERIALI - IMPIANTI ELETTRICI» è l'UNICO capitolo per l'intera disciplina
-    // elettrica del prezzario VdA: contiene sia costi elementari (corda nuda, kg) sia
-    // voci di fornitura e posa (cavi). Il titolo da solo non basta a escludere le
-    // seconde — la voce che dichiara "fornito e posato in opera" resta opera compiuta.
-    const liv1 = 'P60 - MATERIALI - IMPIANTI ELETTRICI'
-    expect(isMaterialeRow(r('Corda di rame nudo, classe2, da 6 a 120 mmq', { liv1 }))).toBe(true)
-    expect(isOperaCompiutaRow(r('Cavo FG16OR16 3x2,5 mmq fornito e posato in opera, compreso ogni onere', { liv1 }))).toBe(true)
-    expect(isMaterialeRow(r('Cavo FG16OR16 3x2,5 mmq fornito e posato in opera, compreso ogni onere', { liv1 }))).toBe(false)
-  })
-
-  it('è l\'esatto complemento di isMaterialeRow sui casi che contano', () => {
-    const cavoPosato = r('Fornitura e posa in opera di cavo FG16OR16 3G2,5')
-    const cavoNudo = r('Cavo FG16OR16 3G2,5')
-    expect(isOperaCompiutaRow(cavoPosato)).toBe(true)
-    expect(isMaterialeRow(cavoPosato)).toBe(false)
-    expect(isOperaCompiutaRow(cavoNudo)).toBe(false)
-    expect(isMaterialeRow(cavoNudo)).toBe(true)
-  })
 })

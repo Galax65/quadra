@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseHubMessage, PALETTES, FONTS, TEXT_SIZES, MOTION_MODES, SHADOW_INTENSITIES, sharedIdOf } from '../../src/shared/bus'
+import { parseHubMessage, PALETTES, FONTS, TEXT_SIZES, MOTION_MODES, SHADOW_INTENSITIES } from '../../src/shared/bus'
 
 describe('parseHubMessage — validazione messaggi hub→tool', () => {
   it('accetta hub:set-theme con tema valido', () => {
@@ -136,25 +136,5 @@ describe('parseHubMessage — validazione messaggi hub→tool', () => {
   it('rifiuta hub:set-shadow con shadow non in allowlist o mancante', () => {
     expect(parseHubMessage({ type: 'hub:set-shadow', shadow: 'huge' })).toBeNull()
     expect(parseHubMessage({ type: 'hub:set-shadow' })).toBeNull()
-  })
-})
-
-// Regressione: un cavidotto/circuito NATIVO (mai adottato da un altro
-// tool) non ha `sharedId` valorizzato su se stesso; il match cross-tool DEVE
-// comunque risolvere lo stesso id che verrebbe pubblicato dall'altro tool.
-describe('sharedIdOf — identità di pool cross-tool', () => {
-  it('un oggetto NATIVO (mai adottato, niente sharedId) risolve dal proprio id locale + origine', () => {
-    expect(sharedIdOf({ id: 'CC01' }, 'gamma')).toBe('gamma:CC01')
-  })
-  it('un oggetto ADOTTATO da un altro tool usa lo sharedId esplicito, non l\'id locale', () => {
-    expect(sharedIdOf({ id: 'cond-1', sharedId: 'gamma:CC01' }, 'pi')).toBe('gamma:CC01')
-  })
-  it('pubblicazione (nativo) e match in arrivo (stesso oggetto) producono LO STESSO id', () => {
-    const nativo = { id: 'CC01' }
-    const idPubblicato = sharedIdOf(nativo, 'gamma')
-    // un circuito che referenzia questo cavidotto pubblica lo stesso id calcolato:
-    const condSharedIdInArrivo = 'gamma:CC01'
-    expect(sharedIdOf(nativo, 'gamma')).toBe(condSharedIdInArrivo)
-    expect(idPubblicato).toBe(condSharedIdInArrivo)
   })
 })

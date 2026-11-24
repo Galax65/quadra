@@ -28,7 +28,7 @@ function header(rel: string): HTMLElement {
 }
 
 const TOOLS = {
-  'Computo': 'src/tools/computo/index.html',
+  'Amministrazione': 'src/tools/amministrazione/index.html',
 } as const
 
 describe('anatomia header condivisa adottata', () => {
@@ -62,47 +62,4 @@ describe('anatomia header condivisa adottata', () => {
       ).toBe(true)
     }
   })
-})
-
-describe('classi ad hoc dismesse nelle intestazioni migrate', () => {
-  const DISMISSED: Record<string, string[]> = {
-    'src/tools/computo/index.html': ['class="logo"', 'logo-text', 'logo-mu', 'hdr-spacer'],
-  }
-  for (const [rel, classes] of Object.entries(DISMISSED)) {
-    it(`${rel}: non contiene più ${classes.join(', ')}`, () => {
-      const blob = read(rel)
-      for (const c of classes) expect(blob, `trovato ancora ${c}`).not.toContain(c)
-    })
-  }
-})
-
-describe('nessuna perdita di azioni/ponti', () => {
-  /** id → onclick atteso (ponti e azioni che NON devono cambiare). */
-  const ACTIONS: Record<string, Record<string, string>> = {
-    'src/tools/computo/index.html': {
-      'drop-zone': '',
-      'folder-btn': 'openFolder()',
-    },
-  }
-
-  for (const [rel, ids] of Object.entries(ACTIONS)) {
-    it(`${rel}: i ponti/azioni restano dentro il gruppo azioni`, () => {
-      const hdr = header(rel)
-      const actions = hdr.querySelector('.ehb-hdr__actions')!
-      for (const id of Object.keys(ids)) {
-        const el = document.getElementById(id)
-        expect(el, `${rel}: id #${id} sparito`).toBeTruthy()
-        expect(actions.contains(el), `${rel}: #${id} non è nelle azioni a destra`).toBe(true)
-      }
-    })
-
-    it(`${rel}: gli onclick dei ponti/azioni sono invariati`, () => {
-      header(rel)
-      for (const [id, onclick] of Object.entries(ids)) {
-        if (!onclick) continue
-        const el = document.getElementById(id)!
-        expect(el.getAttribute('onclick'), `${rel}: onclick di #${id} cambiato`).toBe(onclick)
-      }
-    })
-  }
 })

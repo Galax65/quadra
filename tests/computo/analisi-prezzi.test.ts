@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { calcolaAnalisi, DEFAULT_SPESE_GENERALI_PCT, DEFAULT_UTILE_IMPRESA_PCT, isNoloRow, isMaterialeRow, type AnalisiPrezzi, type AnalisiRiga, type PriceRow } from '../../src/tools/computo/engine'
+import { calcolaAnalisi, DEFAULT_SPESE_GENERALI_PCT, DEFAULT_UTILE_IMPRESA_PCT, type AnalisiPrezzi, type AnalisiRiga } from '../../src/shared/compositore/analisi-prezzi'
+import { isNoloRow, isMaterialeRow } from '../../src/tools/computo/engine/search'
+import { type PriceRow } from '../../src/tools/computo/engine/types'
 
 function analisi(righe: AnalisiRiga[], overrides: Partial<AnalisiPrezzi> = {}): AnalisiPrezzi {
   return {

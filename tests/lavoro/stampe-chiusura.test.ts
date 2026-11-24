@@ -72,12 +72,3 @@ describe('le stampe della chiusura e i file', () => {
   })
 })
 
-describe("l'accordo quadro", () => {
-  it('importo massimo e applicativi: la pagina dice impegnato e residuo; il motore lo stato', async () => {
-    const { statoAccordoQuadro } = await import('../../src/tools/contabilita/engine')
-    const { paginaContabilita } = await import('../../src/tools/lavoro/contabilita')
-    const l = impostaContabilita(chiuso(), { accordoQuadro: { importoMassimo: 100000, applicativi: [{ numero: 1, importo: 40000 }, { numero: 2, importo: 70000 }] } })
-    expect(paginaContabilita(l, '23/11/2026')).toContain("oltre l'importo massimo")
-    expect(statoAccordoQuadro(contabilitaMotore(l)!.appalto)).toMatchObject({ impegnato: 110000, residuo: -10000, superato: true })
-  })
-})

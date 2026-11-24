@@ -1,4 +1,4 @@
-# Quadra — dove eravamo rimasti (23/11/2026)
+# Quadra — dove eravamo rimasti (24/11/2026)
 
 Note per riprendere il lavoro. Il piano è in
 [07-Un-lavoro-un-modulo.md](07-Un-lavoro-un-modulo.md) (il precedente,
@@ -11,10 +11,10 @@ Su `main`, dopo la v0.12.0: **un lavoro, un modulo**. Computo e Contabilità non
 sono più due strumenti: c'è **«Lavoro»** (`src/tools/lavoro/`, modello in
 `src/shared/lavoro/`), dove computo e revisioni, contratto, SAL, perizie, stato
 finale e CRE sono tappe della stessa catena, nella stessa schermata. I due
-strumenti vecchi sono usciti dal registro (tappa 8); i loro **motori** restano
-e li usa «Lavoro» (prezzari, XPWE, contabilità e stampe), mentre le loro
-cartelle d'interfaccia sono ferme nel repository, da cancellare nella pulizia
-finale.
+strumenti vecchi sono usciti dal registro (tappa 8) e la loro interfaccia è
+stata cancellata (pulizia, 24/11): di `src/tools/computo` e
+`src/tools/contabilita` restano solo i **motori** `engine/`, che usa «Lavoro»
+(prezzari, XPWE, contabilità e stampe).
 
 Verifiche all'ultimo giro: `npm run typecheck` 0 errori · `npx vitest run`
 1706 test verdi · `npm run lint:css` 0 violazioni · `npm run build:web` ok.
@@ -41,10 +41,14 @@ Nell'ordine chiesto dall'utente:
    Docs/07). Prima di scriverla: soglia, quota, indici e periodicità **dal
    testo vigente** dopo il correttivo D.Lgs. 209/2024, e la prassi dei programmi di contabilità.
 2. **Ottimizzazione dell'interfaccia.**
-3. **Pulizia**: cancellare le cartelle d'interfaccia di `src/tools/computo` e
-   `src/tools/contabilita` (i motori `engine/` restano) e i loro test di
-   interfaccia; togliere i residui di Open E.Hub (`hub:shared-plan`, il testo
-   «strumenti di disegno» in Docs/01).
+
+La **pulizia** è fatta (24/11): tolte le interfacce di Computo e Contabilità
+con i loro test, la planimetria condivisa di Open E.Hub (`hub:shared-plan`,
+DXF, cavidotti/circuiti, i canali `read-dxf`/`stat-dxf` di Electron) e i testi
+che la citavano. Tolti anche tutti i file non più raggiunti da nessuno
+strumento (compositore a schede tecniche e marchi, oneri della sicurezza, import
+Excel di un computo, catalogo stampe, `zip.ts`, cavi CPR, i pezzi del motore
+di Computo usati solo dalla vecchia interfaccia).
 
 Restano aperti anche: validare i PDF/A con veraPDF; il compositore guidato e la
 voce da scheda tecnica non ci sono, perché vivono di un catalogo che la build
@@ -75,7 +79,7 @@ npm run serve                # l'hub nel browser, su http://localhost:8080/Quadr
 npm run typecheck            # controllo dei tipi
 npx vitest run               # tutti i test
 npm run lint:css             # contratto UI
-npm run build:web            # rigenera Quadra.html, Computo.html, Contabilita.html…
+npm run build:web            # rigenera Quadra.html, Lavoro.html, Amministrazione.html
 ```
 
 ### Applicazione da installare (.dmg)

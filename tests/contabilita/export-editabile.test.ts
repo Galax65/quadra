@@ -1,12 +1,9 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest'
-import {
-  frontespizioHTML, giornaleHTML, librettoHTML, registroHTML, sommarioHTML, salHTML, certificatoHTML, contoFinaleHTML, relazioneFinaleHTML,
-  verbaleHTML, nuovoVerbale, VERBALE_TIPI,
-} from '../../src/tools/contabilita/engine'
-import { importaAMisura, importaACorpo } from '../../src/tools/contabilita/engine/import'
+import { frontespizioHTML, giornaleHTML, librettoHTML, registroHTML, sommarioHTML, salHTML, certificatoHTML, contoFinaleHTML, relazioneFinaleHTML, verbaleHTML } from '../../src/tools/contabilita/engine'
 import type { Appalto, Partita, Sal, Verbale } from '../../src/tools/contabilita/engine/types'
 import { htmlDocToSimpleDoc, buildSimpleDocxParts, buildOdtParts, ODT_MIMETYPE_ENTRY } from '../../src/shared/doc'
+import { partiteDiProva, verbaliDiProva } from './_fixture'
 
 /**
  * Verifica che il convertitore generico `htmlDocToSimpleDoc` (una sola implementazione,
@@ -20,18 +17,12 @@ const appalto: Appalto = {
   rup: 'Ing. Rossi', direttoreLavori: 'Arch. Bianchi', articoloCapitolato: '12',
   baseAsta: 100000, importoOfferta: 80000, oneriSicurezza: 2000, ivaPct: 10, modalita: 'misto',
 }
-const partite: Partita[] = [
-  ...importaAMisura([{ codice: 'M1', desc_short: 'Scavo', um: 'mc', prezzo: 10, qty: 100, categoria: 'Opere edili' }]),
-  ...importaACorpo([{ codice: 'C1', desc_short: 'Impianto', prezzo: 100, qty: 20, categoria: 'Impianti' }]),
-]
+const partite: Partita[] = partiteDiProva()
 const sals: Sal[] = [{ numero: 1, data: '01/06/2026', righe: [
   { partitaId: partite[0].id, quantitaProgressiva: 50 },
   { partitaId: partite[1].id, quotaPct: 30 },
 ] }]
-const verbali: Verbale[] = VERBALE_TIPI.map((t, i) => {
-  const v = nuovoVerbale(t, `0${i + 1}/06/2026`, [], `v${i}`)
-  return { ...v, oggetto: `Oggetto ${t}`, testo: 'Primo paragrafo.\nSecondo paragrafo.' }
-})
+const verbali: Verbale[] = verbaliDiProva()
 
 const tutti: Record<string, string> = {
   frontespizio: frontespizioHTML(appalto, partite),

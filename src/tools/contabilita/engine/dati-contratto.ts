@@ -76,7 +76,6 @@ export function avvisoRibassoHTML(appalto: Appalto, partite: Partita[]): string 
   return `<p class="warn"><b>Ribasso d'asta non indicato.</b> Gli importi che seguono sono al lordo del ribasso: finché il ribasso (o la base d'asta con l'importo di offerta) non è inserito nei dati del contratto, l'importo del presente stato non è quello da liquidare.</p>`
 }
 
-
 /**
  * DATI DEL CONTRATTO CHE LA CONTABILITÀ NON PUÒ CONOSCERE.
  *
@@ -90,30 +89,3 @@ export function avvisoRibassoHTML(appalto: Appalto, partite: Partita[]): string 
  */
 export interface DatoMancante { chiave: string; cosa: string; perche: string; critico: boolean }
 
-export function datiMancanti(appalto: Appalto, partite: Partita[]): DatoMancante[] {
-  const out: DatoMancante[] = []
-  const d = datiContratto(appalto, partite)
-  if (d.ribassoPct != null && (d.ribassoPct < 0 || d.ribassoPct >= 100)) {
-    out.push({ chiave: 'ribassoPct', critico: true, cosa: `Ribasso d'asta non plausibile (${String(d.ribassoPct).replace('.', ',')}%)`, perche: 'un ribasso sta fra 0 e 100; con questo valore gli importi del certificato sono senza senso' })
-  }
-  if (!appalto.prezziUnitari && d.ribassoPct == null) {
-    out.push({
-      chiave: 'ribassoPct', critico: true, cosa: "Ribasso d'asta",
-      perche: 'senza ribasso gli importi restano al lordo: il credito liquidato risulta più alto del dovuto',
-    })
-  }
-  if (appalto.ivaPct == null) {
-    out.push({ chiave: 'ivaPct', critico: true, cosa: 'Aliquota IVA', perche: 'in mancanza si assume il 10%, che non vale per tutti gli appalti' })
-  }
-  if (appalto.arrotondamentoCertificato == null) {
-    out.push({ chiave: 'arrotondamentoCertificato', critico: false, cosa: 'Arrotondamento del certificato', perche: "se il contratto prevede il credito arrotondato (es. a 100 euro), l'importo certificato cambia" })
-  }
-  if (!appalto.oggetto?.trim()) out.push({ chiave: 'oggetto', critico: false, cosa: 'Oggetto dei lavori', perche: 'compare nella testata di ogni atto contabile' })
-  if (!appalto.ente?.denominazione?.trim()) out.push({ chiave: 'ente', critico: false, cosa: 'Stazione appaltante', perche: "è la testata istituzionale dell'atto" })
-  if (!appalto.impresa?.denominazione?.trim()) out.push({ chiave: 'impresa', critico: false, cosa: 'Impresa esecutrice', perche: 'il certificato di pagamento dispone il pagamento a suo favore' })
-  if (!appalto.dataStipula || !appalto.numeroContratto) out.push({ chiave: 'dataStipula', critico: false, cosa: 'Contratto (data e repertorio)', perche: 'il certificato di pagamento lo richiama come titolo' })
-  if (!appalto.dataConsegna && !appalto.dataInizio) out.push({ chiave: 'dataConsegna', critico: false, cosa: 'Data di consegna dei lavori', perche: 'apre i tempi contrattuali e la cronologia degli atti' })
-  if (!appalto.giorniUtili && !appalto.dataUltimazionePrevista) out.push({ chiave: 'giorniUtili', critico: false, cosa: "Tempo utile per l'ultimazione", perche: "serve a verificare i termini e a calcolare l'eventuale penale" })
-  if (!appalto.articoloCapitolato?.trim()) out.push({ chiave: 'articoloCapitolato', critico: false, cosa: 'Articolo del capitolato per il pagamento', perche: 'è la formula con cui il certificato autorizza la rata' })
-  return out
-}

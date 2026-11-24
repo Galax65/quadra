@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { prezzoOfferto, valutaOfferte, vociConOfferta, leggiColonnaPrezzi, type Offerta } from '../../src/shared/offerte'
+import { prezzoOfferto, valutaOfferte, leggiColonnaPrezzi, type Offerta } from '../../src/shared/offerte'
 
 const voci: any[] = [
   { codice: 'A', prezzo: 10, qty: 100, um: 'm³' },
@@ -22,10 +22,6 @@ describe('offerte e quadro comparativo', () => {
     expect(e[0]).toMatchObject({ base: 2000, importo: 1800, ribasso: 10, posizione: 2 })
     expect(e[1]).toMatchObject({ importo: 1750, ribasso: 12.5, posizione: 1 })
     expect(e[2]).toMatchObject({ mancanti: ['B'], posizione: null, ribasso: null })
-  })
-  it('l\'aggiudicataria porta i suoi prezzi sulle voci (non sulla sicurezza)', () => {
-    const v = vociConOfferta(voci, o1)
-    expect(v.map((x) => x.prezzoOfferto)).toEqual([9, 45, undefined])
   })
   it('colonna di prezzi incollata da Excel', () => {
     expect(leggiColonnaPrezzi('1.234,56\n12,5\n\nabc\n€ 7\nA\t3,10')).toEqual([1234.56, 12.5, null, null, 7, 3.1])

@@ -117,11 +117,6 @@ export function rigaGruppoHtml(fase: Fase, g: Omit<RigaGruppo, 'tipo'>, conSelez
   return `<tr class="ehb-gr-gruppo ehb-gr-gruppo--lv${lv}${g.classe ? ' ' + g.classe : ''}"${g.attributi ? ' ' + g.attributi : ''}><td colspan="${colonneGriglia(fase, conSelezione)}">${g.prima || ''}${esc(g.titolo)}${g.nota ? `<span class="ehb-gr-nota">${esc(g.nota)}</span>` : ''}</td></tr>`
 }
 
-export const TITOLI_SEZIONE: Record<NonNullable<RigaSezione['tono']>, string> = {
-  corpo: 'Lavori a corpo — prezzo complessivo fisso',
-  sicurezza: 'Oneri della sicurezza — non soggetti a ribasso',
-}
-
 /** Sezione a sé (lavori a corpo, oneri della sicurezza): in fondo, come in stampa. */
 export function rigaSezioneHtml(fase: Fase, s: Omit<RigaSezione, 'tipo'>, conSelezione = false): string {
   return `<tr class="ehb-gr-sezione${s.tono ? ' ehb-gr-sezione--' + s.tono : ''}${s.classe ? ' ' + s.classe : ''}"><td colspan="${colonneGriglia(fase, conSelezione)}">${esc(s.titolo)}</td></tr>`

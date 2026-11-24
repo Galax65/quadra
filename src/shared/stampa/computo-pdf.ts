@@ -57,16 +57,6 @@ export interface OpzioniComputoPdf {
 const r2 = (n: number): number => { const x = Math.abs(n) * 100; return Math.sign(n) * Math.round(Number(x.toPrecision(15))) / 100 }
 const fq = (n: number | null | undefined, d = 2): string => (n == null || !Number.isFinite(n) ? '' : fmtNum(n, d))
 
-/** Riepilogo per categoria (livello 1 della categoria; «(senza categoria)» se manca). */
-export function riepilogoCategorie(voci: VoceComputo[]): { categoria: string; importo: number }[] {
-  const m = new Map<string, number>()
-  for (const v of voci) {
-    const cat = (v.categoria ?? '').split(CAT_SEP)[0].trim() || '(senza categoria)'
-    m.set(cat, r2((m.get(cat) ?? 0) + importoVoce(v)))
-  }
-  return [...m].map(([categoria, importo]) => ({ categoria, importo }))
-}
-
 /**
  * Riepilogo per Supercategoria › Categoria › Subcategoria: ogni ramo con
  * l'importo suo e dei discendenti, nell'ordine in cui compaiono le voci.

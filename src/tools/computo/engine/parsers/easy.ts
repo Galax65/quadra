@@ -19,7 +19,7 @@
  *       </EASY:Articolo>
  *     </EASY:Contenuto>
  */
-import { REGIONS } from '../../data/regions'
+import { REGIONS } from '../regions'
 import { firstLinePreview } from '../codes'
 import { isSelfContained, composeDesc } from '../descriptions'
 import { makeParser, num, toArray } from '../xml'

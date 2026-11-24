@@ -4,10 +4,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import * as XLSX from 'xlsx'
 import { runCli } from '../../scripts/cli/quadra'
-import { importaACorpo, importaAMisura } from '../../src/tools/contabilita/engine'
+import { partiteDiProva } from '../contabilita/_fixture'
 
 const tmp = () => mkdtempSync(join(tmpdir(), 'quadra-cli2-'))
-
 
 /** Progetto .ehub sintetico con stati Contabilità e δ (stessa forma dei test dei tool). */
 function scriviProgetto(dir: string): string {
@@ -18,10 +17,7 @@ function scriviProgetto(dir: string): string {
     rup: 'Ing. Rossi', direttoreLavori: 'Arch. Bianchi', articoloCapitolato: '12',
     baseAsta: 100000, importoOfferta: 80000, oneriSicurezza: 2000, ivaPct: 10, modalita: 'misto',
   }
-  const partite = [
-    ...importaAMisura([{ codice: 'M1', desc_short: 'Scavo', um: 'mc', prezzo: 10, qty: 100, categoria: 'Opere edili' }]),
-    ...importaACorpo([{ codice: 'C1', desc_short: 'Impianto', prezzo: 100, qty: 20, categoria: 'Impianti' }]),
-  ]
+  const partite = partiteDiProva()
   const sals = [{ numero: 1, data: '01/06/2026', righe: [
     { partitaId: partite[0]!.id, quantitaProgressiva: 50 },
     { partitaId: partite[1]!.id, quotaPct: 30 },
@@ -47,7 +43,6 @@ function scriviProgetto(dir: string): string {
   writeFileSync(path, JSON.stringify(progetto))
   return path
 }
-
 
 describe('CLI quadra — smoke ondata 2 (Contabilità)', () => {
   it('beta:atti genera la cartella d\'appalto da un .ehub (html + xlsx)', async () => {

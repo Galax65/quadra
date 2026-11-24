@@ -18,7 +18,6 @@
 import { componiDescrizione, type Descrizione } from './componi'
 import type { MacroCategoria } from './macrocategorie'
 import type { AnalisiPrezzi } from './analisi-prezzi'
-import { VOCI_PRONTE_DATA } from 'compositore-catalog:libreria'
 
 export interface VocePronta {
   /** id stabile (kebab) della voce pronta */
@@ -71,11 +70,3 @@ export function voceProntaText(v: VocePronta): Descrizione {
   return { breve, estesa: breve }
 }
 
-/**
- * Seed curato — voci ricorrenti nei computi golden reali, una per disciplina
- * principale. `compositore-catalog:libreria` risolve (alias di build, vedi
- * vite.config.ts) ai dati veri; Quadra non porta dataset proprietari,
- * quindi il bundle parte sempre dallo stub vuoto (lo studio importa il
- * proprio catalogo).
- */
-export const VOCI_PRONTE: VocePronta[] = VOCI_PRONTE_DATA

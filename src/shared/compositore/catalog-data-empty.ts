@@ -1,17 +1,13 @@
 /**
  * STUB del catalogo compositore (alias di build, vedi vite.config.ts):
- * Quadra non porta dataset di marchi/prodotti proprietari, quindi il
+ * Quadra non porta dataset di prodotti proprietari, quindi il
  * bundle parte sempre da questi array vuoti — lo studio importa il proprio
  * catalogo dall'app.
  */
-import type { Marchio } from './marchi'
-import type { VocePronta } from './libreria'
 import type { MacroCategoria } from './macrocategorie'
 import type { Famiglia } from './thesaurus'
 import type { FrasarioFamiglia } from './componi'
 
-export const MARCHI_DATA: Marchio[] = []
-export const VOCI_PRONTE_DATA: VocePronta[] = []
 export const GRUPPI_PAROLA_DATA: readonly (readonly string[])[] = []
 export interface RegolaTemaData { tema: string; source: string }
 export const RULES_DATA: RegolaTemaData[] = []

@@ -1,11 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import {
-  FASI, FASE_PERIZIA, FASE_PROGETTO, FASE_SAL, FASE_CONTRATTO, COLONNE_NUMERICHE, OPZ_ORDINE, OPZ_VISTA, filtraVoci,
-  grigliaHtml, rigaDettaglioHtml, rigaGruppoHtml, rigaTotaleHtml, rigaVoceHtml, colonneGriglia, piedeFaseHtml, contenutoCella, type IdColonna,
-} from '../../src/shared/griglia'
-import { MODI_ORDINE } from '../../src/shared/ordine-computo'
+import { FASI, FASE_PERIZIA, FASE_PROGETTO, FASE_SAL, FASE_CONTRATTO, COLONNE_NUMERICHE,  grigliaHtml, rigaDettaglioHtml, rigaGruppoHtml, rigaTotaleHtml, rigaVoceHtml, colonneGriglia, piedeFaseHtml, contenutoCella, type IdColonna } from '../../src/shared/griglia'
 
 /**
  * LA GRIGLIA CONDIVISA (tappa 4 di Docs/06-Interfaccia-unica.md): computo,
@@ -39,15 +35,6 @@ describe('il descrittore di fase', () => {
     expect(FASE_PERIZIA.scrive).toBe('quantita')
     expect(FASE_PERIZIA.confronta).toBe('confronto')
     expect(FASE_CONTRATTO.scrive).toBe('prezzo')
-  })
-  it('viste e ordinamenti sono gli stessi ovunque, e gli ordini sono quelli della stampa', () => {
-    expect(OPZ_VISTA.map((o) => o.valore)).toEqual(['tabella', 'elenco', 'capitoli'])
-    expect(OPZ_ORDINE.map((o) => o.valore)).toEqual(MODI_ORDINE)
-  })
-  it('la ricerca è la stessa regola: senza maiuscole, su un testo che decide lo strumento', () => {
-    const v = [{ c: 'A.01 Scavo' }, { c: 'B.02 Getto' }]
-    expect(filtraVoci(v, '  scAVO ', (x) => x.c)).toEqual([v[0]])
-    expect(filtraVoci(v, '', (x) => x.c)).toBe(v)
   })
 })
 
@@ -164,67 +151,9 @@ describe('le celle: lo strumento dice che cosa, la griglia dice come', () => {
 })
 
 describe('la barra: due righe, i comandi su una sola', () => {
-  it('sopra come si guarda, sotto che cosa si fa', async () => {
-    const { barraVoci } = await import('../../src/shared/ui/barra-voci')
-    const h = barraVoci({
-      cerca: { valore: '', onInput: 'f(this.value)' },
-      viste: { valore: 'tabella', opzioni: OPZ_VISTA, onclickTpl: "v('%v')" },
-      aggiungi: [{ etichetta: '+ Voce libera', titolo: 'Riga vuota', onclick: 'a()' }],
-      dati: [{ etichetta: '⇩ XPWE', titolo: 'Importa', onclick: 'i()' }],
-    })
-    const r1 = /<div class="ehb-barra__r1">(.*?)<\/div><div class="ehb-barra__r2">/.exec(h)![1]
-    expect(r1).toContain('ehb-barra__q')
-    expect(r1).toContain('ehb-seg')
-    expect(h).toMatch(/<div class="ehb-barra__r2"><span class="ehb-barra__g ehb-barra__g--aggiungi">/)
-    // il segno e il nome si separano, così da stretto resta il segno e il nome va nel title
-    expect(h).toContain('<span class="ehb-barra__i">⇩</span><span class="ehb-barra__t"> XPWE</span>')
-    expect(h).toContain('aria-label="⇩ XPWE"')
-  })
   it('la riga dei comandi non va mai a capo', () => {
     const css = leggi('src/shared/ui/components.css')
     expect(css).toMatch(/\.ehb-barra__r2 \{[^}]*flex-wrap: nowrap/)
     expect(css).toContain('@container azioni')
-  })
-})
-
-describe('Computo e Contabilità la richiamano entrambi', () => {
-  const contabilita = leggi('src/tools/contabilita/main.ts')
-  const dir = resolve(ROOT, 'src/tools/computo/legacy')
-  const computo = readdirSync(dir).filter((f) => f.endsWith('.js')).map((f) => readFileSync(resolve(dir, f), 'utf8')).join('\n')
-  it('la Contabilità disegna libretto e perizia con la griglia e il piede condivisi', () => {
-    expect(contabilita).toContain("from '../../shared/griglia'")
-    expect(contabilita).toMatch(/grigliaHtml\(\{\s*fase: FASE_SAL/)
-    expect(contabilita).toMatch(/grigliaHtml\(\{ fase: FASE_PERIZIA/)
-    expect(contabilita).toContain('piedeFaseHtml(FASE_SAL')
-    expect(contabilita).toContain('piedeFaseHtml(FASE_PERIZIA')
-  })
-  it('il Computo disegna le sue voci con la stessa griglia e lo stesso piede', () => {
-    expect(computo).toContain("from '../../../shared/griglia'")
-    expect(computo).toMatch(/grigliaHtml\(\{ fase:FASE_PROGETTO/)
-    expect(computo).toContain('piedeFaseHtml(FASE_PROGETTO')
-  })
-  it('nessuno dei due si ridisegna da sé intestazioni, gruppi o piede delle voci', () => {
-    // prima: <th>Codice</th>… scritti a mano in tre posti, e colspan="6"/"7" contati a occhio
-    expect(contabilita).not.toMatch(/<th>Codice<\/th><th>Designazione<\/th><th class="b-num">(Prezzo unit|Contratto vigente)/)
-    expect(contabilita).not.toContain('class="b-fondo')
-    expect(contabilita).not.toContain('<tr class="b-grp">')
-    expect(computo).not.toContain('<th style="padding:8px 4px">Codice</th>')
-    expect(computo).not.toMatch(/<tr class="(cm-sez-corpo|cm-sez-sic|mis-panel-row|cart-cat-head cm-grp-head)[^"]*"[^>]*>\s*<td colspan="6"/)
-    expect(computo).not.toContain('id="cart-ov-total"')
-  })
-  it('le celle delle voci le descrivono, non le scrivono a mano', () => {
-    // codice, designazione, quantità e comandi: dalle celle condivise in tutti e tre
-    expect(contabilita).not.toContain('codice: esc(p.codice)')
-    expect(contabilita).not.toMatch(/designazione: `<span class="b-desc-clamp"/)
-    const libretto = contabilita.slice(contabilita.indexOf('function rigaLibretto('), contabilita.indexOf('function sottoComputoHTML('))
-    expect(libretto).not.toMatch(/<input type="(text|number)"/) // solo la casella di selezione resta HTML
-    expect(contabilita.match(/codice: \{ tipo: 'codice'/g)?.length).toBeGreaterThanOrEqual(4)
-    expect(computo).not.toContain('class="cm-desc"')
-    expect(computo).not.toContain('cm-voce-meta')
-    expect(computo).not.toContain('background:var(--danger-light);color:var(--danger)')
-    expect(computo).toMatch(/codice:\{ tipo:'codice'/)
-    // la quantità del computo non porta più un colore scritto in esadecimale
-    expect(computo).not.toContain('#22d3ee')
-    expect(computo).toContain("contenutoCella({ tipo:'misurata'")
   })
 })

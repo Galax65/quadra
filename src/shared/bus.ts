@@ -92,74 +92,6 @@ export interface CompanyBrand {
   logoHtml?: string
 }
 
-/**
- * Planimetria UNICA di Progetto (project-global, gestita dall'hub) + geometrie
- * condivise cross-tool. Lo SFONDO è il DXF GREZZO (ogni tool lo ri-parsa col
- * proprio filtro via `dxfToVectorBg`); cavidotti e circuiti sono l'UNIONE per
- * ORIGINE (ogni tool possiede e pubblica solo i propri; gli altri li vede come
- * «riferimento»). Additivo: i `.ehub` legacy senza questo campo restano validi.
- */
-export interface SharedGeom {
-  /** id univoco, prefissato per origine (es. 'gamma:CC01'). */
-  id: string
-  /** appId del tool che possiede la geometria. */
-  origin: string
-  /** polilinea in coordinate DXF (stesso spazio di `dxfToVectorBg`). */
-  pts: { x: number; y: number }[]
-  label?: string
-  kind?: string
-  /** dato tool-specifico opaco (per una futura ri-adozione ricca). */
-  payload?: unknown
-}
-
-/**
- * Identità di POOL di un oggetto locale (cavidotto/circuito) che possiede o adotta
- * una geometria condivisa: se porta un `sharedId` esplicito (adottato da un altro
- * tool) lo usa, altrimenti lo calcola dal proprio id LOCALE prefissato con l'origine
- * (nativo — mai ancora scambiato). Va usata SIA per pubblicare (mai un id locale
- * nudo) SIA per fare il match in arrivo (mai un confronto sul campo grezzo, quasi
- * sempre assente sugli oggetti nativi): un disallineamento tra le due rompe
- * silenziosamente l'associazione cross-tool (successo con due tool che
- * condividono un cavidotto: chi lo disegna non ne portava il `sharedId`).
- */
-export function sharedIdOf(obj: { id: string; sharedId?: string }, origin: string): string {
-  return obj.sharedId || `${origin}:${obj.id}`
-}
-/**
- * Sfondo DXF condiviso. Modello XREF: qui viaggia SOLO L'IDENTITÀ della planimetria
- * (`ref` = percorso assoluto, come un xref CAD, più nome/data/dimensione), MAI i byte.
- *
- * Prima c'era anche un campo `text` col DXF grezzo: l'hub lo teneva in cache e lo
- * rimandava a ogni tool, che se lo riparsava. Sulle tavole vere dello studio (240 MB)
- * significa una copia da 240 MB per tool attraverso `postMessage`. Non era lento: era
- * impossibile. Ora chi importa un file lo legge da sé, in locale, e sul canale annuncia
- * soltanto QUALE planimetria è attiva — gli altri tool sanno di quale progetto si parla
- * e possono, se vogliono, aprirla dal `ref`.
- */
-export interface SharedDxf {
-  /** percorso assoluto del file DXF (xref); assente nel fallback web (nessun percorso). */
-  ref?: string
-  name: string
-  ts: number
-  /** dimensione in byte (info/identità). */
-  size?: number
-  /** true = il `ref` non è più al suo posto (file spostato/cancellato) → banner «Reimporta». */
-  missing?: boolean
-}
-export interface SharedPlan {
-  /** SORGENTE DXF condivisa (xref o embed), o null se nessuna. */
-  dxf?: SharedDxf | null
-  /** condotti/cavidotti, unione cross-tool per origine. */
-  cavidotti: SharedGeom[]
-  /** loop/circuiti routati, unione cross-tool per origine. */
-  circuiti: SharedGeom[]
-  /** Scala calibrata (unità DXF condivise per metro), UNICA per l'intera planimetria:
-   *  i tool di disegno condividono lo spazio coordinate DXF, quindi la calibrazione fatta
-   *  in un tool (2 punti + distanza reale) deve valere anche nell'altro — chi calibra
-   *  per ultimo pubblica, gli altri adottano. null = non ancora calibrata. */
-  scale?: number | null
-}
-
 /** Messaggi dall'hub verso il tool. */
 export type HubToTool =
   /** Push esplicito del tema dal picker dell'hub (il tema resta per-tool, con override locale). */
@@ -178,7 +110,7 @@ export type HubToTool =
   | { type: 'hub:set-motion'; motion: MotionMode }
   /** Intensità ombre (ORTOGONALE alle altre): propagata sempre a tutti i tool. */
   | { type: 'hub:set-shadow'; shadow: ShadowIntensity }
-  /** Risposta a `app:request-state`: lo stato pubblicato da un altro tool (es. il computo di Computo letto da Contabilità). */
+  /** Risposta a `app:request-state`: lo stato pubblicato da un altro tool. */
   | { type: 'hub:project-state'; source: string; project: unknown }
   /** "Progetto Quadra": l'hub chiede al tool il suo stato pieno serializzabile. */
   | { type: 'hub:collect-state' }
@@ -196,10 +128,6 @@ export type HubToTool =
   | { type: 'hub:comando'; comando: string }
   /** Intestazione azienda per le stampe (null = nessuna, es. admin). */
   | { type: 'hub:set-company'; company: CompanyBrand | null }
-  /** Planimetria unica di Progetto + geometrie condivise, relayata a tutti i tool.
-   *  `deleted` (quando presente) sono gli id appena rimossi dal pool: i tool li
-   *  tolgono anche se nativi (delete cross-tool). */
-  | { type: 'hub:shared-plan'; plan: SharedPlan; replay?: boolean; deleted?: { cavidotti?: string[]; circuiti?: string[] } }
 
 /** Messaggi dal tool verso l'hub. */
 export type ToolToHub =
@@ -213,12 +141,6 @@ export type ToolToHub =
   | { type: 'app:project-update'; appId: string; project: unknown }
   /** Risposta a `hub:collect-state`: stato pieno del tool per il progetto Quadra. */
   | { type: 'app:full-state'; appId: string; state: unknown }
-  /** Aggiornamento della planimetria di Progetto: `dxf` (se presente) diventa lo
-   *  sfondo condiviso; `cavidotti`/`circuiti` sostituiscono il sottoinsieme di
-   *  `origin` nell'unione. */
-  /** Pool UNICO: `cavidotti`/`circuiti` sono UPSERT (per id) nel pool condiviso;
-   *  `deleted` rimuove per id. Un update parziale NON azzera il resto del pool. */
-  | { type: 'app:shared-plan-update'; origin: string; dxf?: SharedDxf | null; cavidotti?: SharedGeom[]; circuiti?: SharedGeom[]; scale?: number | null; deleted?: { cavidotti?: string[]; circuiti?: string[] } }
   /** Il tool chiede all'hub di aprire un altro tool (i "ponti" fra strumenti). */
   | { type: 'hub:navigate'; appId: string }
   /** Il tool chiede all'hub di tornare alla schermata iniziale. */
@@ -226,7 +148,7 @@ export type ToolToHub =
 
 const HUB_TYPES = new Set<HubToTool['type']>([
   'hub:set-theme', 'hub:set-palette', 'hub:set-font', 'hub:set-text-size', 'hub:set-motion', 'hub:set-shadow',
-  'hub:project-state', 'hub:collect-state', 'hub:restore-state', 'hub:set-company', 'hub:shared-plan',
+  'hub:project-state', 'hub:collect-state', 'hub:restore-state', 'hub:set-company',
   'hub:vai-a', 'hub:apri-documento', 'hub:comando',
 ])
 
@@ -255,12 +177,6 @@ export function parseHubMessage(data: unknown): HubToTool | null {
   if (m.type === 'hub:vai-a' && (typeof m.fase !== 'string' || !m.fase)) return null
   if (m.type === 'hub:apri-documento' && (typeof m.fase !== 'string' || !m.fase || typeof m.tipo !== 'string' || !m.tipo)) return null
   if (m.type === 'hub:comando' && (typeof m.comando !== 'string' || !m.comando)) return null
-  if (m.type === 'hub:shared-plan') {
-    const p = m.plan
-    if (!p || typeof p !== 'object') return null
-    const pp = p as Record<string, unknown>
-    if (!Array.isArray(pp.cavidotti) || !Array.isArray(pp.circuiti)) return null
-  }
   if (m.type === 'hub:set-company') {
     const c = m.company
     if (c !== null && (typeof c !== 'object' || typeof (c as Record<string, unknown>).name !== 'string')) return null

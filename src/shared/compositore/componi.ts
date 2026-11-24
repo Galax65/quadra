@@ -15,7 +15,6 @@
  * progetto (guardia anti-leak nei test, come per il thesaurus).
  */
 
-import { FAMIGLIE, normQuery, type Famiglia } from './thesaurus'
 import type { MacroCategoria } from './macrocategorie'
 import { FRASARIO_DATA } from 'compositore-catalog:componi'
 
@@ -160,80 +159,3 @@ export interface EsitoCoerenza {
   avvisi: string[]
 }
 
-/** Normalizza una U.M. per il confronto (ml→m, mq/m2→m², cadauno/n/nr→cad…). */
-export function normUm(um: unknown): string {
-  const u = normQuery(um).replace(/[.\s]/g, '')
-  const map: Record<string, string> = {
-    ml: 'm', mt: 'm', mq: 'm²', m2: 'm²', mc: 'm³', m3: 'm³',
-    cadauno: 'cad', cadauna: 'cad', n: 'cad', nr: 'cad', num: 'cad', pz: 'cad',
-  }
-  return map[u] ?? u
-}
-
-/** Firme di misura in un testo: diametri (`d25`) e dimensioni (`200x60`). */
-function firmeMisura(text: unknown): { diametri: Set<string>; dimensioni: Set<string> } {
-  const t = normQuery(text)
-  const diametri = new Set<string>()
-  const dimensioni = new Set<string>()
-  for (const m of t.matchAll(/(\d+(?:[.,]\d+)?)\s*x\s*(\d+(?:[.,]\d+)?)/g)) {
-    dimensioni.add(m[1] + 'x' + m[2])
-  }
-  for (const m of t.matchAll(/(?:⌀|ø|diametro|diam\.?|dn)\s*(\d+(?:[.,]\d+)?)/g)) {
-    diametri.add(m[1])
-  }
-  return { diametri, dimensioni }
-}
-
-function intersecano(a: Set<string>, b: Set<string>): boolean {
-  for (const x of a) if (b.has(x)) return true
-  return false
-}
-
-/**
- * Verifica la coerenza della descrizione composta con la voce di prezzario
- * agganciata: U.M. della voce vs `umTipiche` della famiglia e misura impostata
- * vs misure nella descrizione della voce (pattern ⌀ n / n×m). MAI bloccante:
- * solo avvisi motivati; senza voce agganciata non ci sono avvisi.
- */
-export function verificaCoerenza(input: ComponiInput, voce?: VocePrezzario | null): EsitoCoerenza {
-  const avvisi: string[] = []
-  const fr = frasarioFor(input.famigliaId)
-  if (!fr || !voce) return { ok: true, avvisi }
-
-  const um = normUm(voce.um)
-  if (um && !fr.umTipiche.map(normUm).includes(um)) {
-    avvisi.push(`L'U.M. della voce («${pulisci(voce.um)}») non è tra quelle tipiche della famiglia ${fr.nome} (${fr.umTipiche.join(', ')}).`)
-  }
-
-  const misura = pulisci(input.misura)
-  if (misura && voce.desc) {
-    const mia = firmeMisura(misura)
-    const sua = firmeMisura(voce.desc)
-    if (mia.diametri.size && sua.diametri.size && !intersecano(mia.diametri, sua.diametri)) {
-      avvisi.push(`La voce di prezzario indica ⌀ ${[...sua.diametri].join('/')} mm, la descrizione composta ⌀ ${[...mia.diametri].join('/')} mm: verifica la misura o scegli la voce del diametro corretto.`)
-    }
-    if (mia.dimensioni.size && sua.dimensioni.size && !intersecano(mia.dimensioni, sua.dimensioni)) {
-      avvisi.push(`La voce di prezzario indica ${[...sua.dimensioni].join('/')} mm, la descrizione composta ${[...mia.dimensioni].join('/')} mm: verifica le dimensioni o scegli la voce della misura corretta.`)
-    }
-  }
-
-  return { ok: avvisi.length === 0, avvisi }
-}
-
-/**
- * Propone la famiglia più pertinente per la descrizione di una voce (per il
- * pre-aggancio dal pannello dettaglio): match dei sinonimi/alias del thesaurus
- * nella descrizione, frase più specifica prima. `null` se nessuna famiglia.
- */
-export function suggerisciFamiglia(desc: unknown): string | null {
-  const t = ' ' + normQuery(desc) + ' '
-  let best: { f: Famiglia; len: number } | null = null
-  for (const f of FAMIGLIE) {
-    if (!frasarioFor(f.id)) continue
-    for (const s of [...f.sinonimi, ...f.alias]) {
-      const n = normQuery(s)
-      if (n && t.includes(' ' + n + ' ') && (!best || n.length > best.len)) best = { f, len: n.length }
-    }
-  }
-  return best ? best.f.id : null
-}

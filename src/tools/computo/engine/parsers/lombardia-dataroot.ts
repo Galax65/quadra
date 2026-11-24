@@ -24,7 +24,7 @@
  * autosufficiente (stile Lombardia), quindi `declaratoria`/`desc_short` derivano
  * direttamente da essa: il quality gate self-contained passa senza risalita ai padri.
  */
-import { REGIONS } from '../../data/regions'
+import { REGIONS } from '../regions'
 import { firstLinePreview } from '../codes'
 import { makeParser, num, toArray } from '../xml'
 import type { ParseResult, PriceRow } from '../types'

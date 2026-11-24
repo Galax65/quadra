@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { analisiPrezziAOA, analisiPrezziFileName, fascicoloIndiceAOA, fascicoloSheetName, fascicoloFileName } from '../../src/tools/computo/engine'
-import type { AnalisiPrezzi } from '../../src/tools/computo/engine'
+import { analisiPrezziAOA, fascicoloIndiceAOA, fascicoloSheetName, fascicoloFileName } from '../../src/tools/computo/engine/analisi-prezzi-excel'
+import type { AnalisiPrezzi } from '../../src/shared/compositore/analisi-prezzi'
 
 const analisi: AnalisiPrezzi = {
   id: 'ap-test', codice: 'AP01', descrizioneBreve: 'Fornitura e posa cassetta',
@@ -49,15 +49,6 @@ describe('analisiPrezziAOA', () => {
     expect(riga).toBeDefined()
     expect(riga![1]).toContain('Operaio specializzato')
     expect(riga![1]).toContain('Veneto 2025')
-  })
-})
-
-describe('analisiPrezziFileName', () => {
-  it('genera un nome file slug + suffisso stabile', () => {
-    expect(analisiPrezziFileName(analisi)).toBe('ap01-analisi-prezzi.xlsx')
-  })
-  it('senza codice ripiega su "analisi"', () => {
-    expect(analisiPrezziFileName({ ...analisi, codice: '' })).toBe('analisi-analisi-prezzi.xlsx')
   })
 })
 

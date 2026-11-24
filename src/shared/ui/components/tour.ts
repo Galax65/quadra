@@ -1,6 +1,5 @@
 /* Tour guidato condiviso Quadra — spotlight step-by-step su elementi esistenti.
    Riusa lo stile di `.ehb-modal`/`components.css` (vedi `.ehb-tour-*`). */
-import { readAuth } from '../../session-profile'
 
 export interface TourStep {
   /** Selettore CSS dell'elemento da evidenziare. Se non trovato o non visibile (0×0,
@@ -25,34 +24,12 @@ export interface Tour {
 
 const SEEN_KEY = 'hub:tour-seen'
 
-/** Chiave del profilo corrente (letta da `hub:auth`, stessa origin condivisa fra hub
-    e tool in iframe): ogni profilo/utente ha la sua progressione del tour, così più
-    utenti sulla stessa macchina (o l'admin che testa più profili) non si nascondono
-    a vicenda il tour. Nessun profilo loggato → progressione condivisa su 'anon'. */
-export function currentTourUserKey(): string {
-  try {
-    const auth = readAuth()
-    if (auth?.utente) return `${auth.companyId || 'admin'}::${auth.utente}`
-  } catch { /* nessun profilo valido */ }
-  return 'anon'
-}
-
 function readAllSeen(): Record<string, Record<string, true>> {
   try { return JSON.parse(localStorage.getItem(SEEN_KEY) || '{}') } catch { return {} }
 }
 
 function writeAllSeen(all: Record<string, Record<string, true>>): void {
   try { localStorage.setItem(SEEN_KEY, JSON.stringify(all)) } catch { /* storage non disponibile */ }
-}
-
-export function hasSeenTour(tourId: string, userKey: string = currentTourUserKey()): boolean {
-  return !!readAllSeen()[userKey]?.[tourId]
-}
-
-export function markTourSeen(tourId: string, userKey: string = currentTourUserKey()): void {
-  const all = readAllSeen()
-  all[userKey] = { ...all[userKey], [tourId]: true }
-  writeAllSeen(all)
 }
 
 /** Azzera la progressione tour di UN profilo (tutti i tour), per poterlo ritestare

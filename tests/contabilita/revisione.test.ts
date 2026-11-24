@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calcolaSals, compensazioneRevisione, parametriRevisione, statoAccordoQuadro, type Appalto, type Partita, type Sal } from '../../src/tools/contabilita/engine'
+import { calcolaSals, compensazioneRevisione, parametriRevisione, type Appalto, type Partita, type Sal } from '../../src/tools/contabilita/engine'
 
 const P: Partita[] = [{ id: 'm', modalita: 'misura', codice: 'A.01', descrizione: 'Scavo', um: 'm³', prezzoUnitario: 100, qtyProgetto: 100 }]
 const base = (x: Partial<Appalto> = {}): Appalto => ({ oggetto: 'x', ente: { denominazione: 'E' }, impresa: { denominazione: 'I' }, modalita: 'misura', ...x })
@@ -30,17 +30,6 @@ describe('revisione prezzi (art. 60, All. II.2-bis)', () => {
     expect(r[1].revisioneSal).toBe(378) // 6.000 × (10−3)×90% = 6,3%
     expect(r[1].revisioneProgressiva).toBe(378)
     expect(r[1].totaleEseguito).toBe(10_378)
-  })
-})
-
-describe('accordo quadro', () => {
-  it('impegnato, residuo e superamento del massimo', () => {
-    const a = base({ accordoQuadro: { importoMassimo: 100_000, applicativi: [{ numero: 1, importo: 60_000 }, { numero: 2, importo: 50_000 }] } })
-    const st = statoAccordoQuadro(a)!
-    expect(st.impegnato).toBe(110_000)
-    expect(st.residuo).toBe(-10_000)
-    expect(st.superato).toBe(true)
-    expect(statoAccordoQuadro(base())).toBe(null)
   })
 })
 

@@ -82,19 +82,6 @@ export function normalizzaDatiGenerali(raw: unknown): DatiGenerali {
   return out
 }
 
-/** Completa `base` con i campi di `nuovi` SOLO dove `base` è vuoto (mai sovrascrivere). */
-export function completaDatiGenerali(base: DatiGenerali, nuovi: Partial<DatiGenerali>): DatiGenerali {
-  const out = { ...base }
-  for (const { chiave } of CAMPI_DATI_GENERALI) {
-    const v = (nuovi[chiave] ?? '').trim()
-    if (!out[chiave] && v) out[chiave] = v
-  }
-  return out
-}
-
-export const datiGeneraliCompilati = (dg: Partial<DatiGenerali> | null | undefined): number =>
-  dg ? CAMPI_DATI_GENERALI.filter(c => (dg[c.chiave] ?? '').trim()).length : 0
-
 /** Righe d'intestazione per le stampe (solo i campi compilati). */
 export function intestazioneStampa(dg: Partial<DatiGenerali>, dataStampa: string): string[] {
   const luogo = [dg.comune, dg.provincia ? `(${dg.provincia})` : ''].filter(Boolean).join(' ')

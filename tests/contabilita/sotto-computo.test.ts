@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import {
-  totaleSottoComputo, quadraturaSottoComputo, eseguitoSottoComputo, quotaDaSottoComputo,
-  quotaAttestata, sottoComputoCongelato, haSottoComputo, corpiConSottoComputo, librettoSottoComputiHTML,
-} from '../../src/tools/contabilita/engine/sotto-computo'
+import { totaleSottoComputo, quadraturaSottoComputo, eseguitoSottoComputo, quotaDaSottoComputo, quotaAttestata, haSottoComputo, corpiConSottoComputo, librettoSottoComputiHTML } from '../../src/tools/contabilita/engine/sotto-computo'
 import { eseguitoPartita, calcolaSals } from '../../src/tools/contabilita/engine/contabilita'
 import type { Appalto, Partita, Sal } from '../../src/tools/contabilita/engine/types'
 
@@ -74,12 +71,6 @@ describe("l'importo non passa per la percentuale arrotondata", () => {
 })
 
 describe('quando un SAL firmato lo usa, la scomposizione si congela', () => {
-  it('un SAL firmato che ne registra l\'avanzamento la blocca', () => {
-    expect(sottoComputoCongelato(corpo(), [sal({ firmato: true })])).toBe(true)
-  })
-  it('finché i SAL sono aperti si può correggere', () => {
-    expect(sottoComputoCongelato(corpo(), [sal()])).toBe(false)
-  })
   it('negli atti vale la quota attestata nel SAL, non quella ricalcolata dopo', () => {
     const s = sal({ firmato: true })
     s.righe[0].quotaPct = 40.67

@@ -6,10 +6,11 @@ aveva reso Computo e Contabilità **uguali**; qui diventano **la stessa cosa**.
 
 ## 1. La critica, in una riga
 
-«L'interfaccia deve essere non uguale ma la stessa.» Oggi ci sono ancora due
-programmi (due riquadri, due codici: `src/tools/computo/legacy/*.js` e
-`src/tools/contabilita/main.ts`) che si somigliano; ogni miglioria va fatta due
-volte, e il flusso del lavoro si legge a fatica dalla sidebar.
+«L'interfaccia deve essere non uguale ma la stessa.» Quando questo documento è
+nato c'erano ancora due programmi (due riquadri, due codici: l'interfaccia di
+Computo e quella di Contabilità, oggi tolte — ne restano solo i motori) che si
+somigliavano; ogni miglioria andava fatta due volte, e il flusso del lavoro si
+leggeva a fatica dalla sidebar.
 
 ## 2. L'idea
 

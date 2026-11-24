@@ -50,19 +50,4 @@ contextBridge.exposeInMainWorld('ehubNative', {
   chooseProjectDir() {
     return ipcRenderer.invoke('ehub:choose-project-dir')
   },
-  /**
-   * Legge un file DXF per PERCORSO ASSOLUTO (planimetria di Progetto come XREF):
-   * a differenza di readText (solo cartella risorse), qui il percorso è quello
-   * scelto dall'utente col selettore file. Ritorna { text } | { error }.
-   */
-  readDxf(absPath) {
-    return ipcRenderer.invoke('ehub:read-dxf', { path: absPath })
-  },
-  /**
-   * Dice se un DXF è ancora al suo posto, e quanto pesa — senza leggerlo.
-   * Ritorna { exists, size } | { error }.
-   */
-  statDxf(absPath) {
-    return ipcRenderer.invoke('ehub:stat-dxf', { path: absPath })
-  },
 })

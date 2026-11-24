@@ -70,16 +70,6 @@ export function aliquotaCorpoPct(p: Partita, partite: Partita[]): number | null 
 }
 
 /**
- * Quadratura di un corpo disaggregato: Σ importi delle voci deve eguagliare
- * l'importo del corpo (tolleranza 0,01 €). Ritorna lo scostamento e l'esito.
- */
-export function quadraturaCorpo(importoCorpo: number, voci: Array<{ importo?: number | null }>): { somma: number; scostamento: number; quadra: boolean } {
-  const somma = round2(voci.reduce((s, v) => s + (v.importo || 0), 0))
-  const scostamento = round2(somma - importoCorpo)
-  return { somma, scostamento, quadra: Math.abs(scostamento) <= 0.01 }
-}
-
-/**
  * Una voce COMPARE nel libretto del SAL n se è stata introdotta entro n
  * (le voci da computo, senza `introdottaSal`, valgono da sempre). Le voci
  * soppresse restano visibili (traccia dello storno), col valore azzerato.

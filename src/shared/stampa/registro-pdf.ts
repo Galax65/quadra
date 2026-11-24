@@ -489,27 +489,3 @@ export async function creaRegistroPdf(lib: PdfLib, opz: OpzioniRegistro, righe: 
   return { bytes: await doc.save(), pagine: N, paginaDi, pdfa: false }
 }
 
-/**
- * La stessa tabella in HTML (anteprima a schermo, modifica, Word): colonne, gruppi,
- * righe con grassetto/corsivo/evidenza. Niente impaginazione né riporti.
- */
-export function registroHtml(opz: OpzioniRegistro, righe: RigaTabella[]): string {
-  const e = (t: unknown): string => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  const cols = opz.colonne
-  const al = (a?: string): string => (a === 'destra' ? 'right' : a === 'centro' ? 'center' : 'left')
-  const gruppi: { nome: string; n: number }[] = []
-  for (const c of cols) { const g = c.gruppo ?? ''; const u = gruppi[gruppi.length - 1]; if (u && u.nome === g) u.n++; else gruppi.push({ nome: g, n: 1 }) }
-  const testa = (gruppi.some((g) => g.nome) ? `<tr>${gruppi.map((g) => `<th colspan="${g.n}" style="text-align:center">${e(g.nome)}</th>`).join('')}</tr>` : '') +
-    `<tr>${cols.map((c) => `<th style="text-align:${al(c.allinea)}">${e(c.etichetta)}</th>`).join('')}</tr>`
-  const corpo = righe.map((r) => {
-    const st = [r.grassetto ? 'font-weight:700' : '', r.corsivo ? 'font-style:italic' : '', r.evidenzia ? 'background:#eee' : '', r.lineaSopra ? 'border-top:1px solid #000' : ''].filter(Boolean).join(';')
-    if (r.unisci) {
-      const i0 = cols.findIndex((c) => c.chiave === r.unisci!.da), i1 = cols.findIndex((c) => c.chiave === r.unisci!.a)
-      const testo = cols.slice(i0, i1 + 1).map((c) => r.celle[c.chiave]).filter(Boolean).join(' ')
-      return `<tr style="${st}">${cols.slice(0, i0).map(() => '<td></td>').join('')}<td colspan="${i1 - i0 + 1}">${e(testo)}</td>${cols.slice(i1 + 1).map((c) => `<td style="text-align:${al(c.allinea)}">${e(r.celle[c.chiave])}</td>`).join('')}</tr>`
-    }
-    return `<tr style="${st}">${cols.map((c) => `<td style="text-align:${al(c.allinea)};vertical-align:top">${e(r.celle[c.chiave])}</td>`).join('')}</tr>`
-  }).join('')
-  return `<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>${e(opz.titolo)}</title><style>body{font:12px/1.35 system-ui,sans-serif;margin:24px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #bbb;padding:3px 5px}th{font-size:10px;text-transform:uppercase}h1{font-size:16px}</style></head><body>` +
-    `<h1>${e(opz.titolo)}</h1>${(opz.intestazione ?? []).map((x) => `<div>${e(x)}</div>`).join('')}<br><table><thead>${testa}</thead><tbody>${corpo}</tbody></table></body></html>`
-}

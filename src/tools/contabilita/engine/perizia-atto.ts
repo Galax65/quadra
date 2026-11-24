@@ -15,16 +15,6 @@ import { quadroComparativo, periziaApprovata } from './perizie'
 import { quadroEconomicoPerizia, formaAtto, FORMA_LABEL } from './sottomissione'
 import { datiContrattoHTML } from './dati-contratto'
 
-/** Le fattispecie dell'art. 120 c. 1: la motivazione dice a quale ci si richiama. */
-export const CASI_VARIANTE: { id: string; testo: string }[] = [
-  { id: 'a', testo: 'per le modifiche previste nei documenti di gara iniziali in clausole chiare, precise e inequivocabili' },
-  { id: 'b', testo: 'per lavori supplementari divenuti necessari e non inclusi nell\'appalto iniziale' },
-  { id: 'c', testo: 'per circostanze impreviste e imprevedibili, comprese nuove disposizioni legislative o provvedimenti di autorità' },
-  { id: 'd', testo: 'per la sostituzione del contraente originario' },
-  { id: 'e', testo: 'per modifiche non sostanziali ai sensi del comma 3' },
-  { id: 'f', testo: 'per modifiche di valore inferiore alle soglie del comma 2' },
-]
-
 export function periziaHTML(appalto: Appalto, partite: Partita[], pz: Perizia): string {
   const q = quadroComparativo(partite, appalto.perizie, pz)
   const qe = quadroEconomicoPerizia(appalto, partite, pz)

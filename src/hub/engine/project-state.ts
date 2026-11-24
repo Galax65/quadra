@@ -12,8 +12,6 @@
  * aggiungere un tool non richiede nuovi `if`.
  */
 
-import type { SharedPlan, SharedGeom } from '../../shared/bus'
-
 /** Stato del progetto Quadra corrente: identità + stato per-appId (generico). */
 export interface HubProjectState {
   /** identità stabile del progetto corrente (null finché non aperto/salvato). */
@@ -22,14 +20,6 @@ export interface HubProjectState {
   name: string | null
   /** stato di progetto condiviso per appId (payload relayati cross-tool). */
   tools: Record<string, unknown>
-  /** planimetria UNICA di Progetto (DXF grezzo condiviso) + cavidotti/circuiti
-   *  cross-tool (unione per origine). Project-global, non per-tool. */
-  sharedPlan: SharedPlan
-}
-
-/** Planimetria condivisa vuota. */
-export function emptySharedPlan(): SharedPlan {
-  return { dxf: null, cavidotti: [], circuiti: [], scale: null }
 }
 
 /**
@@ -74,47 +64,7 @@ export function sourceForApp(appId: string): string {
 
 /** Stato di progetto vuoto. */
 export function emptyHubProjectState(): HubProjectState {
-  return { id: null, name: null, tools: {}, sharedPlan: emptySharedPlan() }
-}
-
-/**
- * Normalizza il riferimento alla planimetria condivisa. null se non c'è nessuna sorgente.
- *
- * Qui vive solo l'IDENTITÀ del DXF (percorso, nome, data, dimensione): i byte del file non
- * passano né da qui né dal bus. I progetti salvati con la vecchia versione potevano
- * portarsi dietro un campo `text` col DXF grezzo: si scarta senza far storie.
- */
-export function normalizeSharedDxf(raw: unknown): SharedPlan['dxf'] {
-  if (!raw || typeof raw !== 'object') return null
-  const d = raw as Record<string, unknown>
-  const hasRef = typeof d.ref === 'string' && d.ref
-  const hasName = typeof d.name === 'string' && d.name
-  if (!hasRef && !hasName) return null // niente sorgente → nessuno sfondo
-  const dxf: NonNullable<SharedPlan['dxf']> = { name: hasName ? d.name as string : '', ts: typeof d.ts === 'number' ? d.ts : 0 }
-  if (hasRef) dxf.ref = d.ref as string
-  if (typeof d.size === 'number') dxf.size = d.size
-  return dxf
-}
-
-/** Normalizza una planimetria condivisa (da input eterogeneo/legacy). */
-export function normalizeSharedPlan(raw: unknown): SharedPlan {
-  const p = emptySharedPlan()
-  if (!raw || typeof raw !== 'object') return p
-  const o = raw as Record<string, unknown>
-  p.dxf = normalizeSharedDxf(o.dxf)
-  if (Array.isArray(o.cavidotti)) p.cavidotti = o.cavidotti as SharedGeom[]
-  if (Array.isArray(o.circuiti)) p.circuiti = o.circuiti as SharedGeom[]
-  if (typeof o.scale === 'number' && o.scale > 0) p.scale = o.scale
-  return p
-}
-
-/** Il DXF come va su disco: la sua identità (xref), mai i byte. Che è ormai tutto quello
- *  che il modello contiene — resta come punto unico se un domani si aggiungessero campi
- *  volatili da non persistere. */
-export function dxfForDisk(dxf: SharedPlan['dxf']): SharedPlan['dxf'] {
-  if (!dxf) return null
-  const { missing, ...rest } = dxf; void missing // stato di sessione, non si salva
-  return rest
+  return { id: null, name: null, tools: {} }
 }
 
 /**
@@ -130,7 +80,6 @@ export function migrateHubState(saved: unknown): HubProjectState {
     st.tools = migraAppIdStorici({ ...(o.tools as Record<string, unknown>) })
     st.id = typeof o.id === 'string' ? o.id : null
     st.name = typeof o.name === 'string' ? o.name : null
-    st.sharedPlan = normalizeSharedPlan(o.sharedPlan) // default vuoto se assente (legacy)
     return st
   }
   // legacy: i campi hard-coded delle prime versioni → mappa per appId.
@@ -180,58 +129,6 @@ export function projectStateMessages(st: HubProjectState): ProjectStateMessage[]
     appId,
     replay: true,
   }))
-}
-
-/** Imposta lo SFONDO DXF grezzo condiviso (project-global). Immutabile. */
-export function setSharedDxf(st: HubProjectState, dxf: SharedPlan['dxf']): HubProjectState {
-  return { ...st, sharedPlan: { ...st.sharedPlan, dxf: dxf || null } }
-}
-
-/** UPSERT per id + rimozione degli id in `deleted`. Mantiene l'ordine (gli id
- *  esistenti restano al loro posto, i nuovi in coda). MAI cancella su omissione. */
-function upsertList(list: SharedGeom[], upserts?: SharedGeom[], deleted?: string[]): SharedGeom[] {
-  const byId = new Map<string, SharedGeom>((list || []).map(g => [g.id, g]))
-  for (const g of upserts || []) if (g && g.id) byId.set(g.id, g)
-  for (const id of deleted || []) byId.delete(id)
-  return [...byId.values()]
-}
-
-/**
- * POOL UNICO: applica UPSERT (per id) e DELETE al pool condiviso di cavidotti/
- * circuiti. Un update parziale NON azzera il resto (niente clobber). Immutabile.
- */
-export function upsertShared(
-  st: HubProjectState,
-  data: { cavidotti?: SharedGeom[]; circuiti?: SharedGeom[]; scale?: number | null; deleted?: { cavidotti?: string[]; circuiti?: string[] } },
-): HubProjectState {
-  const sp = st.sharedPlan
-  const delC = data.deleted && data.deleted.cavidotti
-  const delK = data.deleted && data.deleted.circuiti
-  // scala CALIBRATA, UNICA per l'intera planimetria condivisa (i tool di disegno
-  // condividono lo spazio DXF): chi calibra per ultimo la pubblica, vale per tutti. Un valore
-  // assente/non valido non tocca quella già nota (niente clobber, come il DXF).
-  const scale = (typeof data.scale === 'number' && data.scale > 0) ? data.scale : sp.scale
-  return {
-    ...st,
-    sharedPlan: {
-      ...sp,
-      cavidotti: (data.cavidotti || delC) ? upsertList(sp.cavidotti, data.cavidotti, delC) : sp.cavidotti,
-      circuiti: (data.circuiti || delK) ? upsertList(sp.circuiti, data.circuiti, delK) : sp.circuiti,
-      scale,
-    },
-  }
-}
-
-/** Messaggio di replay della planimetria condivisa (uno solo, project-global). */
-export interface SharedPlanMessage {
-  type: 'hub:shared-plan'
-  plan: SharedPlan
-  replay: true
-}
-
-/** Messaggio `hub:shared-plan` per replicare la planimetria condivisa a un frame. */
-export function sharedPlanMessage(st: HubProjectState): SharedPlanMessage {
-  return { type: 'hub:shared-plan', plan: st.sharedPlan, replay: true }
 }
 
 /** Garantisce un id stabile al progetto (lo genera con `gen` se mancante). Immutabile. */

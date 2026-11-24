@@ -17,7 +17,7 @@
  * Nota: la "Parte 4 - Precedente struttura" (root `<dataroot>`) è un export Access
  * diverso e NON è gestita qui (vedi roadmap STEP 4b).
  */
-import { REGIONS } from '../../data/regions'
+import { REGIONS } from '../regions'
 import { firstLinePreview } from '../codes'
 import { makeParser, num, toArray } from '../xml'
 import type { ParseResult, PriceRow, RisorsaComponente } from '../types'

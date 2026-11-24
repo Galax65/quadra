@@ -5,8 +5,8 @@ programmazione. *(Il numero di strumenti e i loro «primi passi» sono generati 
 vedi i blocchi automatici più sotto.)*
 
 Quadra è un programma per il **computo metrico estimativo** e la **contabilità dei lavori
-pubblici** (D.Lgs. 36/2023, Allegato II.14): il computo si prepara in
-**Computo**, passa alla **Contabilità** senza ridigitare nulla, e tutto si salva in un unico
+pubblici** (D.Lgs. 36/2023, Allegato II.14): il computo, il contratto, i SAL e le perizie
+stanno nello stesso strumento, **Lavoro**, senza ridigitare nulla, e tutto si salva in un unico
 file di progetto **`.quadra`**. Funziona su Mac e Windows, senza account e senza internet.
 
 ## 1. Avviare l'app
@@ -32,11 +32,10 @@ ogni strumento.
 │ [▦]  │                      [▦]  Quadra                      │
 │      │              COMPUTO E CONTABILITÀ LAVORI            │
 │ ◺    │        [ Nuovo progetto ]  [ Apri progetto… ]        │
-│ ▤    │                                                      │
-│ ⚙    │   ① COMPUTO METRICO   →   ② CONTABILITÀ LAVORI        │
-│      │   ┌──────────────┐        ┌──────────────┐           │
-│ Nuovo│   │ ◺ Computo    │        │ ▤ Contabilità│           │
-│ Apri │   └──────────────┘        └──────────────┘           │
+│ ⚙    │                                                      │
+│      │   ┌──────────────────────────────────────────┐       │
+│ Nuovo│   │ ◺ Lavoro — computo, contratto, SAL, …    │       │
+│ Apri │   └──────────────────────────────────────────┘       │
 │ Salva│              ( ⚙ Amministrazione )                    │
 └──────┴──────────────────────────────────────────────────────┘
 ```

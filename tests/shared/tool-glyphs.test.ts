@@ -68,7 +68,6 @@ describe('l\'hub monta i glifi vettoriali (non più caratteri)', () => {
 
 describe('gli header dei tool usano lo STESSO path (guardia non-divergenza)', () => {
   const cases: [string, keyof typeof TOOL_GLYPH_PATHS][] = [
-    ['computo', 'computo'], ['contabilita', 'contabilita'],
     ['amministrazione', 'amministrazione'],
   ]
   it.each(cases)('src/tools/%s/index.html: logo E nome col path canonico, niente greco nudo', (tool, key) => {

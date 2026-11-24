@@ -85,16 +85,6 @@ export function quotaAttestata(p: Partita, riga?: RigaSal): number | null {
   return quotaDaSottoComputo(p, riga)
 }
 
-/**
- * Il sotto-computo di un corpo è CONGELATO quando un SAL già firmato lo ha
- * usato: cambiarne prezzi o quantità falsificherebbe la dimostrazione di una
- * percentuale già attestata. Le quantità eseguite dei SAL ancora aperti
- * restano invece modificabili.
- */
-export function sottoComputoCongelato(p: Partita, sals: Sal[]): boolean {
-  return sals.some((s) => s.firmato && s.righe.some((r) => r.partitaId === p.id && (r.sotto?.length || r.quotaPct != null)))
-}
-
 /** I corpi d'opera di questo SAL che hanno un sotto-computo da stampare. */
 export function corpiConSottoComputo(partite: Partita[], salNumero: number): Partita[] {
   return partite.filter((p) => haSottoComputo(p) && voceVisibileInSal(p, salNumero) && !voceSoppressaInSal(p, salNumero))

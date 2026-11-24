@@ -18,17 +18,10 @@ describe('un solo archivio per i due strumenti', () => {
     expect(a).toContain('export async function righePrezzarioSalvato')
   })
 
-  it('il Computo ci arriva tramite il ponte legacy, senza una copia propria', () => {
-    const ponte = leggi('src/tools/computo/legacy/archivio-locale.js')
-    expect(ponte).toContain("from '../../../shared/prezzari/archivio'")
-    expect(ponte).not.toContain('indexedDB.open')   // nessuna seconda implementazione
-  })
-
-  it('Contabilità e Lavoro elencano TUTTO lo scaffale, con lo stesso caricatore condiviso', () => {
+  it('Lavoro elenca TUTTO lo scaffale, con lo stesso caricatore condiviso', () => {
     const b = leggi('src/shared/prezzari/carica.ts')
     expect(b).toContain("from './archivio'")
     expect(b).toContain('export { prezzariDisponibili }')
-    expect(leggi('src/tools/contabilita/prezzario.ts')).toContain("export * from '../../shared/prezzari/carica'")
     expect(leggi('src/tools/lavoro/main.ts')).toContain("from '../../shared/prezzari/carica'")
     // carica sia dall'archivio dell'utente sia dal pacchetto del programma
     expect(b).toContain('fileArchivio(id)')
@@ -37,6 +30,7 @@ describe('un solo archivio per i due strumenti', () => {
 
   it('il formato impacchettato è dati condivisi, non una funzione del Computo', () => {
     expect(() => leggi('src/shared/prezzari/pack.ts')).not.toThrow()
-    expect(leggi('src/tools/computo/engine/index.ts')).toContain("export * from '../../../shared/prezzari/pack'")
+    expect(leggi('src/shared/prezzari/carica.ts')).toContain("from './pack'")
+    expect(leggi('scripts/build-prezzari.ts')).toContain("from '../src/shared/prezzari/pack'")
   })
 })

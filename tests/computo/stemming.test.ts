@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normMisure, stemToken, stemText, normMatch, expandQuery } from '../../src/shared/compositore/thesaurus'
+import { normMisure, stemToken, stemText, expandQuery } from '../../src/shared/compositore/thesaurus'
 
 describe('stemToken — morfologia leggera conservativa', () => {
   it('tronca la vocale finale delle parole alfabetiche ≥ 5 lettere', () => {
@@ -54,11 +54,6 @@ describe('normMisure — canonicalizzazione misure dei prezzari', () => {
 })
 
 describe('normMatch / stemText', () => {
-  it('pipeline completa: normQuery + normMisure + stem', () => {
-    const m = normMatch('Faretti Orientabili Ø 90')
-    expect(m.raw).toBe('faretti orientabili ø90')
-    expect(m.stem).toBe('farett orientabil ø90')
-  })
   it('stemText lascia intatti i token non alfabetici', () => {
     expect(stemText('plafoniera ip65 3x2.5')).toBe('plafonier ip65 3x2.5')
   })

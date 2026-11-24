@@ -23,15 +23,9 @@ import { resolve } from 'node:path'
  * problema di dati persi in produzione.
  */
 
-import { computoSource } from '../computo/computo-src'
-
 const ROOT = resolve(__dirname, '../..')
 const read = (rel: string): string => readFileSync(resolve(ROOT, rel), 'utf8')
-// Computo ha estratto lo script inline in legacy/*.js: il codice del bus non vive più
-// in un solo file. `srcOf` restituisce il sorgente COMPLETO del tool, così il
-// contratto vale ovunque finisca il codice.
-const MULTI_FILE: Record<string, () => string> = { computo: computoSource }
-const srcOf = (t: ToolEntry): string => (MULTI_FILE[t.name] ? MULTI_FILE[t.name]!() : read(t.file))
+const srcOf = (t: ToolEntry): string => read(t.file)
 
 /** Un tool per il quale ha senso verificare il contratto bus: registryId (come
  *  in registry.ts) + il file sorgente principale dove cercare le stringhe. */

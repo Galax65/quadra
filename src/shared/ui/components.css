@@ -9,7 +9,6 @@
 .ehb-h1 { font: 600 var(--fs-xl)/var(--lh-tight) var(--sans); letter-spacing: -.02em; color: var(--text); margin: 0; }
 .ehb-h2 { font: 600 var(--fs-lg)/var(--lh-tight) var(--sans); letter-spacing: -.01em; color: var(--text); margin: 0; }
 .ehb-label { font: 500 var(--fs-sm)/1.3 var(--sans); color: var(--muted); }
-.ehb-mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
 .ehb-muted { color: var(--muted); }
 
 /* ── Logo (glyph-only) — Monospace: NIENTE piastrella/sfondo, sola
@@ -48,30 +47,12 @@
   display: block;
   fill: currentColor;
 }
-/* Glifo del tool DENTRO un nome/testo (es. «Computo») → sempre
-   vettoriale, mai carattere di font (che cadeva su un Computo di sistema «senza apice»). */
-.ehb-name-glyph { display: inline-block; }
-.ehb-name-glyph svg { height: 1em; width: auto; vertical-align: -.2em; fill: currentColor; }
-/* Resta mono come gli altri (niente serif). Il modificatore resta nel
-   markup ma serve solo per un eventuale fine-tuning del fallback-carattere. */
-.ehb-logo--phi   .ehb-logo__glyph { font-size: calc(var(--logo-size) * .74); }
-.ehb-logo--emoji .ehb-logo__glyph { font-size: calc(var(--logo-size) * .5); }
 /* Taglie (sola scala di --logo-size, niente più sfondo/raggi). */
 .ehb-logo--sm { --logo-size: 30px; }
 .ehb-logo--lg { --logo-size: 54px; }
-/* Stato attivo/hover: senza piastrella, il feedback è glow + peso del glifo
-   (non più il bordo del riquadro). */
-.ehb-logo--active .ehb-logo__glyph,
-.ehb-clickable:hover > .ehb-logo .ehb-logo__glyph {
-  text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 55%, transparent);
-  font-weight: 900;
-}
 
 /* ── Marker / pallini di stato ───────────────────────────────────────────── */
 .ehb-dot { width: 8px; height: 8px; border-radius: var(--radius-pill); background: var(--accent); flex: 0 0 8px; }
-.ehb-dot--ok { background: var(--ok); }
-.ehb-dot--warn { background: var(--warn); }
-.ehb-dot--bad { background: var(--bad); }
 .ehb-dot--pulse { position: relative; }
 .ehb-dot--pulse::after { content: ''; position: absolute; inset: -3px; border-radius: inherit; background: inherit; opacity: .5; animation: ehb-pulse 1.8s ease-out infinite; }
 @keyframes ehb-pulse { to { transform: scale(2.4); opacity: 0; } }
@@ -109,12 +90,12 @@
    avevano fill pieno — "sembrano software diversi"): bordo/testo colore
    accento, sfondo dello STESSO accento ma trasparente. .p-btn--go confluisce
    qui per eliminare la duplicazione letterale tra i due CSS locali. */
-.p-btn--go, .ehb-btn--accent-soft {
+.ehb-btn--accent-soft {
   border-color: color-mix(in srgb, var(--accent) 50%, transparent);
   background: var(--accent-soft);
   color: var(--accent);
 }
-.p-btn--go:hover, .ehb-btn--accent-soft:hover {
+.ehb-btn--accent-soft:hover {
   background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 .ehb-btn--ghost { background: transparent; box-shadow: none; color: var(--muted); }
@@ -214,7 +195,6 @@
 .ehb-rail { container-type: inline-size; container-name: binario; overflow-x: auto; scrollbar-width: none; }
 .ehb-rail::-webkit-scrollbar { display: none; }
 @container binario (max-width: 1000px) {
-  .ehb-rail-ctx, .miu-rail-ctx { display: none; }
   .ehb-rail-sep { width: 8px; }
 }
 @container binario (max-width: 680px) {
@@ -223,12 +203,7 @@
 }
 .ehb-rail-step:hover { color: var(--text2); background: var(--panel2); }
 .ehb-rail-step .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--line2); flex: none; }
-.ehb-rail-step .rail-k {
-  font-family: var(--mono); font-size: 9px; line-height: 14px; min-width: 15px;
-  text-align: center; color: var(--faint); border: 1px solid var(--line2); border-radius: 4px;
-}
 .ehb-rail-step.active { color: var(--text); background: var(--panel2); }
-.ehb-rail-step.active .rail-k { border-color: currentColor; color: inherit; }
 .ehb-rail-step.active[data-fam="create"] { color: var(--accent-h); }
 .ehb-rail-step.active[data-fam="create"] .dot { background: var(--accent); }
 .ehb-rail-step.active[data-fam="assign"] { color: var(--fam-assign); }
@@ -238,9 +213,6 @@
 .ehb-rail-step.active[data-fam="nav"] { color: var(--text); background: var(--panel2); }
 .ehb-rail-step.active[data-fam="nav"] .dot { background: var(--text3, var(--faint)); }
 .ehb-rail-sep { width: 16px; height: 1px; background: var(--line2); flex: none; }
-.ehb-rail-sp { flex: 1; }
-.ehb-rail-ctx { font-size: 11px; color: var(--faint); white-space: nowrap; padding-left: 8px; }
-.ehb-rail-ctx b { color: var(--accent-h, var(--accent)); font-weight: 700; }
 
 /* ── Motion / feedback ──────────────────────────────────
    Micro-interazioni condivise: ogni azione utente ha una risposta visiva.
@@ -248,55 +220,9 @@
    Gatate gratis dalla regola ombrello data-motion="reduced" in tokens.css (che
    azzera animation-duration ovunque) + dal blocco prefers-reduced-motion qui
    sotto — nessuna animazione qui usa fill pieno (rispetta lo standard CTA). */
-.ehb-flash { animation: ehb-flash var(--dur-flash) var(--ease-out); }
-@keyframes ehb-flash {
-  0% { background-color: var(--accent-soft); }
-  100% { background-color: transparent; }
-}
-.ehb-pop-in { animation: ehb-pop var(--dur-quick) var(--ease-out); }
-.ehb-view-enter { animation: ehb-view-in var(--dur-view) var(--ease-out); }
-@keyframes ehb-view-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.ehb-skeleton {
-  position: relative;
-  overflow: hidden;
-  background: var(--panel2);
-}
-.ehb-skeleton::after {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--line2) 70%, transparent), transparent);
-  animation: ehb-skeleton-sweep 1.4s ease-in-out infinite;
-}
-@keyframes ehb-skeleton-sweep {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(100%); }
-}
-/* Clessidra minimale — per attese INDETERMINATE (fase senza un conteggio reale,
-   es. compressione ZIP dopo che i PDF sono pronti). Per attese con un progresso
-   noto usa una progress bar reale, non questa: uno
-   spinner su un'operazione misurabile mente sul tempo restante. */
-.ehb-spinner {
-  display: inline-block; width: 14px; height: 14px; flex: none;
-  border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
-  border-top-color: currentColor;
-  border-radius: 50%;
-  animation: ehb-spin .7s linear infinite;
-}
-/* display d'autore vince sull'attributo [hidden] (bassissima priorità UA) —
-   bug ricorrente nella suite quando un elemento con `hidden` ha anche una
-   regola display esplicita: va sempre accompagnata da questo override. */
-.ehb-spinner[hidden] { display: none; }
-@keyframes ehb-spin { to { transform: rotate(360deg); } }
-/* La regola ombrello in tokens.css azzera già animation-duration
-   (fermando la rotazione), ma lascerebbe un anello con un quarto evidenziato —
-   sembra rotto, non "in corso". Anello uniforme invece. */
-:root[data-motion="reduced"] .ehb-spinner { border-top-color: color-mix(in srgb, currentColor 25%, transparent); }
 
 /* ── Campi (input / select / textarea) ───────────────────────────────────── */
-.ehb-input, .ehb-select, .ehb-textarea {
+.ehb-input, .ehb-select {
   width: 100%;
   font: 450 var(--fs-base)/1.3 var(--sans);
   color: var(--text);
@@ -306,8 +232,8 @@
   padding: 9px 12px;
   transition: var(--tr);
 }
-.ehb-input::placeholder, .ehb-textarea::placeholder { color: var(--faint); }
-.ehb-input:focus, .ehb-select:focus, .ehb-textarea:focus {
+.ehb-input::placeholder { color: var(--faint); }
+.ehb-input:focus, .ehb-select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-dim);
@@ -330,18 +256,8 @@
   box-shadow: var(--shadow-1);
   transition: var(--tr);
 }
-.ehb-clickable { cursor: pointer; }
-.ehb-clickable:hover.ehb-card,
-.ehb-clickable.ehb-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); border-color: var(--line2); }
 
 /* ── Header / brand ──────────────────────────────────────────────────────── */
-.ehb-header {
-  display: flex; align-items: center; gap: var(--sp-4);
-  padding: var(--sp-3) var(--sp-5);
-  background: color-mix(in srgb, var(--panel) 86%, transparent);
-  border-bottom: 1px solid var(--line);
-  backdrop-filter: saturate(140%) blur(8px);
-}
 .ehb-brand { display: flex; align-items: center; gap: var(--sp-3); }
 .ehb-brand__text { display: flex; flex-direction: column; gap: 1px; }
 .ehb-brand__name { font: 600 var(--fs-md)/1.15 var(--sans); letter-spacing: -.01em; color: var(--text); }
@@ -382,25 +298,6 @@
     max-width: 100%; gap: var(--sp-1);
   }
 }
-
-/* ── Pulsante GUIDA condiviso (uniforme in tutti i tool) ──────────────────────
-   Filosofia unica: la Guida è ROSSA e vive in topbar, sempre come ULTIMA azione
-   a destra (dopo il tema). I tool applicano .ehb-guide-btn al proprio bottone
-   mantenendo l'id esistente (gli handler restano agganciati). */
-.ehb-guide-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  font: 550 var(--fs-sm)/1 var(--sans);
-  color: var(--bad);
-  background: var(--bad-soft, color-mix(in srgb, var(--bad) 14%, transparent));
-  border: 1px solid color-mix(in srgb, var(--bad) 55%, transparent);
-  border-radius: var(--radius-sm, 8px);
-  padding: 7px 12px; min-height: 32px;
-  cursor: pointer; white-space: nowrap;
-  transition: var(--tr, .15s ease);
-}
-.ehb-guide-btn:hover { background: var(--bad); color: var(--on-bad); border-color: var(--bad); }
-.ehb-guide-btn:active { transform: translateY(1px); }
-.ehb-guide-btn.ic, .ehb-guide-btn--icon { padding: 7px; min-width: 32px; justify-content: center; }
 
 /* ── Tabelle ─────────────────────────────────────────────────────────────── */
 .ehb-table { width: 100%; border-collapse: collapse; font: 450 var(--fs-sm)/1.4 var(--sans); }
@@ -514,11 +411,7 @@
 .ehb-guide__chapter figure { margin: var(--sp-3) 0; }
 .ehb-guide__chapter figcaption { font-size: var(--fs-xs); color: var(--muted); text-align: center; margin-top: 6px; font-style: italic; }
 /* Callout/nota: box evidenziato per suggerimenti e riquadri di collegamento. */
-.ehb-guide__note { border: 1px solid var(--line2); border-left: 3px solid var(--accent); border-radius: var(--radius-sm); background: var(--panel2); padding: var(--sp-3) var(--sp-4); margin: var(--sp-3) 0; }
-.ehb-guide__note > .ehb-guide__note-h { display: block; font: 600 var(--fs-xs)/1 var(--sans); letter-spacing: .04em; text-transform: uppercase; color: var(--accent); margin: 0 0 var(--sp-2); }
-.ehb-guide__note :last-child { margin-bottom: 0; }
 .ehb-guide__lead { font-size: var(--fs-base); color: var(--text); }
-.ehb-guide__bad { color: var(--danger, #c0392b); }
 .ehb-guide__foot .ehb-btn { margin-top: var(--sp-2); }
 .ehb-guide__chapter details { border: 1px solid var(--line2); border-radius: var(--radius); padding: 8px 12px; margin: 0 0 6px; }
 .ehb-guide__chapter summary { cursor: pointer; font: 600 var(--fs-sm)/1.4 var(--sans); list-style: none; }
@@ -533,13 +426,6 @@
 
 .ehb-guide__section-date:empty { display: none; }
 
-@media (prefers-reduced-motion: reduce) {
-  .ehb-flash, .ehb-pop-in, .ehb-view-enter, .ehb-skeleton::after { animation: none; }
-  /* Anello statico (non un ferma-immagine di una rotazione): la sola
-     border-top-color darebbe l'impressione di un cerchio rotto/fermo. */
-  .ehb-spinner { animation: none; border-top-color: color-mix(in srgb, currentColor 25%, transparent); }
-}
-
 /* ── Toast ───────────────────────────────────────────────────────────────── */
 .ehb-toast {
   position: fixed; bottom: var(--sp-5); left: 50%; transform: translateX(-50%);
@@ -552,17 +438,6 @@
   padding: 12px 18px;
   z-index: 9999;
 }
-.ehb-toast--ok { border-color: var(--ok); }
-.ehb-toast--warn { border-color: var(--warn); }
-.ehb-toast--bad { border-color: var(--bad); }
-/* Toast con azione «Annulla» — sostituisce il confirm() bloccante per le azioni
-   distruttive recuperabili (src/shared/ui/components/feedback.ts: undoToast). */
-.ehb-toast--undo { display: flex; align-items: center; gap: 14px; }
-.ehb-toast__undo {
-  flex: none; background: none; border: none; padding: 0;
-  color: var(--accent-h); font: 700 inherit; cursor: pointer; text-decoration: underline;
-}
-.ehb-toast__undo:hover { color: var(--accent); }
 
 /* ── Tour guidato ────────────────────────────────────────────────────────── */
 .ehb-tour-dim {
@@ -605,7 +480,7 @@
   cursor: pointer;
   transition: var(--tr);
 }
-.ehb-dropzone:hover, .ehb-dropzone--over {
+.ehb-dropzone:hover {
   color: var(--accent);
   border-color: var(--accent);
   background: var(--accent-soft);
@@ -616,39 +491,6 @@
 .ehb-scroll::-webkit-scrollbar-thumb { background: var(--line2); border-radius: var(--radius-pill); border: 2px solid transparent; background-clip: padding-box; }
 .ehb-scroll::-webkit-scrollbar-thumb:hover { background: var(--faint); background-clip: padding-box; }
 .ehb-scroll::-webkit-scrollbar-track { background: transparent; }
-
-/* ── CAD stage: toolbar fissa + canvas pannabile/zoomabile ──────────────────
-   Bug ricorrente nei tool con un canvas CAD (SVG/DXF): se la toolbar e il
-   canvas condividono l'unico overflow:auto dell'area principale (#app),
-   un contenuto un po' largo (tanti bottoni) fa scrollare TUTTA l'area,
-   trascinando la toolbar insieme al canvas invece di lasciarla fissa —
-   scoperto e corretto per la prima volta su un canvas CAD (toolbar tagliata
-   fuori dalla UI + "scorre col CAD").
-   `.ehb-cad-stage` contiene tutto (overflow:hidden — niente scroll di
-   ricaduta sull'area principale); `.ehb-cad-toolbar` va a capo (flex-wrap)
-   invece di forzare lo scroll orizzontale quando i bottoni non ci stanno;
-   `.ehb-cad-canvas` è l'area restante, occupa lo spazio libero (flex:1) e
-   fa da confine per pan/zoom interni al tool (overflow:hidden). */
-.ehb-cad-stage { overflow: hidden; min-height: 0; }
-.ehb-cad-toolbar { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.ehb-cad-canvas { flex: 1; min-height: 0; min-width: 0; overflow: hidden; position: relative; }
-
-/* ── Volo: «questa cosa è finita là» ───────────────────────────────────────
-   Compagno di .ehb-flash nel layer di micro-interazioni (feedback.ts::volaVerso).
-   Serve quando un elemento CAMBIA POSTO: il flash dice «è successo qui», il volo
-   dice anche «da dove a dove». Neutralizzato dalla regola ombrello di tokens.css
-   quando le animazioni sono disattivate. */
-.ehb-volo {
-  position: fixed; z-index: 60; pointer-events: none;
-  font-size: var(--fs-xs); padding: 2px 8px; border-radius: var(--radius-pill);
-  background: var(--accent); color: var(--on-accent); white-space: nowrap;
-  box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 55%, transparent);
-}
-.ehb-scia { position: fixed; inset: 0; z-index: 55; pointer-events: none; }
-.ehb-scia path {
-  fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linecap: round;
-  opacity: .55;
-}
 
 /* ── Tabella delle misure (Computo computo + Contabilità libretto) ─────────────────────────
    Un solo aspetto per un solo gesto: misurare. Il markup lo costruisce
@@ -690,9 +532,6 @@
 .ehb-mis-tab thead th:not(.ehb-mis-th--desc) { width: 62px; }
 .ehb-mis-tab thead th:last-child { width: 56px; }
 .ehb-mis-nuova { padding: 3px 9px; font: 600 var(--fs-xs)/1.4 var(--sans); cursor: pointer; }
-/* Segno del punto di rilascio quando si trascina una misura (Computo e Contabilità). */
-tr.ehb-mis-riga.cm-drop-before > td { box-shadow: inset 0 2px 0 var(--accent); }
-tr.ehb-mis-riga.cm-drop-after > td { box-shadow: inset 0 -2px 0 var(--accent); }
 
 /* ── La barra delle voci ──────────────────────────────────────────────────
    Una sola barra per tutte le schermate che sono un computo: computo di
@@ -701,7 +540,6 @@ tr.ehb-mis-riga.cm-drop-after > td { box-shadow: inset 0 -2px 0 var(--accent); }
 .ehb-barra { position: sticky; top: 0; z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
   margin: -4px calc(-1 * var(--sp-5)) 10px; padding: 8px var(--sp-5); border-bottom: 1px solid var(--line); background: var(--panel); }
 .ehb-barra__q { flex: 0 1 240px; font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; }
-.ehb-barra__sp { flex: 1 1 auto; }
 .ehb-barra__g { display: inline-flex; align-items: center; gap: 6px; }
 .ehb-barra__g + .ehb-barra__g { padding-left: 8px; border-left: 1px solid var(--line); }
 /* i comandi della barra sono tanti e la barra è una: pulsanti compatti, perché
@@ -746,8 +584,7 @@ tr.ehb-mis-riga.cm-drop-after > td { box-shadow: inset 0 -2px 0 var(--accent); }
 @container azioni (max-width: 700px) {
   /* il primo del gruppo è «≡ Prezzi» (apre e chiude la colonna dei prezzi): il segno basta */
   .ehb-barra__g--aggiungi > .ehb-btn:first-child .ehb-barra__t { display: none; }
-  /* l'azione principale della schermata (accento: «✓ Consegna…», «＋ Nuova revisione…») tiene sempre il nome */
-}
+  }
 .ehb-seg { display: inline-flex; align-items: center; gap: 4px; padding: 2px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel2); }
 .ehb-seg__lab { font-size: var(--fs-xs); letter-spacing: .08em; color: var(--muted); padding: 0 6px; }
 .ehb-seg__b { font: inherit; font-size: var(--fs-xs); color: var(--muted); background: none; border: 0; border-radius: 999px; padding: 4px 10px; cursor: pointer; }
@@ -808,8 +645,6 @@ tr.ehb-mis-riga.cm-drop-after > td { box-shadow: inset 0 -2px 0 var(--accent); }
 .ehb-gr .ehb-gr-misurata { color: var(--text); }
 .ehb-gr .ehb-gr-muto { color: var(--muted); }
 .ehb-gr .ehb-gr-cod { display: block; }
-.ehb-gr .ehb-gr-cod.is-np { color: var(--warn, var(--accent)); font-weight: 700; }
-.ehb-gr .ehb-gr-cod.is-libera { color: var(--muted); font-family: var(--sans); font-weight: 600; }
 .ehb-gr .ehb-gr-etic { display: inline-block; margin-top: 2px; padding: 0 3px; border: 1px solid currentColor; border-radius: 4px; font-size: 9px; font-weight: 700; color: var(--warn, var(--accent)); }
 .ehb-gr .ehb-gr-des { color: var(--text); line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .ehb-gr .ehb-gr-des.is-vuota { color: var(--muted); font-style: italic; }
@@ -848,7 +683,6 @@ tr.ehb-mis-riga.cm-drop-after > td { box-shadow: inset 0 -2px 0 var(--accent); }
 .ehb-testata__n { font-family: var(--mono); font-size: var(--fs-sm); color: var(--faint, var(--muted)); }
 .ehb-testata__s { font-size: var(--fs-sm); color: var(--muted); }
 .ehb-pastiglia { font-size: var(--fs-xs); padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line2); color: var(--muted); white-space: nowrap; }
-.ehb-pastiglia.is-fase { border-color: transparent; background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); }
 .ehb-pastiglia.is-bozza { border-color: transparent; background: color-mix(in srgb, var(--warn) 22%, transparent); color: var(--warn); }
 
 /* ── Il piede: i valori di controllo, in calce e sempre visibili ─────────── */

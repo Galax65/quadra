@@ -11,7 +11,6 @@
  *    importo in modo che l'importo maturato resti identico (quota × vecchio / nuovo).
  */
 import type { Appalto, Partita, Perizia, VocePerizia } from './types'
-import type { VoceImport } from './import'
 import { renderDocPage, escHtml } from '../../../shared/doc/doc'
 import { eur, num, pct } from '../../../shared/format'
 import { enteDi, footerFieldsDi, headMetaDi, kickerDi, firmeHTML, ilDirettore } from './doc-common'
@@ -194,45 +193,3 @@ export interface EsitoImportPerizia {
   modificate: number
 }
 
-let _seqPz = 0
-const uidPz = (): string => `pz${Date.now().toString(36)}${(_seqPz++).toString(36)}`
-
-/**
- * Confronta il computo di variante (`voci`) con le partite del contratto e costruisce
- * la perizia: stessa voce = stesso codice, stessa categoria e stesso prezzo (a parità
- * di chiave conta l'ordine). Voci a misura: nuova quantità; voci del contratto assenti
- * dalla variante: quantità zero; voci nuove: partite nuove dal SAL della perizia.
- */
-export function periziaDaVoci(partite: Partita[], voci: VoceImport[], numero: number, dalSal: number): EsitoImportPerizia {
-  const chiave = (codice: string | undefined, cat: string | undefined, prezzo: number | null | undefined): string =>
-    `${(codice || '').trim()}|${(cat || '').trim()}|${prezzo ?? ''}`
-  const libere = new Map<string, Partita[]>()
-  for (const p of partite.filter((x) => x.modalita === 'misura' && (x.introdottaSal ?? 1) <= dalSal)) {
-    const k = chiave(p.codice, p.categoria, p.prezzoUnitario)
-    libere.set(k, [...(libere.get(k) || []), p])
-  }
-  const qty = new Map<string, number>()
-  const nuove: Partita[] = []
-  for (const v of voci) {
-    const q = v.misurazioni?.length ? Math.round(v.misurazioni.reduce((s, m) => s + (m.quantita || 0), 0) * 100) / 100 : (v.qty ?? 0)
-    const lista = libere.get(chiave(v.codice, v.categoria, v.prezzo))
-    const p = lista?.shift()
-    if (p) { qty.set(p.id, Math.round(((qty.get(p.id) ?? 0) + q) * 100) / 100); continue }
-    nuove.push({
-      id: uidPz(), modalita: 'misura', codice: (v.codice || '').trim(), descrizione: (v.desc_short || v.declaratoria || v.codice || '').trim(),
-      ...(v.declaratoria ? { declaratoria: v.declaratoria.trim() } : {}),
-      um: v.um, categoria: v.categoria, ...(v.wbs ? { wbs: v.wbs } : {}), prezzoUnitario: v.prezzo == null || v.prezzo <= 0 ? null : v.prezzo,
-      qtyProgetto: q, introdottaSal: dalSal, ...(v.sicurezza ? { sicurezza: true } : {}),
-    })
-  }
-  let soppresse = 0, invariate = 0, modificate = 0
-  const vociPz: Perizia['voci'] = []
-  for (const p of partite.filter((x) => x.modalita === 'misura' && (x.introdottaSal ?? 1) <= dalSal)) {
-    const nq = qty.has(p.id) ? qty.get(p.id)! : 0
-    if (!qty.has(p.id)) soppresse++
-    if (Math.abs(nq - (p.qtyProgetto ?? 0)) < 0.005) { invariate++; continue }
-    if (qty.has(p.id)) modificate++
-    vociPz.push({ partitaId: p.id, qty: nq })
-  }
-  return { perizia: { numero, dalSal, voci: vociPz, approvata: false }, nuove, soppresse, invariate, modificate }
-}

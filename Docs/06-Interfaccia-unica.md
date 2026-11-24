@@ -110,7 +110,7 @@ Ognuna è rilasciabile da sola e non rompe quella prima.
    quelli condivisi (`src/shared/griglia/testata.ts`, `piede.ts`); i pulsanti
    «Stampe» in pagina sono scesi a zero (via «⎙ Stampe» in testata e il menu
    «Esporta ▾», le cui voci sono tutte nel catalogo) e si stampa solo da
-   «⎙ Stampa…» — `tests/shared/stampe-catalogo.test.ts` lo tiene a zero.
+   «⎙ Stampa…».
    L'elenco prezzi del progetto è una **colonna** a destra, come nella
    Contabilità: non si trascina più e non diventa una pillola; si allarga dal
    bordo, si chiude con ✕ e si riapre da «≡ Elenco prezzi» nella barra.
@@ -132,7 +132,7 @@ Ognuna è rilasciabile da sola e non rompe quella prima.
    fase in corso; aprendo un progetto si caricano tutti, così l'albero è intero
    da subito.
 7. ~~**Revisioni memorizzate, non derivate**~~ — **fatto**
-   (`src/tools/computo/engine/revisioni.ts`). Una revisione di computo congela
+   (oggi nel modello di Lavoro, `src/shared/lavoro/`). Una revisione di computo congela
    voci, **misure** ed **elenco prezzi** (ogni articolo con il prezzo di allora
    e la sua provenienza: prezzario, nuovo prezzo, analisi), e resta nel file;
    le revisioni salvate prima ricavano l'elenco dalle loro voci. Si
@@ -143,7 +143,7 @@ Ognuna è rilasciabile da sola e non rompe quella prima.
    **revisione di progetto** (cambiano gli elaborati, non il computo): non
    fotografa niente, poggia sull'ultima revisione di computo e lo dice
    nell'albero («Computo invariato (rev.00)»).
-8. ~~**PFTE ed Esecutivo come fasi vere**~~ — **fatto** (`src/shared/contratto.ts`).
+8. ~~**PFTE ed Esecutivo come fasi vere**~~ — **fatto** (oggi nel modello di Lavoro, `src/shared/lavoro/`).
    Il computo in corso è il computo di una **fase** (PFTE → definitivo →
    esecutivo): si legge in testata e nell'albero («Esecutivo · in corso»), e
    «⇥ Passa all'esecutivo» chiude la fase congelandola in una revisione con

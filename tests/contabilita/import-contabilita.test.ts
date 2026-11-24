@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { parseXpwe, xpweToVoci, valutaFormula } from '../../src/shared/xpwe/xpwe'
 import { importoVoce } from '../../src/shared/stampa/computo-pdf'
 import { importoQta } from '../../src/shared/importo'
-import { calcolaSals, contabilitaDaVoci, proponiSal, type Appalto } from '../../src/tools/contabilita/engine'
 
 // Contabilità XPWE fittizia con i casi reali che il collaudo ha fatto emergere:
 // decimali col punto («0.200», «1.000+0.5»), vedi voce su quantità arrotondata,
@@ -44,60 +43,5 @@ describe('collaudo XPWE di contabilità (dati fittizi)', () => {
     expect(voci[4].sicurezza).toBe(true)
   })
 
-  it('tipo documento e date delle misure', () => {
-    expect(doc.tipoDocumento).toBe(2)
-    expect(voci[0].dataMis).toBe('12/12/2023')
-    expect([...proponiSal(voci.map((v) => v.dataMis || ''))]).toEqual([['12/12/2023', 1], ['23/05/2024', 2], ['06/03/2026', 3]])
-  })
-
-  it('SAL progressivi; la sicurezza non subisce il ribasso', () => {
-    const e = contabilitaDaVoci(voci, [], proponiSal(voci.map((v) => v.dataMis || '')))
-    expect(e.nuove).toBe(5)
-    expect(e.sals.map((s) => s.righe.length)).toEqual([2, 4, 5])
-    const A: Appalto = { oggetto: 'x', ente: { denominazione: 'E' }, impresa: { denominazione: 'I' }, modalita: 'misura', ribassoPct: 10 }
-    const r = calcolaSals(A, e.partite, e.sals)
-    const lavori = 4449.93 + 2841.48 + 413.74 + 215.78
-    expect(r[2].lavoriEseguiti).toBe(Math.round(lavori * 100) / 100)
-    expect(r[2].oneriSicurezzaEseguiti).toBe(2926.12)
-    expect(r[2].ribassoImporto).toBe(Math.round(lavori * 10) / 100)
-  })
 })
 
-describe('nessun accorpamento automatico delle voci ripetute', () => {
-  const voci: any[] = [
-    { codice: 'A.01', desc_short: 'Scavo', um: 'm3', prezzo: 10, dataMis: '13/08/2020', categoria: 'Opere edili · Scavi', misurazioni: [{ descrizione: 'edificio', quantita: 43.86 }] },
-    { codice: 'A.01', desc_short: 'Scavo', um: 'm3', prezzo: 10, dataMis: '03/12/2020', categoria: 'Impianti · Idrico', misurazioni: [{ descrizione: 'tubazioni', quantita: 6.43 }] },
-    { codice: 'B.01', desc_short: 'Lattoneria', um: 'm', prezzo: 5, dataMis: '03/12/2020', categoria: 'Opere edili · Coperture', misurazioni: [{ descrizione: 'copertine', quantita: 32 }] },
-    { codice: 'B.01', desc_short: 'Lattoneria', um: 'm', prezzo: 5, dataMis: '03/12/2020', categoria: 'Opere edili · Coperture', misurazioni: [{ descrizione: 'grondaia', quantita: 7.7 }] },
-  ]
-  const mappa = new Map([['13/08/2020', 1], ['03/12/2020', 2]])
-  const e = contabilitaDaVoci(voci, [], mappa)
-  it('ogni voce del file resta una voce, anche a parità di articolo e categoria', () => {
-    expect(e.partite).toHaveLength(4)
-    expect(e.partite.filter((p) => p.codice === 'A.01')).toHaveLength(2)
-    expect(e.partite.filter((p) => p.codice === 'B.01')).toHaveLength(2)
-    expect(e.partite.map((p) => p.categoria)).toContain('Impianti · Idrico')
-  })
-  it('ogni voce porta la sua misura, con la sua designazione', () => {
-    const ultimo = e.sals[e.sals.length - 1]
-    expect(ultimo.righe).toHaveLength(4)
-    const desc = ultimo.righe.flatMap((r) => (r.misurazioni || []).map((m) => m.descrizione))
-    expect(desc.sort()).toEqual(['copertine', 'edificio', 'grondaia', 'tubazioni'])
-    const tot = ultimo.righe.flatMap((r) => r.misurazioni || []).reduce((s, m) => s + (m.quantita || 0), 0)
-    expect(Math.round(tot * 100) / 100).toBe(89.99)
-  })
-  it('le quantità non si perdono e il primo SAL ha solo le sue misure', () => {
-    expect(e.sals[0].righe).toHaveLength(1)
-    expect(e.sals[0].righe[0].misurazioni?.[0].quantita).toBe(43.86)
-  })
-  it('ogni voce si abbina a una partita di progetto diversa, per categoria', () => {
-    const prog: any[] = [
-      { id: 'p1', modalita: 'misura', codice: 'A.01', descrizione: 'Scavo', um: 'm3', prezzoUnitario: 10, qtyProgetto: 50, categoria: 'Impianti · Idrico' },
-      { id: 'p2', modalita: 'misura', codice: 'A.01', descrizione: 'Scavo', um: 'm3', prezzoUnitario: 10, qtyProgetto: 44, categoria: 'Opere edili · Scavi' },
-    ]
-    const r = contabilitaDaVoci(voci, prog, mappa)
-    expect(r.abbinate).toBe(2)
-    expect(r.nuove).toBe(2)
-    expect(r.partite.filter((p) => p.codice === 'A.01').map((p) => p.id).sort()).toEqual(['p1', 'p2'])
-  })
-})

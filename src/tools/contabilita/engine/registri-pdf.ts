@@ -4,7 +4,7 @@
  * ripetuta. Stesso motore delle stampe del computo (src/shared/stampa/registro-pdf).
  * Le versioni HTML (libretto.ts, registro.ts) restano per l'anteprima a schermo.
  */
-import { creaRegistroPdf, registroHtml, fmtEuro, fmtNum, type RigaTabella, type OpzioniRegistro } from '../../../shared/stampa/registro-pdf'
+import { creaRegistroPdf,  fmtEuro, fmtNum, type RigaTabella, type OpzioniRegistro } from '../../../shared/stampa/registro-pdf'
 import type { Appalto, Partita, Perizia, Sal, RigaSal, ListaEconomia } from './types'
 import { calcolaSals, round2, eseguitoPartita, importoContrattualePartita, voceSoppressaInSal, voceVisibileInSal } from './contabilita'
 import { economiaATuttoSal } from './economia'
@@ -164,30 +164,6 @@ export async function registroInBiancoPdf(lib: unknown, appalto: Appalto, fogli:
     pagineVuoteMinime: n,
     piede: 'Registro di contabilità in bianco — da vidimare',
   }, righe)
-}
-
-/** La pagina che spiega a schermo che cosa produce la stampa in bianco. */
-export function registroInBiancoHtml(appalto: Appalto, fogli: number): string {
-  const n = Math.max(1, Math.min(500, Math.floor(fogli) || 1))
-  return registroHtml({
-    titolo: 'REGISTRO DI CONTABILITÀ — FOGLI DA VIDIMARE',
-    intestazione: [
-      `OGGETTO: ${appalto.oggetto || '—'}`,
-      `IMPRESA: ${appalto.impresa?.denominazione || '—'}`,
-      `Il registro si comporrà di ${n} fogli numerati, da bollare e vidimare PRIMA dell'inizio dei lavori.`,
-      'La stampa in PDF produce i fogli veri: qui si vede solo la dichiarazione di vidimazione.',
-    ],
-    colonne: [
-      { chiave: 'desc', etichetta: 'Dichiarazione', larghezza: 120 },
-      { chiave: 'firma', etichetta: 'Firma', larghezza: 60 },
-    ],
-    colonnaRiporto: 'firma', colonnaEtichetta: 'desc', senzaRiporti: true,
-  }, [
-    { celle: { desc: `Il presente registro di contabilità si compone di ${n} fogli, numerati progressivamente.`, firma: '' } },
-    { celle: { desc: 'Il Direttore dei Lavori', firma: '________________________' } },
-    { celle: { desc: "L'esecutore", firma: '________________________' } },
-    { celle: { desc: 'Data', firma: '________________________' } },
-  ])
 }
 
 /** REGISTRO DI CONTABILITÀ a tutto il SAL n, in PDF, con il riepilogo del credito. */
@@ -595,27 +571,15 @@ export async function confrontoProgettoEseguitoPdf(lib: unknown, appalto: Appalt
   const { bytes, pagine } = await creaRegistroPdf(lib, d.opz, d.righe)
   return { bytes, pagine, contratto: d.contratto, eseguito: d.eseguito }
 }
-export function confrontoProgettoEseguitoHtml(appalto: Appalto, partite: Partita[], sals: Sal[], salNumero: number, liste?: ListaEconomia[]): string {
-  const d = confrontoProgettoEseguitoDoc(appalto, partite, sals, salNumero, liste)
-  return registroHtml(d.opz, d.righe)
-}
 
 export async function statoFinalePdf(lib: unknown, appalto: Appalto, partite: Partita[], sals: Sal[], liste?: ListaEconomia[]): Promise<{ bytes: Uint8Array; pagine: number } & { residuo: number }> {
   const d = statoFinaleDoc(appalto, partite, sals, liste)
   const { bytes, pagine } = await creaRegistroPdf(lib, d.opz, d.righe)
   return { bytes, pagine, residuo: d.residuo }
 }
-export function statoFinaleHtml(appalto: Appalto, partite: Partita[], sals: Sal[], liste?: ListaEconomia[]): string {
-  const d = statoFinaleDoc(appalto, partite, sals, liste)
-  return registroHtml(d.opz, d.righe)
-}
 
 export async function situazioneContabilePdf(lib: unknown, appalto: Appalto, partite: Partita[], sals: Sal[], liste?: ListaEconomia[]): Promise<{ bytes: Uint8Array; pagine: number } & {}> {
   const d = situazioneContabileDoc(appalto, partite, sals, liste)
   const { bytes, pagine } = await creaRegistroPdf(lib, d.opz, d.righe)
   return { bytes, pagine }
-}
-export function situazioneContabileHtml(appalto: Appalto, partite: Partita[], sals: Sal[], liste?: ListaEconomia[]): string {
-  const d = situazioneContabileDoc(appalto, partite, sals, liste)
-  return registroHtml(d.opz, d.righe)
 }

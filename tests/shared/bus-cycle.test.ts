@@ -38,14 +38,8 @@ describe('parseHubMessage — messaggi del Progetto Quadra', () => {
     expect(parseHubMessage({ type: 'hub:collect' })).toBeNull()
   })
 
-  it('accetta hub:shared-plan con plan valido (cavidotti/circuiti liste)', () => {
-    const m = parseHubMessage({ type: 'hub:shared-plan', plan: { dxf: null, cavidotti: [], circuiti: [] }, replay: true })
-    expect(m?.type).toBe('hub:shared-plan')
-  })
-
-  it('rifiuta hub:shared-plan senza plan o con liste mancanti', () => {
-    expect(parseHubMessage({ type: 'hub:shared-plan' })).toBeNull()
-    expect(parseHubMessage({ type: 'hub:shared-plan', plan: { cavidotti: [] } })).toBeNull()
+  it('la planimetria condivisa (eredità dei tool di disegno) non è più nel contratto', () => {
+    expect(parseHubMessage({ type: 'hub:shared-plan', plan: { dxf: null, cavidotti: [], circuiti: [] }, replay: true })).toBeNull()
   })
 })
 

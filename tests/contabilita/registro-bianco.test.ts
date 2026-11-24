@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import * as lib from 'pdf-lib'
-import { registroInBiancoPdf, registroInBiancoHtml } from '../../src/tools/contabilita/engine'
+import { registroInBiancoPdf } from '../../src/tools/contabilita/engine'
 import type { Appalto } from '../../src/tools/contabilita/engine'
 
 /**
@@ -28,12 +28,5 @@ describe('registro in bianco da vidimare', () => {
     const r = await registroInBiancoPdf(lib, A, 3)
     expect(r.bytes.length).toBeGreaterThan(1000)
     expect(new TextDecoder().decode(r.bytes.slice(0, 5))).toBe('%PDF-')
-  })
-  it('a schermo mostra la dichiarazione di vidimazione e quanti fogli saranno', () => {
-    const html = registroInBiancoHtml(A, 12)
-    expect(html).toContain('12 fogli')
-    expect(html).toContain('vidimare')
-    expect(html).toContain("PRIMA dell'inizio dei lavori")
-    expect(html).toContain('Il Direttore dei Lavori')
   })
 })

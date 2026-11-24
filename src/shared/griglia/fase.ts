@@ -66,23 +66,11 @@ export type StrutturaFase = Pick<DescrittoreFase<never>, 'fase' | 'colonne' | 's
 
 export type VistaVoci = 'tabella' | 'elenco' | 'capitoli'
 
-export const OPZ_VISTA: OpzioneOrdine[] = [
-  { valore: 'tabella', etichetta: 'Tabella', titolo: 'Le voci come righe modificabili, con le misure' },
-  { valore: 'elenco', etichetta: 'Elenco', titolo: "Una riga per voce, sola lettura: più voci a colpo d'occhio" },
-  { valore: 'capitoli', etichetta: 'Capitoli', titolo: 'Raggruppate per categoria, con il totale di ogni capitolo' },
-]
-
 export const OPZ_ORDINE: OpzioneOrdine[] = [
   { valore: 'manuale', etichetta: 'Manuale', titolo: "Nell'ordine in cui le voci sono state iscritte" },
   { valore: 'categorie', etichetta: 'Categorie', titolo: 'Raggruppate per categoria (stesso ordine a schermo e in stampa)' },
   { valore: 'wbs', etichetta: 'WBS', titolo: 'Per codice WBS (le voci senza WBS in coda)' },
 ]
-
-/** Ricerca testuale sulle voci: la stessa regola in ogni fase. */
-export function filtraVoci<T>(voci: T[], q: string, testo: (v: T) => string): T[] {
-  const s = q.trim().toLowerCase()
-  return s ? voci.filter((v) => testo(v).toLowerCase().includes(s)) : voci
-}
 
 /* ── Le fasi ────────────────────────────────────────────────────────────── */
 

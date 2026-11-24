@@ -7,7 +7,7 @@ elettrici)? Bastano pochi passi. La parte bella: **non devi toccare Electron**.
 
 Oggi i tool **non** sono HTML scritti a mano: si **sviluppano in `src/`** (TypeScript + CSS +
 markup) e un **build** (Vite) genera l'HTML self-contained a nome **stabile** in root
-(`Amministrazione.html`, `Computo.html`, …). Un nuovo tool è quindi:
+(`Amministrazione.html`, `Lavoro.html`, …). Un nuovo tool è quindi:
 1. una **cartella sorgente** `src/tools/<tool>/` con il suo `index.html` + `main` + stili;
 2. il tool aggiunto alle liste di build (vedi la **checklist** in fondo: sono cinque);
 3. una **voce** nel registry del hub (`src/hub/data/registry.ts`), che punta al file HTML buildato
@@ -18,7 +18,7 @@ ma in [versions.js](../versions.js) (fonte unica, vedi doc 03 §4).
 
 ## Passo 1 — Crea il sorgente del tool
 
-Crea `src/tools/<tool>/` sul modello di uno esistente (es. `src/tools/computo/`):
+Crea `src/tools/<tool>/` sul modello di uno esistente (es. `src/tools/lavoro/`):
 
 ```
 src/tools/quadri/
@@ -81,10 +81,10 @@ e aggiungi una voce:
 | `name` | ✅ | Titolo sulla card. |
 | `tagline` | ✅ | Sottotitolo descrittivo. |
 | `file` | ✅ | **Nome file stabile** prodotto dal build. Il hub verifica che sia presente in cartella. |
-| `logoType` | ✅ | Stile dell'icona: `miu`→squadra (Computo), `beta`→registro (Contabilità), `alfa`→cursori (Amministrazione), qualsiasi altro→◇ |
+| `logoType` | ✅ | Stile dell'icona (chiave di `LOGO_MAP` in `src/hub/ui/shell.js`): `lavoro`→squadra, `amministrazione`→cursori, qualsiasi altro→◇ |
 | `tags` | consigliato | Parole chiave per la barra di ricerca. |
 | `status` | consigliato | `stable` o `beta` (badge sulla card). |
-| `note` | opzionale | Nota extra, es. `{ icon:"miu", text:"Integra con Computo", beta:true }` |
+| `note` | opzionale | Nota extra, es. `{ icon:"lavoro", text:"Integra con Lavoro", beta:true }` |
 
 ### Nuova icona personalizzata?
 `logoType` gestisce solo gli stili già previsti. Per aggiungerne uno nuovo, modifica la

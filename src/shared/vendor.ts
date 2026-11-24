@@ -40,7 +40,6 @@ function giaPresente(globale: string): boolean {
 }
 export const loadXLSX = (inject?: Injector): Promise<void> => giaPresente('XLSX') ? Promise.resolve() : loadScript('vendor/xlsx.full.min.js', inject)
 export const loadJSZip = (inject?: Injector): Promise<void> => giaPresente('JSZip') ? Promise.resolve() : loadScript('vendor/jszip.min.js', inject)
-export const loadPDF = (inject?: Injector): Promise<void> => loadScript('vendor/pdf.min.js', inject)
 /**
  * pdf-lib, e con lui fontkit: senza fontkit i caratteri non si incorporano e
  * i PDF non possono essere PDF/A (stampa/pdfa.ts). Se fontkit non si carica, si
@@ -51,4 +50,3 @@ export const loadPdfLib = async (inject?: Injector): Promise<void> => {
   await loadScript('vendor/pdf-lib.min.js', inject)
   await loadScript('vendor/fontkit.min.js', inject).catch(() => undefined)
 }
-export const loadFontkit = (inject?: Injector): Promise<void> => loadScript('vendor/fontkit.min.js', inject)

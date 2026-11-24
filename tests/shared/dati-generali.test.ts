@@ -1,9 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest'
-import {
-  CAMPI_DATI_GENERALI, completaDatiGenerali, datiGeneraliCompilati, datiGeneraliVuoti, formDatiGenerali,
-  intestazioneStampa, normalizzaDatiGenerali,
-} from '../../src/shared/dati-generali'
+import { CAMPI_DATI_GENERALI, datiGeneraliVuoti, formDatiGenerali, intestazioneStampa, normalizzaDatiGenerali } from '../../src/shared/dati-generali'
 
 describe('dati generali del progetto', () => {
   it('normalizza: tutti i campi presenti, stringhe ripulite, il resto ignorato', () => {
@@ -13,14 +10,6 @@ describe('dati generali del progetto', () => {
     expect(dg.cup).toBe('123')
     expect(dg.rup).toBe('')
     expect(normalizzaDatiGenerali(undefined)).toEqual(datiGeneraliVuoti())
-  })
-
-  it('completa solo i campi vuoti (un import non sovrascrive ciò che è già scritto)', () => {
-    const base = { ...datiGeneraliVuoti(), oggetto: 'Mio oggetto' }
-    const dg = completaDatiGenerali(base, { oggetto: 'Altro', committente: 'Comune di Esempio', comune: '' })
-    expect(dg.oggetto).toBe('Mio oggetto')
-    expect(dg.committente).toBe('Comune di Esempio')
-    expect(datiGeneraliCompilati(dg)).toBe(2)
   })
 
   it('intestazione di stampa: solo i campi compilati, data di ripiego', () => {

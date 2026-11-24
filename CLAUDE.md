@@ -14,14 +14,15 @@ autonomi generati dal build; si lavora nei sorgenti sotto `src/`.
 
 ```
 src/
-├── hub/        ← il lanciatore ε (registry, ricerca, resolve dei file)
+├── hub/        ← il lanciatore (registry, ricerca, resolve dei file)
 │   └── data/registry.ts   ← APP_REGISTRY: fonte unica dell'elenco dei tool
-├── shared/     ← layer condiviso: bus.ts, ehub-project.ts, theme.ts, ui/ (design system)
+├── shared/     ← layer condiviso: bus.ts, progetto-quadra.ts, theme.ts, lavoro/ (modello), ui/ (design system)
+│   └── xpwe/   ← lettura/scrittura XPWE (formato di interscambio), usata da Lavoro
 └── tools/
-    ├── alfa/   (α — pannello admin/statistiche dell'hub)
-    ├── miu/    (μ — prezzari e computo metrico)
-    └── beta/   (β — contabilità lavori pubblici; import XPWE)
-src/shared/xpwe/ ← lettura/scrittura XPWE (formato di interscambio), usata da Lavoro
+    ├── lavoro/          (lo strumento unico: computo, contratto, SAL, perizia)
+    ├── amministrazione/ (pannello admin/statistiche dell'hub)
+    ├── computo/engine/      (motore puro: parser prezzari, ricerca, export — solo motore, niente UI)
+    └── contabilita/engine/  (motore puro della contabilità lavori pubblici — solo motore, niente UI)
 scripts/        ← build, release, pipeline dati (prezzari), CLI ehub
 tests/          ← Vitest, un'area per tool + hub/shared/integration/docs/web
 ```
@@ -45,8 +46,8 @@ npm run lint:css        # stylelint sul contratto UI (vedi §6)
 npm run sync:docs       # riallinea i blocchi AUTO nei doc dal registry/bus/package.json
 ```
 
-Ogni tool ha anche una build dedicata (`npm run build:computo`, `build:amministrazione`,
-`build:contabilita`, `build:hub`): utile per iterare veloce su un solo tool senza
+Ogni tool ha anche una build dedicata (`npm run build:lavoro`, `build:amministrazione`,
+`build:hub`): utile per iterare veloce su un solo tool senza
 ricompilare tutta la suite.
 
 ## 2. "Porta il tuo prezzario" (Computo)
@@ -120,10 +121,10 @@ In sintesi (checklist di quel doc, quattro-cinque liste che devono restare allin
 - **Bus hub↔tool**: contratto tipizzato in [src/shared/bus.ts](src/shared/bus.ts)
   (`postMessage`, messaggi `hub:*` / `app:*`). Non inventare messaggi fuori contratto;
   guardato da [tests/hub/bus-contract.test.ts](tests/hub/bus-contract.test.ts).
-- **Progetto `.ehub`**: round-trip collect/restore dello stato di tutti i tool in un
-  unico file (`src/shared/ehub-project.ts`). Coperto da
+- **Progetto `.quadra`** (si aprono anche i vecchi `.ehub`): round-trip collect/restore dello stato di tutti i tool in un
+  unico file (`src/shared/progetto-quadra.ts`). Coperto da
   [tests/shared/ehub-project.test.ts](tests/shared/ehub-project.test.ts) e
-  [tests/integration/progetto-roundtrip.test.ts](tests/integration/progetto-roundtrip.test.ts) —
+  [tests/shared/bus-cycle.test.ts](tests/shared/bus-cycle.test.ts) —
   ogni tool che salva stato deve restare compatibile col round-trip.
 - **Contratto UI (pulsanti/identità)**: i pulsanti sono **solo** `.ehb-btn*` /
   `.ehb-icon-btn` (niente `.p-btn`/`.btn` di tool); il colore viene sempre dai token

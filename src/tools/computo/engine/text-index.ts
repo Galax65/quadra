@@ -38,81 +38,10 @@ function keyAt(s: string, p: number): number {
   return (s.charCodeAt(p) & 255) | ((s.charCodeAt(p + 1) & 255) << 8) | ((s.charCodeAt(p + 2) & 255) << 16)
 }
 
-interface Building {
-  rows: object[]
-  textOf: (r: never) => string
-  counts: Map<number, number>
-  lastSeen: Map<number, number>
-  texts: string[]
-  next: number
-}
-
-function countRow(b: Building, i: number): void {
-  const s = b.texts[i] = (b.textOf as (r: object) => string)(b.rows[i]!)
-  for (let p = 0; p + 3 <= s.length; p++) {
-    const key = keyAt(s, p)
-    if (b.lastSeen.get(key) !== i) {
-      b.lastSeen.set(key, i)
-      b.counts.set(key, (b.counts.get(key) ?? 0) + 1)
-    }
-  }
-}
-
-function finalize(b: Building): TextIndex {
-  const postings = new Map<number, Uint32Array>()
-  const fill = new Map<number, number>()
-  for (const [g, c] of b.counts) { postings.set(g, new Uint32Array(c)); fill.set(g, 0) }
-  for (let i = 0; i < b.rows.length; i++) {
-    const s = b.texts[i]!
-    for (let p = 0; p + 3 <= s.length; p++) {
-      const key = keyAt(s, p)
-      const arr = postings.get(key)!
-      const k = fill.get(key)!
-      if (k > 0 && arr[k - 1]! === i) continue // dedupe: righe processate in ordine
-      arr[k] = i
-      fill.set(key, k + 1)
-    }
-  }
-  const idx: TextIndex = { postings }
-  IDX_CACHE.set(b.rows, idx)
-  return idx
-}
-
-function newBuilding<T extends object>(rows: T[], textOf: (r: T) => string): Building {
-  return { rows, textOf: textOf as Building['textOf'], counts: new Map(), lastSeen: new Map(), texts: new Array(rows.length), next: 0 }
-}
-
 /** Indice già costruito per questo array di righe (null se assente/disabilitato). */
 export function textIndexFor<T extends object>(rows: T[]): TextIndex | null {
   if (!ENABLED) return null
   return IDX_CACHE.get(rows) ?? null
-}
-
-/** Build SINCRONA (test, CLI, dataset piccoli): blocca finché l'indice è pronto. */
-export function buildTextIndex<T extends object>(rows: T[], textOf: (r: T) => string): TextIndex {
-  const cached = IDX_CACHE.get(rows)
-  if (cached) return cached
-  const b = newBuilding(rows, textOf)
-  for (let i = 0; i < rows.length; i++) countRow(b, i)
-  return finalize(b)
-}
-
-/**
- * Build ASINCRONA a chunk per la UI: lavora ~CHUNK righe per volta e cede il
- * thread, così la digitazione resta fluida durante l'indicizzazione. Se
- * l'array viene sostituito nel frattempo, l'indice orfano si perde da solo
- * (WeakMap). Ritorna l'indice (o quello già in cache).
- */
-export async function buildTextIndexAsync<T extends object>(rows: T[], textOf: (r: T) => string, chunk = 2000): Promise<TextIndex> {
-  const cached = IDX_CACHE.get(rows)
-  if (cached) return cached
-  const b = newBuilding(rows, textOf)
-  while (b.next < rows.length) {
-    const end = Math.min(b.next + chunk, rows.length)
-    for (; b.next < end; b.next++) countRow(b, b.next)
-    await new Promise(res => setTimeout(res, 0))
-  }
-  return finalize(b)
 }
 
 const EMPTY = new Uint32Array(0)

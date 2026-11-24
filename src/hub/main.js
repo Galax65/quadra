@@ -16,8 +16,6 @@ import { initAnalytics } from '../shared/analytics'
 import { UNSIGNED_NOTICE } from '../shared/edition'
 import { bindGuideShortcut } from '../shared/ui/components/index'
 import { registerGuide } from '../shared/ui/guide'
-import { BETA_GUIDE } from '../tools/contabilita/data/guida'
-import { MIU_GUIDE } from '../tools/computo/data/guida'
 import { HUB_GUIDE } from './data/guida'
 import { applyDensity, applyFont, applyMotion, applyShadow, applyTextSize, nudgeUiScale, setDensity, setFont, setMotion, setShadow, setTextSize, setUiScale, setUiScalePct } from './ui/aspetto.js'
 import { ascoltaAzienda, enabledApps, initAuth } from './ui/auth.js'
@@ -31,10 +29,8 @@ import { hubToast, toggleSidebar } from './ui/shell.js'
 import { applyContextTheme, closeFontMenu, closePaletteMenu, closeSettings, setContextTool, setPalette, setTheme, toggleSettings, toggleTheme } from './ui/tema.js'
 initAnalytics()
 
-/* Manuale unico: l'hub aggrega la propria sezione + quelle di TUTTI i tool,
-   così la home mostra la guida completa organizzata per tool (indice a capitoli). */
+/* Manuale unico: la home mostra la guida dell'hub (indice a capitoli). */
 registerGuide({ ...HUB_GUIDE, onTour: () => startHubTour() });
-[MIU_GUIDE, BETA_GUIDE].forEach((g) => registerGuide(g));
 bindGuideShortcut('hub');
 
 document.addEventListener('DOMContentLoaded', () => {

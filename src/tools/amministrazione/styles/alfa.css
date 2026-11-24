@@ -61,7 +61,6 @@ body { margin: 0; font-family: var(--sans); background: var(--bg); color: var(--
 .adm-user__rename input { flex: 1 1 0; min-width: 0; font-family: var(--sans); font-size: var(--fs-base); background: var(--panel); border: 1px solid var(--line2); border-radius: var(--r2, 8px); padding: 4px 8px; color: var(--text); }
 
 .adm-ph { font-family: var(--mono); font-size: var(--fs-sm); color: var(--faint); background: var(--panel2); border: 1px dashed var(--line2); border-radius: var(--r2, 8px); padding: 9px 12px; }
-.adm-ph--warn { font-family: var(--sans); color: var(--warn); background: var(--warn-soft); border-style: solid; border-color: var(--warn); }
 .adm-backup { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .adm-co { display: flex; align-items: center; gap: 12px; background: var(--panel2); border: 1px solid var(--line); border-radius: var(--r2, 8px); padding: 10px 12px; max-width: 480px; }
 .adm-co__name { font-family: var(--sans); font-size: var(--fs-md); font-weight: 600; color: var(--text); }

@@ -4,7 +4,6 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Tour } from '../../src/shared/ui/components/tour'
 import { HUB_TOUR } from '../../src/hub/data/tour'
-import { MIU_TOUR } from '../../src/tools/computo/data/tour'
 
 /**
  * GUARDIA DEL TOUR GUIDATO: ogni step punta a un elemento che esiste DAVVERO.
@@ -22,7 +21,6 @@ const ROOT = resolve(HERE, '../..')
 
 const TOURS: Array<{ tour: Tour; html: string }> = [
   { tour: HUB_TOUR, html: 'src/hub/index.html' },
-  { tour: MIU_TOUR, html: 'src/tools/computo/index.html' },
 ]
 
 /** Il bersaglio è dichiarato nell'HTML? (`#id` → `id="…"`, `.classe` → `class="… …"`) */

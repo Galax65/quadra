@@ -95,12 +95,6 @@ export function analisiPrezziAOA(a: AnalisiPrezzi): AoaRow[] {
   return rows
 }
 
-/** Nome file suggerito per l'export, es. "AP01-analisi-prezzi.xlsx". */
-export function analisiPrezziFileName(a: AnalisiPrezzi): string {
-  const slug = (a.codice || 'analisi').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase()
-  return `${slug || 'analisi'}-analisi-prezzi.xlsx`
-}
-
 // ────────────────────────────────────────────────────────────────────────────
 // FASCICOLO multi-analisi (mockup export-toolbar-miu, variante A): un unico
 // .xlsx con il foglio «Indice» + un foglio per ogni Analisi Prezzi del
@@ -154,11 +148,3 @@ export function aoaColWidths(aoa: AoaRow[]): number[] {
   return w.map((n) => Math.max(10, Math.min(64, n + 2)))
 }
 
-/** Celle unite: ogni riga a cella singola non vuota si estende su tutta la tabella. */
-export function aoaMerges(aoa: AoaRow[], width = 6): { s: { r: number; c: number }; e: { r: number; c: number } }[] {
-  const out: { s: { r: number; c: number }; e: { r: number; c: number } }[] = []
-  aoa.forEach((row, r) => {
-    if (row.length === 1 && String(row[0] ?? '').trim() !== '') out.push({ s: { r, c: 0 }, e: { r, c: width - 1 } })
-  })
-  return out
-}

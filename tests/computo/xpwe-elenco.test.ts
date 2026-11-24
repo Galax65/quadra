@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { parseXpwe } from '../../src/shared/xpwe/xpwe'
-import { isElencoXpwe, edizioneDaNome, righeDaElencoXpwe } from '../../src/tools/computo/engine/parsers/xpwe-elenco'
+import { edizioneDaNome, righeDaElencoXpwe } from '../../src/tools/computo/engine/parsers/xpwe-elenco'
 
 // XPWE sintetico «solo elenco prezzi» (TipoDocumento 0), come quello esportato da un listino
 const XML = `<?xml version="1.0" encoding="UTF-8"?>
@@ -16,10 +16,6 @@ const XML = `<?xml version="1.0" encoding="UTF-8"?>
 
 describe('XPWE elenco prezzi (TipoDocumento 0) come prezzario', () => {
   const doc = parseXpwe(XML)
-  it('riconosce l\'elenco prezzi e il tipo documento 0', () => {
-    expect(doc.tipoDocumento).toBe(0)
-    expect(isElencoXpwe(doc)).toBe(true)
-  })
   it('edizione dal nome del file d\'origine', () => {
     expect(edizioneDaNome(doc.fileNameDocumento!)).toEqual({ regione: 'Listino editoriale', anno: '2024' })
   })

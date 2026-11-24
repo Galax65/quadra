@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import * as lib from 'pdf-lib'
 import { creaRegistroPdf, fmtNum, spezzaTesto, testoStampabile, type RigaTabella } from '../../src/shared/stampa/registro-pdf'
-import { computoPdf, righeComputo, riepilogoCategorie, riepilogoWbs, importoVoce } from '../../src/shared/stampa/computo-pdf'
+import { computoPdf, righeComputo, riepilogoWbs } from '../../src/shared/stampa/computo-pdf'
 import type { VoceComputo } from '../../src/shared/xpwe/xpwe'
 
 const COLONNE = [
@@ -81,11 +81,6 @@ const VOCI: VoceComputo[] = [
 ]
 
 describe('computo metrico estimativo', () => {
-  it('importi: quantità dalle misure (detrazioni comprese) × prezzo', () => {
-    expect(importoVoce(VOCI[0])).toBe(140)
-    expect(importoVoce(VOCI[1])).toBe(102)
-    expect(riepilogoCategorie(VOCI)).toEqual([{ categoria: 'OPERE STRADALI', importo: 242 }, { categoria: 'OPERE A VERDE', importo: 200 }])
-  })
 
   it('righe: titoli di categoria, voce con estesa, misure, SOMMANO con importo', () => {
     const r = righeComputo(VOCI)

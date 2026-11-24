@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { analisiPrezziHTML, fascicoloAnalisiHTML } from '../../src/tools/computo/engine'
-import type { AnalisiPrezzi } from '../../src/tools/computo/engine'
+import { analisiPrezziHTML, fascicoloAnalisiHTML } from '../../src/tools/computo/engine/analisi-prezzi-report'
+import type { AnalisiPrezzi } from '../../src/shared/compositore/analisi-prezzi'
 
 const NOW = new Date('2026-07-08T09:30:00')
 

@@ -1,10 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import {
-  FRASARIO, frasarioFor, componiDescrizione, verificaCoerenza, normUm, suggerisciFamiglia,
-  type FrasarioFamiglia,
-} from '../../src/shared/compositore/componi'
+import { FRASARIO, frasarioFor, componiDescrizione, type FrasarioFamiglia } from '../../src/shared/compositore/componi'
 import { FAMIGLIE, type Famiglia } from '../../src/shared/compositore/thesaurus'
 
 /**
@@ -187,64 +184,3 @@ describe('componiDescrizione', () => {
   })
 })
 
-describe('verificaCoerenza', () => {
-  const input = { famigliaId: '__test-componente__', misura: '⌀ 32 mm', materiale: 'PVC' }
-
-  it('nessuna voce agganciata ⇒ ok, nessun avviso', () => {
-    expect(verificaCoerenza(input)).toEqual({ ok: true, avvisi: [] })
-    expect(verificaCoerenza(input, null)).toEqual({ ok: true, avvisi: [] })
-  })
-
-  it('U.M. compatibile e misura coerente ⇒ ok', () => {
-    const esito = verificaCoerenza({ ...input, misura: '⌀ 20 mm' },
-      { codice: 'X.01', um: 'm', desc: 'Componente di prova in PVC ⌀ 20 mm, posato a vista' })
-    expect(esito.ok).toBe(true)
-    expect(esito.avvisi).toEqual([])
-  })
-
-  it('U.M. estranea alla famiglia ⇒ avviso motivato (mai bloccante)', () => {
-    const esito = verificaCoerenza(input, { um: 'kg', desc: '' })
-    expect(esito.ok).toBe(false)
-    expect(esito.avvisi.join(' ')).toMatch(/U\.M\..*kg.*componente di prova/i)
-  })
-
-  it('U.M. equivalenti normalizzate: ml=m, cadauno=cad, mq=m²', () => {
-    expect(normUm('ml')).toBe('m')
-    expect(normUm('Cadauno')).toBe('cad')
-    expect(normUm('mq')).toBe('m²')
-    expect(verificaCoerenza(input, { um: 'ml' }).ok).toBe(true)
-    expect(verificaCoerenza({ famigliaId: '__test-componente__' }, { um: 'Cadauno' }).ok).toBe(true)
-  })
-
-  it('misura in contraddizione: ⌀ 20 nella voce vs ⌀ 32 composto ⇒ avviso', () => {
-    const esito = verificaCoerenza(input,
-      { um: 'm', desc: 'Componente di prova in PVC, ⌀ 20 mm, posato a vista' })
-    expect(esito.ok).toBe(false)
-    expect(esito.avvisi.join(' ')).toContain('20')
-    expect(esito.avvisi.join(' ')).toContain('32')
-  })
-
-  it('dimensioni n×m in contraddizione ⇒ avviso; coincidenti ⇒ ok', () => {
-    const pass = { famigliaId: '__test-componente__', misura: '200×60 mm' }
-    const ko = verificaCoerenza(pass, { um: 'm', desc: 'Componente asolato 300×60 mm' })
-    expect(ko.ok).toBe(false)
-    expect(ko.avvisi.join(' ')).toContain('300x60')
-    const okE = verificaCoerenza(pass, { um: 'm', desc: 'Componente asolato 200×60 mm' })
-    expect(okE.ok).toBe(true)
-  })
-
-  it('voce senza misure nella descrizione ⇒ nessun falso allarme', () => {
-    const esito = verificaCoerenza(input, { um: 'm', desc: 'Componente di prova in PVC' })
-    expect(esito.ok).toBe(true)
-  })
-})
-
-describe('suggerisciFamiglia (pre-aggancio dal dettaglio)', () => {
-  it('propone la famiglia dai sinonimi del thesaurus nella descrizione voce', () => {
-    expect(suggerisciFamiglia('Fornitura di componente di prova varie misure')).toBe('__test-componente__')
-  })
-  it('descrizione fuori thesaurus ⇒ null', () => {
-    expect(suggerisciFamiglia('Sedia impilabile in legno di faggio')).toBeNull()
-    expect(suggerisciFamiglia('')).toBeNull()
-  })
-})

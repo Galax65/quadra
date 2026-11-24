@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alberoCategorie, appiattisci, rinominaCategoria, eliminaCategoria, spostaGruppo, alberoWbs, ricodificaWbs, eliminaWbs, prossimoCodiceWbs, modelloDaProgetto, applicaModello, normalizzaModelli } from '../../src/shared/struttura-computo'
-import { ordinaVoci } from '../../src/shared/ordine-computo'
+import { alberoCategorie, appiattisci, rinominaCategoria, eliminaCategoria, alberoWbs, ricodificaWbs, eliminaWbs, prossimoCodiceWbs, modelloDaProgetto, applicaModello, normalizzaModelli } from '../../src/shared/struttura-computo'
 
 const base = () => ({
   categoria: { a: 'Strade · Scavi', b: 'Strade · Pavimentazioni', c: 'Legno · Parapetti', d: 'Strade · Scavi · A mano' } as Record<string, string | undefined>,
@@ -26,15 +25,6 @@ describe('albero delle categorie', () => {
     expect(categoria.a).toBe('Strade'); expect(categoria.d).toBe('Strade')
     expect(eliminaCategoria(categoria, dich, ['Legno'])).toBe(1)
     expect(categoria.c).toBeUndefined()
-  })
-  it('sposta un gruppo fra i fratelli', () => {
-    const { categoria, ordine } = base()
-    const tutte = Object.keys(categoria)
-    const nuovo = spostaGruppo(categoria, ordine, tutte, ['Legno'], -1)
-    expect(ordinaVoci(tutte, 'categorie', { ordine: nuovo, categoria })[0]).toBe('c')
-    const n2 = spostaGruppo(categoria, ordine, tutte, ['Strade', 'Pavimentazioni'], -1)
-    const ord = ordinaVoci(tutte, 'categorie', { ordine: n2, categoria })
-    expect(ord.indexOf('b')).toBeLessThan(ord.indexOf('a'))
   })
 })
 

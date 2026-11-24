@@ -35,9 +35,6 @@ export function ordineIscrizione(partite: Partita[]): Map<string, number> {
   return ord
 }
 
-/** Numero d'ordine di una partita (1 se sconosciuta: non si inventa un buco). */
-export const nOrdine = (ord: Map<string, number>, pid: string): number => ord.get(pid) ?? 0
-
 /**
  * Richiamo al libretto da scrivere nel registro: «LM 2 · n. 17» — numero del
  * libretto (= il SAL che l'ha prodotto) e numero d'ordine della partita.
@@ -46,12 +43,6 @@ export const nOrdine = (ord: Map<string, number>, pid: string): number => ord.ge
  */
 export function rifLibretto(salN: number, ordine: number, pagina?: number | null): string {
   const base = `LM ${salN}${ordine ? ` · n. ${ordine}` : ''}`
-  return pagina ? `${base} · pag. ${pagina}` : base
-}
-
-/** Richiamo al registro da scrivere nel sommario: «SAL 2 · RC n. 17». */
-export function rifRegistro(salN: number, ordine: number, pagina?: number | null): string {
-  const base = `SAL ${salN}${ordine ? ` · RC n. ${ordine}` : ''}`
   return pagina ? `${base} · pag. ${pagina}` : base
 }
 

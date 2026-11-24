@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { ordineIscrizione, rifLibretto, rifRegistro, paginaIniziale, pagineEmesse, atoContinua, notaSeguito } from '../../src/tools/contabilita/engine/atti-rif'
+import { ordineIscrizione, rifLibretto, paginaIniziale, pagineEmesse, atoContinua, notaSeguito } from '../../src/tools/contabilita/engine/atti-rif'
 import { librettoHTML, registroHTML, sommarioHTML } from '../../src/tools/contabilita/engine'
 import { rifRC } from '../../src/tools/contabilita/engine/sommario'
 import type { Appalto, Partita, Sal, Consegna } from '../../src/tools/contabilita/engine/types'
@@ -53,9 +53,6 @@ describe('richiami fra gli atti', () => {
   it('il registro dice da quale libretto e da quale numero viene la partita', () => {
     expect(rifLibretto(2, 7)).toBe('LM 2 · n. 7')
     expect(rifLibretto(2, 7, 4)).toBe('LM 2 · n. 7 · pag. 4')
-  })
-  it('il sommario dice il SAL e il numero d\'ordine nel registro', () => {
-    expect(rifRegistro(3, 12)).toBe('SAL 3 · RC n. 12')
   })
   it('il libretto stampa la colonna del numero d\'ordine', () => {
     const html = librettoHTML(appalto(), partite(), sals()[0])

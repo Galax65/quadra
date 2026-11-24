@@ -16,7 +16,7 @@
  * Una voce per ogni <prezzo> (un paragrafo può avere più varianti di prezzo); la
  * sintetica/estesa del paragrafo viene ereditata da tutte le sue varianti.
  */
-import { REGIONS } from '../../data/regions'
+import { REGIONS } from '../regions'
 import { makeParser, num, toArray } from '../xml'
 import type { ParseResult, PriceRow } from '../types'
 

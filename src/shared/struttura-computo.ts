@@ -120,33 +120,6 @@ export function eliminaCategoria(categoria: Record<string, string | undefined>, 
   return n
 }
 
-/**
- * Sposta il gruppo `percorso` prima/dopo il gruppo fratello che lo precede/segue,
- * riscrivendo l'ordine manuale (il raggruppamento per categorie segue quell'ordine).
- * Ritorna il nuovo ordine (o quello di prima se non si può spostare).
- */
-export function spostaGruppo(categoria: Record<string, string | undefined>, ordine: string[], tutte: string[], percorso: string[], delta: -1 | 1): string[] {
-  const chiavi = ordinaVoci(tutte, 'categorie', { ordine, categoria })
-  const padre = percorso.slice(0, -1)
-  const livello = percorso.length - 1
-  // fratelli nell'ordine a schermo
-  const fratelli: string[] = []
-  for (const k of chiavi) {
-    const p = partiCategoria(categoria[k])
-    if (p.length > livello && inizia(p, padre) && !fratelli.includes(p[livello])) fratelli.push(p[livello])
-  }
-  const i = fratelli.indexOf(percorso[livello]), j = i + delta
-  if (i < 0 || j < 0 || j >= fratelli.length) return chiavi
-  const di = (nome: string): string[] => chiavi.filter((k) => inizia(partiCategoria(categoria[k]), [...padre, nome]))
-  const mio = di(fratelli[i]), altro = di(fratelli[j])
-  const blocco = new Set([...mio, ...altro])
-  const primo = chiavi.findIndex((k) => blocco.has(k))
-  const resto = chiavi.filter((k) => !blocco.has(k))
-  const nuovi = delta < 0 ? [...mio, ...altro] : [...altro, ...mio]
-  resto.splice(primo, 0, ...nuovi)
-  return resto
-}
-
 // ── WBS ────────────────────────────────────────────────────────────────────
 
 export interface NodoWbs { codice: string; descrizione: string; livello: number; voci: number; importo: number; implicito: boolean }

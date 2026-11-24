@@ -11,10 +11,10 @@ Le librerie usate dai tool (Excel, 3D, PDF, font) sono salvate in `vendor/` per 
 
 | File in `vendor/` | Libreria | Usata da |
 |---|---|---|
-| `xlsx.full.min.js` | SheetJS xlsx 0.20.3 (Excel) | Computo, Contabilità |
-| `jszip.min.js` | JSZip 3.10.1 (zip) | Computo, Contabilità |
-| `pdf.min.js` + `pdf.worker.min.js` | pdf.js 3.11.174 (lettura PDF) | Computo |
-| `pdf-lib.min.js` | pdf-lib 1.17.x (generazione PDF) | Computo (stampe: computo, elenco prezzi, stima, quadro economico) |
+| `xlsx.full.min.js` | SheetJS xlsx 0.20.3 (Excel) | Lavoro |
+| `jszip.min.js` | JSZip 3.10.1 (zip) | Lavoro |
+| `pdf.min.js` + `pdf.worker.min.js` | pdf.js 3.11.174 (lettura PDF) | Lavoro |
+| `pdf-lib.min.js` | pdf-lib 1.17.x (generazione PDF) | Lavoro (stampe: computo, elenco prezzi, atti contabili, quadro economico) |
 | `fontkit.min.js` | fontkit 1.1.x (metriche font per l'export PDF) | riserva per font personalizzati (le stampe usano Helvetica standard) |
 | `fonts.css` + `fonts/*.woff2` | Inter + JetBrains Mono | tutti |
 
@@ -100,7 +100,7 @@ La **fonte di verità** di tutte le versioni è [versions.js](../versions.js) (r
 
 Ci sono **due** numerazioni indipendenti, non confonderle:
 - **App** → `versions.js` (`app.version`) → `X.Y.Z` (es. `3.6.0`), sincronizzata su `package.json`. Decide il nome dei file in `dist/`.
-- **Versione** → [versions.js](../versions.js): UNA per tutta la suite (i tool non hanno numeri propri). I nomi file sono stabili (`Quadra.html`, `Computo.html`, `Contabilita.html`, `Amministrazione.html`). Decide cosa mostra il hub.
+- **Versione** → [versions.js](../versions.js): UNA per tutta la suite (i tool non hanno numeri propri). I nomi file sono stabili (`Quadra.html`, `Lavoro.html`, `Amministrazione.html`). Decide cosa mostra il hub.
 
 ---
 

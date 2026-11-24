@@ -2,8 +2,8 @@
 
 ## 1. Cos'è Quadra, spiegato semplice
 
-Immagina una **cassetta degli attrezzi**. Dentro ci sono diversi attrezzi (calcolatori,
-prezzari, strumenti di disegno). Ogni attrezzo è completo e funziona da solo. La cassetta
+Immagina una **cassetta degli attrezzi**. Dentro ci sono gli attrezzi (oggi **Lavoro**, che
+tiene il lavoro dal computo alla contabilità, e **Amministrazione**). Ogni attrezzo è completo e funziona da solo. La cassetta
 (il "hub") serve a tenerli tutti insieme e a passartene uno quando ti serve.
 
 In Quadra:
@@ -52,9 +52,9 @@ quadra/
 │   └── _bundle/              ←   wrapper .js generati (gitignored, rigenerati al build)
 │
 ├── vendor/                   ← librerie scaricate in locale (per funzionare OFFLINE)
-│   ├── xlsx.full.min.js      ←   lettura Excel (Computo, Contabilità)
-│   ├── jszip.min.js          ←   zip (Computo, Contabilità)
-│   ├── pdf.min.js / pdf.worker.min.js  ←  lettura PDF (Computo)
+│   ├── xlsx.full.min.js      ←   lettura Excel (Lavoro)
+│   ├── jszip.min.js          ←   zip (Lavoro)
+│   ├── pdf.min.js / pdf.worker.min.js  ←  lettura PDF (Lavoro)
 │   ├── fonts.css             ←   i font del progetto
 │   └── fonts/*.woff2         ←   i file dei font (Inter, JetBrains Mono)
 │
@@ -127,7 +127,7 @@ descrive un tool e punta a un **nome file stabile**:
 
 Il hub poi **scansiona la cartella** (`resolveFiles`) e, per ogni voce, verifica semplicemente che
 `file` sia presente (`resolvedFile = file` o `null`). **Niente più parsing di versione dal nome**:
-i file hanno nomi stabili (`Amministrazione.html`, `Computo.html`, `Contabilita.html`, `Quadra.html`) e la
+i file hanno nomi stabili (`Amministrazione.html`, `Lavoro.html`, `Quadra.html`) e la
 versione è unica, definita in [versions.js](../versions.js) (vedi doc 03 §4). Vedi doc 04 per
 aggiungere un tool.
 
@@ -178,14 +178,13 @@ qui sotto ne è generata, quindi non può divergere:
 | `hub:set-text-size` | `size`, `scale?` | Dimensione testo di suite (ORTOGONALE alle altre): propagata sempre a tutti i tool. |
 | `hub:set-motion` | `motion` | Riduci animazioni (ORTOGONALE alle altre): propagato sempre a tutti i tool. |
 | `hub:set-shadow` | `shadow` | Intensità ombre (ORTOGONALE alle altre): propagata sempre a tutti i tool. |
-| `hub:project-state` | `source`, `project` | Risposta a `app:request-state`: lo stato pubblicato da un altro tool (es. il computo di Computo letto da Contabilità). |
+| `hub:project-state` | `source`, `project` | Risposta a `app:request-state`: lo stato pubblicato da un altro tool. |
 | `hub:collect-state` | — | "Progetto Quadra": l'hub chiede al tool il suo stato pieno serializzabile. |
 | `hub:restore-state` | `appId?`, `state` | "Progetto Quadra": l'hub chiede al tool di ripristinare uno stato salvato. |
 | `hub:vai-a` | `fase` | La sidebar ha cliccato una revisione: il tool apra quella fase. |
 | `hub:apri-documento` | `fase`, `tipo` | L'albero in sidebar ha cliccato un ATTO dentro una fase: il tool lo apra. |
 | `hub:comando` | `comando` | L'albero ha chiesto di CREARE qualcosa: un SAL, una perizia, una revisione. |
 | `hub:set-company` | `company` | Intestazione azienda per le stampe (null = nessuna, es. admin). |
-| `hub:shared-plan` | `plan`, `replay?`, `deleted?` | Planimetria unica di Progetto + geometrie condivise, relayata a tutti i tool. |
 
 **Tool → Hub**
 
@@ -196,7 +195,6 @@ qui sotto ne è generata, quindi non può divergere:
 | `app:request-state` | `want?` | Il tool chiede lo stato condiviso di un altro tool (`want` = quale). |
 | `app:project-update` | `appId`, `project` | Il tool pubblica il proprio stato corrente, così gli altri possono consumarlo. |
 | `app:full-state` | `appId`, `state` | Risposta a `hub:collect-state`: stato pieno del tool per il progetto Quadra. |
-| `app:shared-plan-update` | `origin`, `dxf?`, `cavidotti?`, `circuiti?`, `scale?`, `deleted?` | Pool UNICO: `cavidotti`/`circuiti` sono UPSERT (per id) nel pool condiviso; `deleted` rimuove per id. |
 | `hub:navigate` | `appId` | Il tool chiede all'hub di aprire un altro tool (i "ponti" fra strumenti). |
 | `hub:go-home` | — | Il tool chiede all'hub di tornare alla schermata iniziale. |
 
@@ -205,9 +203,9 @@ qui sotto ne è generata, quindi non può divergere:
 > Attenzione alla direzione: `hub:navigate` e `hub:go-home` hanno prefisso `hub:` ma sono
 > richieste del **tool verso l'hub** ("aprimi quest'altro tool", "torna alla home").
 
-Esempio reale: **Computo** pubblica il computo valorizzato (`app:project-update`); l'hub lo
-conserva e lo ritrasmette; **Contabilità** all'avvio chiede lo stato (`app:request-state`), lo
-riceve e ne ricava le partite contabili. È così che i due tool restano sincronizzati.
+Esempio reale: **Lavoro** pubblica il proprio stato (`app:project-update`) con l'albero del
+lavoro; l'hub lo conserva, ne disegna i rami in sidebar e lo ritrasmette agli altri tool. Un
+tool appena aperto chiede lo stato (`app:request-state`) e lo riceve come replay.
 
 ## 8. Perché "tutto offline"
 

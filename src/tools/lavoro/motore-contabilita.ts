@@ -21,7 +21,7 @@
  */
 import type { Appalto, Partita, Perizia, Sal, RigaSal, ListaEconomia, Verbale, Riserva, RigaGiornale, Consegna } from '../contabilita/engine/types'
 import {
-  contratto, datiContabilita, attiDi, verbaliDi, importiContratto, prezzoIn, quantitaVoce, ribassoArticolo, revisione, sigla,
+  contratto, datiContabilita, attiDi, verbaliDi, importiContratto, prezzoIn, quantitaVoce, ribassoArticolo,  sigla,
   type Articolo, type Lavoro, type Revisione, type Voce,
 } from '../../shared/lavoro'
 import { sommaMisurazioni } from '../../shared/compositore/misurazioni'
@@ -186,11 +186,3 @@ export function contabilitaMotore(l: Lavoro): ContabilitaMotore | null {
   return { appalto, partite, sals, perizie, liste, verbali, riserve, giornale, consegne }
 }
 
-/** Il numero di SAL del motore per un avanzamento del lavoro (il CRE legge lo stato finale). */
-export function salNumeroDi(l: Lavoro, avId: string): number {
-  const a = l.avanzamenti.find((x) => x.id === avId)
-  return a ? a.n : 0
-}
-
-/** Per i test: la revisione da cui legge un avanzamento. */
-export const revisioneDi = (l: Lavoro, avId: string): Revisione => revisione(l, l.avanzamenti.find((x) => x.id === avId)!.leggeDa)

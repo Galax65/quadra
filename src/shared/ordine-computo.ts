@@ -15,7 +15,6 @@
  */
 
 export type ModoOrdine = 'manuale' | 'categorie' | 'wbs'
-export const MODI_ORDINE: ModoOrdine[] = ['manuale', 'categorie', 'wbs']
 
 export interface DatiOrdine {
   /** Ordine manuale: chiavi delle voci. */
@@ -101,40 +100,6 @@ export function ordinaVoci(chiavi: string[], modo: ModoOrdine, d: DatiOrdine = {
 }
 
 /**
- * Sposta le chiavi `mosse` subito prima (o dopo) di `bersaglio` nell'ordine
- * manuale, mantenendo il loro ordine relativo. Restituisce il nuovo ordine completo.
- */
-export function spostaVoci(chiavi: string[], ordine: string[] | undefined, mosse: string[], bersaglio: string, dopo = false): string[] {
-  const base = ordineManuale(chiavi, ordine)
-  const set = new Set(mosse)
-  if (set.has(bersaglio)) return base
-  const resto = base.filter(k => !set.has(k))
-  const blocco = base.filter(k => set.has(k))
-  const i = resto.indexOf(bersaglio)
-  if (i < 0) return base
-  resto.splice(dopo ? i + 1 : i, 0, ...blocco)
-  return resto
-}
-
-/**
- * Sposta in su (delta -1) o in giù (+1) di una posizione le chiavi `mosse`
- * all'interno della SEQUENZA VISIBILE `vista` (l'ordine a schermo), poi riscrive
- * l'ordine manuale. Le voci già in cima (o in fondo) restano dove sono.
- */
-export function scorriVoci(vista: string[], mosse: string[], delta: -1 | 1): string[] {
-  const out = [...vista]
-  const set = new Set(mosse)
-  const idx = out.map((k, i) => (set.has(k) ? i : -1)).filter(i => i >= 0)
-  if (delta > 0) idx.reverse()
-  for (const i of idx) {
-    const j = i + delta
-    if (j < 0 || j >= out.length || set.has(out[j])) continue
-    ;[out[i], out[j]] = [out[j], out[i]]
-  }
-  return out
-}
-
-/**
  * Titoli di raggruppamento di una voce, dal livello più alto: le parti della
  * categoria, oppure i nodi WBS che la contengono («01 Opere», «01.02 Scavi»).
  */
@@ -152,19 +117,3 @@ export function titoliGruppo(modo: ModoOrdine, categoria: string | undefined, wb
   return []
 }
 
-/**
- * Sposta l'elemento `da` di `sorgente` nella posizione `a` di `destinazione`
- * (anche la stessa lista). `a` è l'indice nella destinazione PRIMA dello spostamento;
- * con `dopo` l'elemento va subito dopo quella posizione. Restituisce le nuove liste.
- */
-export function spostaElemento<T>(sorgente: T[], da: number, destinazione: T[], a: number, dopo = false): { sorgente: T[]; destinazione: T[] } {
-  if (da < 0 || da >= sorgente.length) return { sorgente, destinazione }
-  const stessa = sorgente === destinazione
-  const src = [...sorgente]
-  const [el] = src.splice(da, 1)
-  const dst = stessa ? src : [...destinazione]
-  let i = Math.max(0, Math.min(a + (dopo ? 1 : 0), destinazione.length))
-  if (stessa && da < i) i--
-  dst.splice(i, 0, el)
-  return stessa ? { sorgente: dst, destinazione: dst } : { sorgente: src, destinazione: dst }
-}

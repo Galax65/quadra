@@ -40,7 +40,3 @@ export function computoMetricoAOA(righe: ComputoExcelRiga[]): AoaRow[] {
   return rows
 }
 
-/** Nome file suggerito per l'export, con data ISO per non sovrascrivere export precedenti. */
-export function computoMetricoFileName(date: Date = new Date()): string {
-  return `computo-metrico-${date.toISOString().slice(0, 10)}.xlsx`
-}

@@ -1,6 +1,6 @@
-# Contabilità dei lavori pubblici — base di conoscenza di Contabilità
+# Contabilità dei lavori pubblici — base di conoscenza del motore
 
-Riferimento operativo del tool. Copre la contabilizzazione **a corpo**, **a misura**
+Riferimento operativo del motore della contabilità (usato da Lavoro). Copre la contabilizzazione **a corpo**, **a misura**
 e **mista** ai sensi del **D.Lgs. 36/2023** e del suo **Allegato II.14**. Tutti gli
 importi degli atti contabili sono **al netto di IVA** (l'IVA compare solo nel
 certificato di pagamento e a titolo informativo nel SAL).

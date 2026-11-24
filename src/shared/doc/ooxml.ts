@@ -16,7 +16,6 @@ export const para = (t: string, opts: { style?: string; b?: boolean; i?: boolean
   return `<w:p>${pPr ? `<w:pPr>${pPr}</w:pPr>` : ''}${run(t, opts)}</w:p>`
 }
 export const emptyPara = (): string => '<w:p/>'
-export const pageBreak = (): string => '<w:p><w:r><w:br w:type="page"/></w:r></w:p>'
 
 // Bordi singoli per le tabelle (riusati in ogni cella via tblBorders).
 const TBL_BORDERS =

@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest'
-import { makeAccordion } from '../../src/shared/ui/components/collapse'
 
 /**
  * Computo: results-bar snellita + due ricerche distinte.
@@ -190,32 +189,6 @@ describe('mini-search "filtra opzioni" distinta', () => {
     expect(mini.getAttribute('title')).toContain('distinta dalla ricerca voci')
   })
 
-  it('compare solo a filtri aperti: makeAccordion.onChange la nasconde/azzera al collasso', () => {
-    const mini = document.getElementById('filter-mini-search') as HTMLInputElement
-    mini.value = 'reg'
-    let cleared = 0
-    makeAccordion(
-      document.getElementById('filter-toggle'),
-      document.querySelector('.filter-grid'),
-      {
-        storageKey: 'pricelist:filters-collapsed',
-        onChange: (collapsed) => {
-          mini.style.display = collapsed ? 'none' : ''
-          if (collapsed) { mini.value = ''; cleared++ }
-        },
-      },
-    )
-    // aperto di default
-    expect(mini.style.display).toBe('')
-    // collassa → nascosta e azzerata
-    document.getElementById('filter-toggle')!.click()
-    expect(mini.style.display).toBe('none')
-    expect(mini.value).toBe('')
-    expect(cleared).toBe(1)
-    // riapre → torna visibile
-    document.getElementById('filter-toggle')!.click()
-    expect(mini.style.display).toBe('')
-  })
 })
 
 describe('nessuna perdita di funzione', () => {

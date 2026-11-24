@@ -76,30 +76,6 @@ ipcMain.handle('ehub:save-project-to', async (_e, { path: p, content }) => {
   }
 })
 
-// Legge un DXF per percorso assoluto (planimetria di Progetto come XREF): il file
-// è quello scelto dall'utente col selettore; nessun byte del DXF finisce nel .ehub.
-ipcMain.handle('ehub:read-dxf', async (_e, { path: p }) => {
-  try {
-    if (!p || typeof p !== 'string') return { error: 'percorso non valido' }
-    return { text: fs.readFileSync(p, 'utf8') }
-  } catch (err) {
-    return { error: String((err && err.message) || err) }
-  }
-})
-
-// Dice solo SE l'xref è ancora al suo posto, e quanto pesa. Serve al banner
-// «planimetria non trovata»: prima quella verifica si faceva leggendo l'intero file,
-// che su una tavola vera dello studio significa spostare 240 MB per sapere che esiste.
-ipcMain.handle('ehub:stat-dxf', async (_e, { path: p }) => {
-  try {
-    if (!p || typeof p !== 'string') return { error: 'percorso non valido' }
-    const st = fs.statSync(p)
-    return { exists: st.isFile(), size: st.size }
-  } catch {
-    return { exists: false, size: 0 }
-  }
-})
-
 // Cambia la cartella di salvataggio progetti.
 ipcMain.handle('ehub:choose-project-dir', async () => {
   const dir = await pickProjectDir()

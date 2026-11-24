@@ -22,28 +22,3 @@ export function firstLinePreview(text: string, max = 220): string {
   return firstLine.length > max ? firstLine.substring(0, max) + '…' : firstLine
 }
 
-/**
- * Spezza un codice nei suoi segmenti gerarchici progressivi.
- * Splitta su QUALSIASI separatore "-" o ".", quindi ogni segmento è un livello:
- * "VEN25-10.05.03.a" → ["VEN25","VEN25-10","VEN25-10.05","VEN25-10.05.03","VEN25-10.05.03.a"]
- * Gestisce separatori misti "-"/"." e il suffisso ".-" finale della Lombardia.
- * (NB: il commento originale nel monolite ometteva per errore il primo livello "VEN25".)
- */
-export function codeLevels(cod: string): string[] {
-  const c = cod.replace(/\.-$/, '')                 // togli ".-" finale (Lombardia)
-  const parts = c.split(/[-.]/).filter(Boolean)     // spezza su - e .
-  const levels: string[] = []
-  let acc = ''
-  for (let k = 0; k < parts.length; k++) {
-    // ricostruisci il prefisso usando il separatore originale
-    if (k === 0) {
-      acc = parts[0]
-    } else {
-      // trova il separatore reale tra parts[k-1] e parts[k] nel codice originale
-      const sep = c.charAt(acc.length)              // carattere subito dopo l'accumulato
-      acc = acc + (sep === '-' || sep === '.' ? sep : '.') + parts[k]
-    }
-    levels.push(acc)
-  }
-  return levels
-}

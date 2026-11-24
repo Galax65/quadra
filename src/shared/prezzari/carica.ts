@@ -21,11 +21,6 @@ declare global {
   }
 }
 
-/** Nome leggibile di un prezzario. */
-export function nomePrezzario(p: PrezzarioDisponibile): string {
-  return p.nome || [p.regione || p.id, p.anno].filter(Boolean).join(' ')
-}
-
 /** gzip base64 → payload, senza fetch (funziona anche sotto file://). */
 async function decodeGz(b64: string): Promise<PackedPrezzario> {
   const bin = atob(b64)
@@ -88,8 +83,3 @@ export function cercaNelPrezzario(righe: PriceRow[], query: string, max = 40): P
   return out.sort((a, b) => b.punti - a.punti).slice(0, max).map((x) => x.r)
 }
 
-/** Percorso di categoria della voce, nella forma usata dalla contabilità. */
-export function categoriaDiRiga(r: PriceRow): string | undefined {
-  const parti = [r.liv1, r.liv2].map((x) => (x || '').trim()).filter(Boolean)
-  return parti.length ? parti.join(' · ') : undefined
-}

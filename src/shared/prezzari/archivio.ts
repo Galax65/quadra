@@ -89,12 +89,6 @@ export async function righePrezzarioSalvato(filename: string): Promise<PriceRow[
   return rec?.rows || []
 }
 
-/** Toglie un prezzario dall'archivio. */
-export async function dimenticaPrezzarioSalvato(filename: string): Promise<void> {
-  await tx('readwrite', (st) => st.delete(filename))
-  try { if (localStorage.getItem(CHIAVE_ULTIMO) === filename) localStorage.removeItem(CHIAVE_ULTIMO) } catch { /* ok */ }
-}
-
 const CHIAVE_ULTIMO = 'miu:ultimo-prezzario'
 export function ricordaUltimo(filename: string): void { try { localStorage.setItem(CHIAVE_ULTIMO, filename) } catch { /* ok */ } }
 export function ultimoPrezzario(): string | null { try { return localStorage.getItem(CHIAVE_ULTIMO) } catch { return null } }

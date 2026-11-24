@@ -39,22 +39,6 @@ export const VERBALE_ART: Record<VerbaleTipo, string> = {
   relazioneRup: 'D.M. 49/2018',
 }
 
-/** Breve descrizione dell'atto (card della timeline). */
-export const VERBALE_DESC: Record<VerbaleTipo, string> = {
-  consegna: 'Presa in consegna del cantiere e stato dei luoghi.',
-  ordine: 'Disposizione del DL all\'esecutore.',
-  sospensione: 'Interruzione dei lavori: causa e durata.',
-  ripresa: 'Ripresa dopo sospensione: giorni residui.',
-  proroga: 'Nuovo termine concesso su istanza motivata dell\'esecutore.',
-  nuoviprezzi: 'Concordamento di prezzi non contrattuali.',
-  accertamento: 'Verifica di fatti, prove o anomalie.',
-  ultimazione: 'Attesta la fine dei lavori; precede il conto finale.',
-  relazioneRup: 'Comunicazione del DL alla stazione appaltante.',
-}
-
-/** Ordine dei tipi nel selettore «+ Verbale/atto». */
-export const VERBALE_TIPI: VerbaleTipo[] = ['consegna', 'ordine', 'sospensione', 'ripresa', 'proroga', 'nuoviprezzi', 'accertamento', 'ultimazione', 'relazioneRup']
-
 /** Firme in calce, secondo l'atto (chi sottoscrive in contraddittorio). */
 function firmeDi(tipo: VerbaleTipo, a: Appalto): string {
   const dl = { ruolo: ilDirettore(a), nome: a.direttoreLavori }
@@ -171,10 +155,3 @@ export function verbaleHTML(appalto: Appalto, v: Verbale, partite?: Partita[]): 
   })
 }
 
-/** Factory: nuovo verbale con id e numero progressivo per tipo. */
-export function nuovoVerbale(tipo: VerbaleTipo, data: string, esistenti: Verbale[], id: string): Verbale {
-  const numero = esistenti.filter((x) => x.tipo === tipo).length + 1
-  const v: Verbale = { id, tipo, data, numero }
-  if (tipo === 'consegna') v.consegnaMod = 'unica'
-  return v
-}

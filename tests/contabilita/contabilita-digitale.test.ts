@@ -1,6 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import {
   registroAttiHTML, pacchettoAperto, vociCsv, misureCsv, salCsv, improntedCsv, eseguitoCsv, righeDi,
   improntaSal, type Appalto, type Partita, type Sal, type Consegna, type Verifica,
@@ -121,31 +119,5 @@ describe('export in formato aperto', () => {
     const file = pacchettoAperto({ appalto: appalto(), partite: [], sals: [] })
     expect(file).toHaveLength(7)
     expect(file.find((f) => f.nome === 'LEGGIMI.txt')!.testo).toContain('Nessun SAL firmato')
-  })
-})
-
-/**
- * I due comandi che chiudono il cerchio stanno nel pannello dei documenti
- * consegnati: verificare i sigilli ed esportare in formato aperto riguardano
- * TUTTI gli atti, non un SAL in particolare.
- */
-describe('i comandi sono raggiungibili', () => {
-  // (l'HTML del tool non porta più questi comandi: stanno nel cruscotto)
-
-  it('il cruscotto offre verifica dei fascicoli ed export aperto', () => {
-    // non più un pannello fisso nell'HTML: stanno nel cruscotto del lavoro,
-    // la pagina che si apre quando non si sta lavorando a un atto
-    const m = readFileSync(resolve(__dirname, '../../src/tools/contabilita/main.ts'), 'utf8')
-    expect(m).toContain('onclick="verificaFascicoli()"')
-    expect(m).toContain('onclick="esportaFormatoAperto()"')
-    expect(m).toContain('art. 12 c. 10')
-  })
-
-  it('il registro degli atti è una scheda della catena documentale', () => {
-    const main = readFileSync(resolve(__dirname, '../../src/tools/contabilita/main.ts'), 'utf8')
-    expect(main).toContain("tipo: 'registroatti'")
-    expect(main).toContain('registroAttiHTML(a, S.consegne, S.sals, _verifiche)')
-    // alla firma si sigilla, e il sigillo entra nello stato del SAL
-    expect(main).toMatch(/sal\.impronta = h; sal\.improntaAlgo = ALGO_IMPRONTA/)
   })
 })

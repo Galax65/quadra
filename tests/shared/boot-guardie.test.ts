@@ -23,7 +23,7 @@ const ROOT = resolve(__dirname, '../..')
 const read = (rel: string): string => readFileSync(resolve(ROOT, rel), 'utf8')
 
 /** Punto d'ingresso di ogni tool (l'estensione varia: alcuni sono già TypeScript). */
-const ENTRIES = ['computo', 'contabilita', 'amministrazione'].map((t) => {
+const ENTRIES = ['amministrazione'].map((t) => {
   const js = `src/tools/${t}/main.js`
   return { tool: t, file: existsSync(resolve(ROOT, js)) ? js : `src/tools/${t}/main.ts` }
 })

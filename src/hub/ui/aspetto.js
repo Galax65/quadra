@@ -88,9 +88,6 @@ export function setFont(name) {
   closeFontMenu();   // scelta fatta → chiudi la tendina
 }
 
-/* Dimensione testo: ORTOGONALE alle altre dimensioni, stesso
-   pattern del font (sync via bus a tutti i tool, persistita). "md" = 100%. */
-export const SUITE_TEXT_SIZES = TEXT_SIZES;
 /* La dimensione testo è ora un valore CONTINUO (--ui-scale)
    pilotato da uno slider, non più i 4 preset. Manteniamo però `suiteTextSize` (il
    preset più vicino) per: back-compat del messaggio bus e anti-flash srcdoc
