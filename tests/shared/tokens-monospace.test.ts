@@ -11,7 +11,7 @@ import { resolve } from 'node:path'
  *  - la base ardesia/:root (dark) è grafite NEUTRA con i valori del linguaggio;
  *  - hub è accento NEUTRO #9fb0c6 (non più rosso) e i tool restano pieni;
  *  - i derivati accento e i token di tracking esistono;
- *  - --sans è alias di --mono e --prose resta distinto;
+ *  - il carattere è quello del sistema, --sans e --prose ne sono alias;
  *  - i nomi-token CANONICI consumati dal sorgente non sono stati rinominati.
  */
 
@@ -123,17 +123,18 @@ describe('accento-da-tool (un solo --accent governato da [data-tool])', () => {
   })
 })
 
-describe('tipografia monospace-forward + tracking', () => {
-  it('--mono è JetBrains Mono EMBEDDED (latin+greco) e --sans è alias del mono', () => {
-    // Font brand embeddato (@font-face inline base64, latin + greco per i
-    // glifi dei tool ε Computo Contabilità δ χ Amministrazione) → identico su ogni OS. Il logo ε è un <path> a parte.
-    expect(tokens).toMatch(/--mono:\s*'JetBrains Mono'/)
-    expect(tokens).toMatch(/@font-face[\s\S]*font-family:\s*"JetBrains Mono"/)
-    expect(tokens).toMatch(/unicode-range:\s*U\+0370-03FF/) // subset greco (ε Computo Contabilità …)
+describe('tipografia: leggibile prima di tutto', () => {
+  it("l'interfaccia usa il carattere del sistema, e --sans/--prose ne sono alias", () => {
+    expect(tokens).toMatch(/--mono:\s*-apple-system/)
     expect(tokens).toMatch(/--sans:\s*var\(--mono\)/)
+    expect(tokens).toMatch(/--prose:\s*var\(--mono\)/)
   })
-  it('--prose (Inter) resta distinto, riservato alla prosa lunga', () => {
-    expect(tokens).toMatch(/--prose:\s*'Inter'/)
+  it('JetBrains Mono resta embeddato e si sceglie nelle Impostazioni', () => {
+    expect(tokens).toMatch(/@font-face[\s\S]*font-family:\s*"JetBrains Mono"/)
+    expect(tokens).toMatch(/:root\[data-font="jetbrains-mono"\]\s*\{\s*--mono:\s*'JetBrains Mono'/)
+  })
+  it('le cifre sono tabulari ovunque: le colonne dei numeri si leggono in verticale', () => {
+    expect(tokens).toMatch(/body\s*\{\s*font-variant-numeric:\s*tabular-nums/)
   })
 })
 

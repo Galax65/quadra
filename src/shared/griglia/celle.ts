@@ -102,20 +102,7 @@ export interface CellaNumero extends Aggancio {
   muto?: boolean
 }
 
-/** Un comando di riga: ripeti, elimina. Sempre gli stessi pulsanti. */
-export interface ComandoRiga {
-  icona: string
-  titolo: string
-  onclick: string
-  /** Distruttivo: si colora di rosso al passaggio. */
-  pericolo?: boolean
-}
-export interface CellaComandi extends Aggancio {
-  tipo: 'comandi'
-  comandi: ComandoRiga[]
-}
-
-export type CellaVoce = CellaCodice | CellaDesignazione | CellaCampo | CellaMisurata | CellaNumero | CellaComandi
+export type CellaVoce = CellaCodice | CellaDesignazione | CellaCampo | CellaMisurata | CellaNumero
 
 const attr = (a: Aggancio): string => (a.id ? ` id="${esc(a.id)}"` : '') + (a.attributi ? ' ' + a.attributi : '')
 
@@ -154,11 +141,6 @@ function misurataHtml(m: CellaMisurata): string {
     + ` <span class="ehb-gr-da">(da ${m.misure} ${m.misure === 1 ? 'misura' : 'misure'})</span>`
 }
 
-function comandiHtml(c: CellaComandi): string {
-  return c.comandi.map((k) =>
-    `<button class="ehb-btn ehb-btn--sm ehb-btn--ghost ehb-gr-cmd${k.pericolo ? ' is-pericolo' : ''}" onclick="${esc(k.onclick)}" title="${esc(k.titolo)}" aria-label="${esc(k.titolo)}">${esc(k.icona)}</button>`).join('')
-}
-
 /** Il contenuto di una cella descritta (senza il <td>). */
 export function contenutoCella(c: CellaVoce): string {
   switch (c.tipo) {
@@ -167,7 +149,6 @@ export function contenutoCella(c: CellaVoce): string {
     case 'campo': return campoHtml(c)
     case 'misurata': return misurataHtml(c)
     case 'numero': return c.muto ? `<span class="ehb-gr-muto">${esc(c.testo)}</span>` : esc(c.testo)
-    case 'comandi': return comandiHtml(c)
   }
 }
 

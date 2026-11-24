@@ -31,7 +31,7 @@ export function isPalette(p: unknown): p is Palette {
  */
 export const FONTS = ['jetbrains-mono', 'cormorant', 'sistema', 'pixelify', 'fredoka'] as const
 export type FontChoice = (typeof FONTS)[number]
-export const DEFAULT_FONT: FontChoice = 'jetbrains-mono'
+export const DEFAULT_FONT: FontChoice = 'sistema'
 
 /** True se `f` è un font noto (type guard). */
 export function isFont(f: unknown): f is FontChoice {

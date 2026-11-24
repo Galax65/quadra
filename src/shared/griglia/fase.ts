@@ -16,10 +16,11 @@ import type { OpzioneOrdine } from '../ui/barra-voci'
 
 export type IdFase = 'progetto' | 'contratto' | 'sal' | 'perizia'
 
-export type IdColonna = 'codice' | 'designazione' | 'confronto' | 'quantita' | 'prezzo' | 'importo' | 'differenza' | 'comandi'
+export type IdColonna = 'codice' | 'designazione' | 'confronto' | 'parti' | 'lung' | 'larg' | 'alt' | 'quantita' | 'prezzo' | 'importo' | 'differenza'
+
 
 /** Le colonne numeriche: a destra, cifre tabulari. */
-export const COLONNE_NUMERICHE: ReadonlySet<IdColonna> = new Set(['confronto', 'quantita', 'prezzo', 'importo', 'differenza'])
+export const COLONNE_NUMERICHE: ReadonlySet<IdColonna> = new Set(['confronto', 'parti', 'lung', 'larg', 'alt', 'quantita', 'prezzo', 'importo', 'differenza'])
 
 export interface ColonnaGriglia {
   id: IdColonna
@@ -27,6 +28,20 @@ export interface ColonnaGriglia {
   /** Spiegazione al passaggio del mouse sull'intestazione. */
   aiuto?: string
 }
+
+/**
+ * Le colonne delle misure, come nel foglio di computo dei programmi di
+ * contabilità (PriMus): parti uguali × lunghezza × larghezza × altezza/peso.
+ * Stanno subito prima della quantità, che ne è il prodotto; ognuna dice quale
+ * fattore della riga di misura scrive.
+ */
+export const COLONNE_MISURA: readonly { id: IdColonna; campo: 'n' | 'l1' | 'l2' | 'h'; titolo: string; aiuto: string }[] = [
+  { id: 'parti', campo: 'n', titolo: 'Par.ug.', aiuto: 'Parti uguali (col segno meno: detrazione)' },
+  { id: 'lung', campo: 'l1', titolo: 'Lung.', aiuto: 'Lunghezza' },
+  { id: 'larg', campo: 'l2', titolo: 'Larg.', aiuto: 'Larghezza' },
+  { id: 'alt', campo: 'h', titolo: 'H/peso', aiuto: 'Altezza o peso' },
+]
+const MISURE: ColonnaGriglia[] = COLONNE_MISURA.map(({ id, titolo, aiuto }) => ({ id, titolo, aiuto }))
 
 /** I valori di controllo in calce: una sintesi a sinistra, il numero che conta a destra. */
 export interface Calce {
@@ -87,11 +102,11 @@ export const FASE_PROGETTO: DescrittoreFase<ValoriProgetto> = {
   nome: 'Computo metrico',
   colonne: [
     { id: 'codice', titolo: 'Codice' },
-    { id: 'designazione', titolo: 'Designazione' },
+    { id: 'designazione', titolo: 'Designazione dei lavori' },
+    ...MISURE,
     { id: 'quantita', titolo: 'Quantità' },
-    { id: 'prezzo', titolo: 'Prezzo' },
+    { id: 'prezzo', titolo: 'Prezzo unit.' },
     { id: 'importo', titolo: 'Importo' },
-    { id: 'comandi', titolo: '' },
   ],
   scrive: 'quantita',
   cerca: '⌕ cerca nel computo',
@@ -155,11 +170,11 @@ export const FASE_SAL: DescrittoreFase<ValoriSal> = {
   nome: 'Libretto delle misure',
   colonne: [
     { id: 'codice', titolo: 'Codice' },
-    { id: 'designazione', titolo: 'Designazione' },
+    { id: 'designazione', titolo: 'Designazione dei lavori' },
+    ...MISURE,
     { id: 'quantita', titolo: 'Eseguito a tutto il SAL' },
     { id: 'prezzo', titolo: 'Prezzo unit.', aiuto: 'Prezzo di contratto: la contabilità si fa a questo prezzo' },
     { id: 'importo', titolo: 'Importo' },
-    { id: 'comandi', titolo: '' },
   ],
   scrive: 'quantita',
   cerca: '⌕ cerca nel libretto',
@@ -199,6 +214,7 @@ export const FASE_PERIZIA: DescrittoreFase<ValoriPerizia> = {
     { id: 'codice', titolo: 'Codice' },
     { id: 'designazione', titolo: 'Designazione' },
     { id: 'confronto', titolo: 'Contratto vigente' },
+    ...MISURE,
     { id: 'quantita', titolo: 'Perizia' },
     { id: 'differenza', titolo: 'Differenza' },
   ],

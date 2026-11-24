@@ -43,7 +43,7 @@ describe('la stessa pagina per ogni tappa', () => {
     expect(h).toContain('class="ehb-gr-campo')     // il prezzo si scrive
     expect(h).toContain('lvDuplica(')
     expect(h).toContain('✓ Consegna…')
-    expect(h).toContain('＋ riga di misura')
+    expect(h).toContain('＋ misura')
     expect(h).not.toContain('sola lettura')
   })
 
@@ -54,7 +54,7 @@ describe('la stessa pagina per ogni tappa', () => {
     const h = paginaRevisione(l, revisione(l, id), v)
     expect(h).not.toContain('class="ehb-gr-campo')
     expect(h).not.toContain('lvDuplica(')
-    expect(h).not.toContain('＋ riga di misura')
+    expect(h).not.toContain('＋ misura')
     expect(h).not.toContain('✓ Consegna…')
     expect(h).toContain('🔒 sola lettura')
     expect(h).toContain('consegnata')

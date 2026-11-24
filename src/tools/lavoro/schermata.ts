@@ -11,8 +11,8 @@
  * comandi sono funzioni globali `lv…` che main.ts espone.
  */
 import {
-  FASE_PROGETTO, FASE_CONTRATTO, FASE_SAL, FASE_PERIZIA, OPZ_ORDINE, grigliaHtml, rigaDettaglioHtml, piedeFaseHtml, piedeHtml, testataHtml, barraVoci, misureTabellaHtml,
-  type RigaGriglia, type RigaVoce, type Cella,
+  FASE_PROGETTO, FASE_CONTRATTO, FASE_SAL, FASE_PERIZIA, OPZ_ORDINE, grigliaHtml, rigaDettaglioHtml, righeFoglioHtml, piedeFaseHtml, piedeHtml, testataHtml, barraVoci,
+  type RigaGriglia, type RigaVoce, type Cella, type AzioniMisure,
 } from '../../shared/griglia'
 import {
   NOME_FASE, importiRevisione, importiContratto, importiAvanzamento, prezzoIn, quantitaVoce, quantitaEseguita, rigaDi, misurata, contratto,
@@ -33,12 +33,36 @@ const numIn = (n: number | null | undefined): string => (n == null || n === 0 ? 
 export interface Vista {
   q: string
   ordine: 'manuale' | 'categorie' | 'wbs'
-  /** Voci con le misure aperte. */
+  /** Solo voci: le misure si nascondono, ogni voce sta su una riga (si riaprono una per una). */
+  soloVoci?: boolean
+  /** Con «solo voci»: le voci riaperte una per una. */
   aperte: Set<string>
+  /** Nel foglio (misure a vista): le voci chiuse una per una. */
+  chiuse?: Set<string>
   /** Il pannello prezzi a destra è aperto. */
   prezziAperti?: boolean
   /** Nel SAL: solo le voci misurate, quelle oltre il contratto, o tutto. In perizia: solo le variate, o tutto. */
   mostra?: 'misurate' | 'eccedenti' | 'variate' | 'tutte'
+}
+
+/** Le misure di una voce sono a vista? Nel foglio sì, salvo le chiuse; con «solo voci» no, salvo le riaperte. */
+export function misureAVista(vista: Vista, id: string): boolean {
+  return vista.soloVoci ? vista.aperte.has(id) : !vista.chiuse?.has(id)
+}
+
+/** I comandi delle righe di misura di una voce: gli stessi nel computo e nel libretto. */
+function azioniMisure(id: string, extra: Partial<AzioniMisure> = {}): AzioniMisure {
+  return {
+    set: (i, c) => `lvMisSet(${q(id)},${i},'${c}',this.value)`,
+    tasti: (i, c) => `lvMisTasti(event,${q(id)},${i},'${c}')`,
+    duplica: (i) => `lvMisDuplica(${q(id)},${i})`,
+    elimina: (i) => `lvMisElimina(${q(id)},${i})`,
+    menu: (i) => `lvMisMenu(event,${q(id)},${i})`,
+    incollaQui: (i) => `lvMisIncolla(event,${q(id)},${i})`,
+    aggiungi: `lvMisAggiungi(${q(id)},1)`,
+    detrazione: `lvMisAggiungi(${q(id)},-1)`,
+    ...extra,
+  }
 }
 
 /** Che cosa dice la testata di una revisione: nome, fase, stato. */
@@ -94,24 +118,24 @@ function rigaVoce(r: Revisione, v: Voce, a: Articolo, vista: Vista, n: number, c
   const scrive = r.stato === 'aperta'
   const qty = quantitaVoce(v)
   const misure = v.misure.length
-  const aperta = vista.aperte.has(v.id)
+  const aperta = misureAVista(vista, v.id)
   const quantita: Cella = misure
     ? { tipo: 'misurata', valore: fmt(qty), um: a.um, misure, id: `lv-q-${v.id}` }
     : scrive
-      ? { tipo: 'campo', valore: numIn(v.quantita), um: a.um, segnaposto: '—', isola: true, comando: `lvSetQta(${q(v.id)},this.value)`, titolo: 'Quantità (virgola decimale, anche formule). Per il dettaglio L×L×H usa «▸ misure»', id: `lv-q-${v.id}` }
+      ? { tipo: 'campo', valore: numIn(v.quantita), um: a.um, segnaposto: '—', isola: true, comando: `lvSetQta(${q(v.id)},this.value)`, titolo: 'Quantità (virgola decimale, anche formule). Per il dettaglio scrivi le misure: «＋ misura»', id: `lv-q-${v.id}` }
       : { tipo: 'numero', testo: `${fmt(qty)} ${a.um}`.trim(), muto: !qty }
   // in perizia il prezzo di contratto è fisso: si scrive solo quello dei nuovi prezzi
   // nel contratto a prezzi unitari si scrive il prezzo OFFERTO (finché nessun SAL è emesso)
   const offerto = r.tipo === 'contratto' && !!r.contratto?.prezziOfferti && !a.sicurezza
   const prezzo: Cella = offerto && offerta
-    ? { tipo: 'campo', valore: r.contratto!.prezziOfferti![a.id] != null ? fmt(r.contratto!.prezziOfferti![a.id]) : '', prefisso: '€', segnaposto: a.prezzo ? fmt(a.prezzo) : '—', isola: true, comando: `lvSetOfferto(${q(a.id)},this.value)`, titolo: "Prezzo unitario offerto dall'impresa: vuoto = vale il prezzo di progetto", id: `lv-p-${v.id}` }
+    ? { tipo: 'campo', valore: r.contratto!.prezziOfferti![a.id] != null ? fmt(r.contratto!.prezziOfferti![a.id]) : '', segnaposto: a.prezzo ? fmt(a.prezzo) : '—', isola: true, comando: `lvSetOfferto(${q(a.id)},this.value)`, titolo: "Prezzo unitario offerto dall'impresa: vuoto = vale il prezzo di progetto", id: `lv-p-${v.id}` }
     : scrive && (r.tipo !== 'perizia' || a.origine === 'np')
-    ? { tipo: 'campo', valore: a.prezzo ? fmt(a.prezzo) : '', prefisso: '€', segnaposto: '—', isola: true, comando: `lvSetPrezzo(${q(a.id)},this.value)`, titolo: "Prezzo dell'articolo: vale per tutte le voci che lo usano", id: `lv-p-${v.id}` }
-    : { tipo: 'numero', testo: a.prezzo ? eur(prezzoIn(r, a)) : '—' }
+    ? { tipo: 'campo', valore: a.prezzo ? fmt(a.prezzo) : '', segnaposto: '—', isola: true, comando: `lvSetPrezzo(${q(a.id)},this.value)`, titolo: "Prezzo dell'articolo: vale per tutte le voci che lo usano", id: `lv-p-${v.id}` }
+    : { tipo: 'numero', testo: a.prezzo ? fmt(prezzoIn(r, a)) : '—' }
   const meta: string[] = []
   if (a.sicurezza) meta.push('<span class="lv-chip is-sic" title="Oneri della sicurezza: non soggetti a ribasso">sicurezza</span>')
   if (v.corpo) meta.push('<span class="lv-chip" title="Lavoro a corpo">a corpo</span>')
-  if (v.categoria) meta.push(`<span class="lv-chip" title="Categoria">${esc(v.categoria.split(CAT_SEP).join(' › '))}</span>`)
+  if (v.categoria) meta.push(`<span class="lv-chip" title="Categoria: ${esc(v.categoria.split(CAT_SEP).join(' › '))}">${esc(v.categoria.split(CAT_SEP).join(' › '))}</span>`)
   if (v.wbs) meta.push(`<span class="lv-chip is-wbs" title="WBS">WBS ${esc(v.wbs)}</span>`)
   if (cfr) meta.push(...chipPerizia(v, a, cfr))
   if (r.tipo !== 'computo') meta.push(...chipRibasso(c, r, a))
@@ -123,49 +147,33 @@ function rigaVoce(r: Revisione, v: Voce, a: Articolo, vista: Vista, n: number, c
   }
   // l'ordine manuale si cambia trascinando la voce
   const trascina = scrive && vista.ordine === 'manuale' ? ` draggable="true" ondragstart="lvDragVoce(event,${q(v.id)})" ondragover="lvDragSopra(event)" ondrop="lvDropVoce(event,${q(v.id)})" ondragend="lvDragFine(event)"` : ''
-  return {
-    classe: 'lv-voce',
-    attributi: `data-voce="${esc(v.id)}" oncontextmenu="lvMenuVoce(event,${q(v.id)})"${trascina}`,
-    sel: `<span class="lv-n"${trascina ? ' title="Trascina per spostare la voce" style="cursor:grab"' : ''}>${n}</span><button class="lv-piega" onclick="lvToggleMisure(${q(v.id)})" title="${aperta ? 'Chiudi' : 'Apri'} le misure di dettaglio" aria-expanded="${aperta}">${aperta ? '▾' : '▸'}</button>`,
-    celle: {
-      codice: { tipo: 'codice', codice: a.codice, senza: '✎ libera', tono: a.origine === 'np' ? 'np' : !a.codice ? 'libera' : undefined, ...(a.origine === 'np' ? { etichetta: 'NP' } : {}) },
-      designazione: {
-        tipo: 'designazione', testo: a.descrizione, vuoto: 'voce libera — scrivi la descrizione con ✎',
-        meta,
-        azioni: scrive ? `<button class="ehb-btn ehb-btn--sm ehb-btn--ghost" onclick="lvModificaVoce(${q(v.id)})" title="Codice, descrizione, unità, prezzo, categoria, WBS">✎</button>` : '',
-      },
-      quantita,
-      prezzo,
-      importo: { tipo: 'numero', testo: eur(importoQta(qty, prezzoIn(r, a), a.um)), id: `lv-i-${v.id}` },
-      comandi: scrive ? { tipo: 'comandi', comandi: [
-        { icona: '⧉', titolo: 'Ripeti la voce: lo stesso articolo, con misure proprie', onclick: `lvDuplica(${q(v.id)})` },
-        { icona: '✕', titolo: `Togli la voce dal${r.tipo === 'perizia' ? 'la perizia' : ' computo'} (l'articolo resta nell'elenco prezzi)`, onclick: `lvElimina(${q(v.id)})`, pericolo: true },
-      ] } : { tipo: 'comandi', comandi: [] },
+  const importo: Cella = { tipo: 'numero', testo: fmt(importoQta(qty, prezzoIn(r, a), a.um)), id: `lv-i-${v.id}` }
+  const testa: RigaVoce['celle'] = {
+    codice: { tipo: 'codice', codice: a.codice, senza: '✎ libera', tono: a.origine === 'np' ? 'np' : !a.codice ? 'libera' : undefined, ...(a.origine === 'np' ? { etichetta: 'NP' } : {}) },
+    designazione: {
+      tipo: 'designazione', testo: a.descrizione, vuoto: 'voce libera — scrivi la descrizione con ✎',
+      meta,
+      // i comandi della voce, accanto ai suoi dati: modifica, ripeti, togli
+      azioni: scrive ? `<span class="lv-voce-az"><button class="ehb-icon-btn" onclick="lvModificaVoce(${q(v.id)})" title="Codice, descrizione, unità, prezzo, categoria, WBS">✎</button><button class="ehb-icon-btn" onclick="lvDuplica(${q(v.id)})" title="Ripeti la voce: lo stesso articolo, con misure proprie">⧉</button><button class="ehb-icon-btn is-pericolo" onclick="lvElimina(${q(v.id)})" title="Togli la voce dal${r.tipo === 'perizia' ? 'la perizia' : ' computo'} (l'articolo resta nell'elenco prezzi)">✕</button></span>` : '',
     },
-    dopo: aperta ? rigaDettaglioHtml(FASE_PROGETTO, {
-      conSelezione: true,
-      attributi: `data-voce="${esc(v.id)}"`,
-      contenuto: misureTabellaHtml({
-        righe: v.misure, um: a.um, fmt: (x) => fmt(x), soloLettura: !scrive,
-        titolo: 'Misure (par.ug. × L1 × L2 × H)', totale: 'Quantità della voce',
-        etichettaVediVoce: (k) => { const x = r.voci.find((y) => y.id === k); const ar = x && r.articoli.find((z) => z.id === x.articolo); return ar ? `${ar.codice || 'voce'} ${fmt(quantitaVoce(x!))} ${ar.um}` : 'voce tolta' },
-        extra: scrive ? `<button class="ehb-btn ehb-btn--sm ehb-btn--ghost" onclick="lvMisDaVoce(${q(v.id)})" title="Copia le misure da un'altra voce di questo computo, o di un altro progetto aperto nell'elenco prezzi">⇣ Da un'altra voce…</button>` : '',
-        vuoto: scrive ? 'Nessuna riga: «＋ riga di misura» qui sotto, oppure scrivi la quantità nella riga della voce.' : 'Nessuna misura di dettaglio.',
-        azioni: {
-          set: (i, c) => `lvMisSet(${q(v.id)},${i},'${c}',this.value)`,
-          tasti: (i, c) => `lvMisTasti(event,${q(v.id)},${i},'${c}')`,
-          duplica: (i) => `lvMisDuplica(${q(v.id)},${i})`,
-          elimina: (i) => `lvMisElimina(${q(v.id)},${i})`,
-          menu: (i) => `lvMisMenu(event,${q(v.id)},${i})`,
-          incollaQui: (i) => `lvMisIncolla(event,${q(v.id)},${i})`,
-          vediVoce: (i) => `lvMisVediVoce(${q(v.id)},${i})`,
-          copia: `lvMisCopia(${q(v.id)})`,
-          incolla: `lvMisIncollaTutte(${q(v.id)})`,
-          aggiungi: `lvMisAggiungi(${q(v.id)},1)`,
-          detrazione: `lvMisAggiungi(${q(v.id)},-1)`,
-        },
-      }) + (v.corpo ? sottoComputoHtml(r, v, a, scrive) : ''),
-    }) : '',
+  }
+  // nel foglio la quantità sta sulla riga SOMMANO, sotto le sue misure
+  const qSommano: Cella = misure ? { tipo: 'numero', testo: fmt(qty), id: `lv-q-${v.id}` } : quantita
+  const etichettaVediVoce = (k: string): string => { const x = r.voci.find((y) => y.id === k); const ar = x && r.articoli.find((z) => z.id === x.articolo); return ar ? `${ar.codice || 'voce'} ${fmt(quantitaVoce(x!))} ${ar.um}` : 'voce tolta' }
+  return {
+    classe: aperta ? 'lv-voce is-foglio' : 'lv-voce',
+    attributi: `data-voce="${esc(v.id)}" oncontextmenu="lvMenuVoce(event,${q(v.id)})"${trascina}`,
+    sel: `<span class="lv-n"${trascina ? ' title="Trascina per spostare la voce" style="cursor:grab"' : ''}>${n}</span><button class="lv-piega" onclick="lvToggleMisure(${q(v.id)})" title="${aperta ? 'Nascondi' : 'Mostra'} le misure" aria-expanded="${aperta}">${aperta ? '▾' : '▸'}</button>`,
+    celle: aperta ? testa : { ...testa, quantita, prezzo, importo },
+    dopo: aperta
+      ? righeFoglioHtml(FASE_PROGETTO, {
+          righe: v.misure, um: a.um, fmt: (x) => fmt(x), soloLettura: !scrive, conSelezione: true,
+          attributi: `data-voce="${esc(v.id)}" oncontextmenu="lvMenuVoce(event,${q(v.id)})"`,
+          etichettaVediVoce,
+          azioni: azioniMisure(v.id, { vediVoce: (i) => `lvMisVediVoce(${q(v.id)},${i})` }),
+          sommano: { quantita: qSommano, prezzo, importo },
+        }) + (v.corpo ? rigaDettaglioHtml(FASE_PROGETTO, { conSelezione: true, attributi: `data-voce="${esc(v.id)}"`, contenuto: sottoComputoHtml(r, v, a, scrive) }) : '')
+      : '',
   }
 }
 
@@ -182,7 +190,7 @@ export function vociVisibili(r: Revisione, vista: Vista): { voce: Voce; articolo
 
 export function grigliaRevisione(r: Revisione, vista: Vista, cfr?: ImportiPerizia, offerta?: boolean, c: Revisione | null = null): string {
   const soloVariate = !!cfr && vista.mostra === 'variate'
-  const vis = vociVisibili(r, vista).filter((x) => !soloVariate || cfr!.perVoce.has(x.voce.id) || vista.aperte.has(x.voce.id))
+  const vis = vociVisibili(r, vista).filter((x) => !soloVariate || cfr!.perVoce.has(x.voce.id) || (!!vista.soloVoci && vista.aperte.has(x.voce.id)))
   const righe: RigaGriglia[] = []
   let gruppo: string | null = null
   for (const x of vis) {
@@ -250,7 +258,7 @@ export function paginaRevisione(l: Lavoro, r: Revisione, vista: Vista): string {
     // in perizia la barra mostra variate/tutte al posto dell'ordine: la prima riga resta una
     ...(perizia ? {} : { ordine: { valore: vista.ordine, opzioni: OPZ_ORDINE, onclickTpl: "lvOrdine('%v')" } }),
     ...(perizia ? { mostra: { valore: vista.mostra === 'variate' ? 'variate' : 'tutte', opzioni: FASE_PERIZIA.mostra || [], onclickTpl: "lvMostra('%v')" } } : {}),
-    espandi: { tutteAperte: r.voci.length > 0 && r.voci.every((v) => vista.aperte.has(v.id)), onclick: 'lvEspandiTutte()' },
+    espandi: { tutteAperte: !vista.soloVoci, onclick: 'lvEspandiTutte()' },
     aggiungi: [
       { etichetta: vista.prezziAperti ? '≡ Prezzi ✓' : '≡ Prezzi', titolo: vista.prezziAperti ? "L'elenco prezzi è aperto a destra" : "Riapri a destra l'elenco prezzi: progetto, prezzario, altro progetto", onclick: 'lvPzApri()' },
       ...(scrive ? [{ etichetta: '＋ Voce libera', titolo: 'Una voce nuova: codice, descrizione e prezzo si scrivono con ✎', onclick: 'lvVoceLibera()' }, { etichetta: '★ Libreria', titolo: 'Una voce o un\'analisi dalla libreria dello studio', onclick: 'lvLibInserisci()' }] : []),
@@ -332,7 +340,7 @@ export function titoloAvanzamento(a: Avanzamento): string {
 function rigaSal(a: Avanzamento, r: Revisione, v: Voce, ar: Articolo, vista: Vista, n: number, c: Revisione | null = null): RigaVoce {
   const scrive = a.stato === 'bozza' && a.tipo !== 'cre'
   const riga = rigaDi(a, v.id)
-  const aperta = vista.aperte.has(v.id)
+  const aperta = misureAVista(vista, v.id)
   const qtyContratto = quantitaVoce(v)
   const eseguito = quantitaEseguita(riga)
   const qSotto = v.corpo ? quotaDaSotto(v, riga) : null
@@ -345,7 +353,7 @@ function rigaSal(a: Avanzamento, r: Revisione, v: Voce, ar: Articolo, vista: Vis
     : riga.misure.length
       ? { tipo: 'misurata', valore: fmt(eseguito), um: ar.um, misure: riga.misure.length, id: `lv-q-${v.id}` }
       : scrive
-        ? { tipo: 'campo', valore: numIn(riga.quantita), um: ar.um, segnaposto: '—', isola: true, comando: `lvSalQta(${q(v.id)},this.value)`, titolo: "Eseguito a tutto il SAL. Per il dettaglio L×L×H usa «▸ misure»", id: `lv-q-${v.id}` }
+        ? { tipo: 'campo', valore: numIn(riga.quantita), um: ar.um, segnaposto: '—', isola: true, comando: `lvSalQta(${q(v.id)},this.value)`, titolo: "Eseguito a tutto il SAL. Per il dettaglio scrivi le misure: «＋ misura»", id: `lv-q-${v.id}` }
         : { tipo: 'numero', testo: `${fmt(eseguito)} ${ar.um}`.trim(), muto: !eseguito }
   const prezzo = prezzoIn(r, ar)
   const importo = v.corpo ? importoQta(qtyContratto, prezzo, ar.um) * (riga.quotaPct ?? 0) / 100 : importoQta(eseguito, prezzo, ar.um)
@@ -357,18 +365,22 @@ function rigaSal(a: Avanzamento, r: Revisione, v: Voce, ar: Articolo, vista: Vis
     ...chipRibasso(c, r, ar),
     ...(eccede ? [`<span class="lv-chip is-eccede" title="L'eseguito supera la quantità di contratto: si può contabilizzare, ma la quantità si ridetermina solo con una perizia">oltre il contratto +${fmt(eseguito - qtyContratto)} ${esc(ar.um)}</span>`] : []),
   ]
+  // nel foglio (misure a vista) le voci a misura portano le loro righe e la riga SOMMANO
+  const foglio = aperta && !v.corpo
+  const testa: RigaVoce['celle'] = {
+    codice: { tipo: 'codice', codice: ar.codice, tono: ar.origine === 'np' ? 'np' : undefined, ...(ar.origine === 'np' ? { etichetta: 'NP' } : {}) },
+    designazione: { tipo: 'designazione', testo: ar.descrizione, meta },
+  }
+  const numeri: RigaVoce['celle'] = {
+    quantita,
+    prezzo: { tipo: 'numero', testo: v.corpo ? fmt(importoQta(qtyContratto, prezzo, ar.um)) : fmt(prezzo), muto: v.corpo },
+    importo: { tipo: 'numero', testo: fmt(importo), id: `lv-i-${v.id}` },
+  }
   return {
-    classe: eccede ? 'lv-voce is-eccede' : 'lv-voce',
+    classe: (eccede ? 'lv-voce is-eccede' : 'lv-voce') + (foglio ? ' is-foglio' : ''),
     attributi: `data-voce="${esc(v.id)}" oncontextmenu="lvMenuVoce(event,${q(v.id)})"`,
     sel: `<span class="lv-n">${n}</span>${v.corpo && !v.sottoComputo?.length ? '' : `<button class="lv-piega" onclick="lvToggleMisure(${q(v.id)})" title="${aperta ? 'Chiudi' : 'Apri'} ${v.corpo ? 'il sotto-computo' : 'le misure'}" aria-expanded="${aperta}">${aperta ? '▾' : '▸'}</button>`}`,
-    celle: {
-      codice: { tipo: 'codice', codice: ar.codice, tono: ar.origine === 'np' ? 'np' : undefined, ...(ar.origine === 'np' ? { etichetta: 'NP' } : {}) },
-      designazione: { tipo: 'designazione', testo: ar.descrizione, meta },
-      quantita,
-      prezzo: { tipo: 'numero', testo: v.corpo ? eur(importoQta(qtyContratto, prezzo, ar.um)) : eur(prezzo), muto: v.corpo },
-      importo: { tipo: 'numero', testo: eur(importo), id: `lv-i-${v.id}` },
-      comandi: { tipo: 'comandi', comandi: [] },
-    },
+    celle: foglio ? testa : { ...testa, ...numeri },
     dopo: aperta && v.corpo && v.sottoComputo?.length ? rigaDettaglioHtml(FASE_SAL, {
       conSelezione: true, attributi: `data-voce="${esc(v.id)}"`,
       contenuto: `<div class="lv-sc"><div class="ehb-mis-titolo">Sotto-computo: eseguito a tutto il SAL di ogni lavorazione — quota ${fmt(qSotto ?? 0)} %</div>
@@ -376,25 +388,12 @@ function rigaSal(a: Avanzamento, r: Revisione, v: Voce, ar: Articolo, vista: Vis
         ${v.sottoComputo.map((x) => { const e = riga.sotto?.find((y) => y.voceId === x.id); const qe = e?.quantita ?? 0
           return `<tr><td>${esc(x.codice ? x.codice + ' ' : '')}${esc(x.descrizione)}</td><td class="lv-ct-n">${fmt(x.qty || 0)} ${esc(x.um || '')}</td><td>${scrive ? `<input value="${qe ? String(qe).replace('.', ',') : ''}" inputmode="decimal" style="width:90px" onchange="lvScEseg(${q(v.id)},${q(x.id)},this.value)">` : `${fmt(qe)}`}</td><td class="lv-ct-n">${eur(qe * (x.prezzo || 0))}</td></tr>` }).join('')}
         </tbody></table></div>`,
-    }) : aperta && !v.corpo ? rigaDettaglioHtml(FASE_SAL, {
-      conSelezione: true, attributi: `data-voce="${esc(v.id)}"`,
-      contenuto: misureTabellaHtml({
-        righe: riga.misure, um: ar.um, fmt: (x) => fmt(x), soloLettura: !scrive,
-        titolo: 'Misure a tutto il SAL (par.ug. × L1 × L2 × H)', totale: 'Eseguito a tutto il SAL',
-        vuoto: scrive ? 'Nessuna misura: «＋ riga di misura», oppure scrivi l\'eseguito nella riga della voce.' : 'Nessuna misura.',
-        azioni: {
-          set: (i, c) => `lvMisSet(${q(v.id)},${i},'${c}',this.value)`,
-          tasti: (i, c) => `lvMisTasti(event,${q(v.id)},${i},'${c}')`,
-          duplica: (i) => `lvMisDuplica(${q(v.id)},${i})`,
-          elimina: (i) => `lvMisElimina(${q(v.id)},${i})`,
-          menu: (i) => `lvMisMenu(event,${q(v.id)},${i})`,
-          incollaQui: (i) => `lvMisIncolla(event,${q(v.id)},${i})`,
-          copia: `lvMisCopia(${q(v.id)})`,
-          incolla: `lvMisIncollaTutte(${q(v.id)})`,
-          aggiungi: `lvMisAggiungi(${q(v.id)},1)`,
-          detrazione: `lvMisAggiungi(${q(v.id)},-1)`,
-        },
-      }),
+    }) : foglio ? righeFoglioHtml(FASE_SAL, {
+      righe: riga.misure, um: ar.um, fmt: (x) => fmt(x), soloLettura: !scrive, conSelezione: true,
+      attributi: `data-voce="${esc(v.id)}" oncontextmenu="lvMenuVoce(event,${q(v.id)})"`,
+      etichetta: `A TUTTO IL SAL${ar.um ? ' ' + ar.um : ''}`,
+      azioni: azioniMisure(v.id),
+      sommano: { ...numeri, quantita: riga.misure.length ? { tipo: 'numero', testo: fmt(eseguito), id: `lv-q-${v.id}` } : quantita },
     }) : '',
   }
 }
@@ -412,7 +411,7 @@ export function paginaAvanzamento(l: Lavoro, a: Avanzamento, vista: Vista): stri
   const s = vista.q.trim().toLowerCase()
   const tutte = r.voci.map((v, i) => ({ v, ar: art.get(v.articolo)!, n: i + 1 })).filter((x) => x.ar)
   const vis = tutte
-    .filter((x) => mostra === 'tutte' || (mostra === 'eccedenti' ? eccedenti.some((e) => e.voce === x.v.id) : misurata(rigaDi(a, x.v.id))) || vista.aperte.has(x.v.id))
+    .filter((x) => mostra === 'tutte' || (mostra === 'eccedenti' ? eccedenti.some((e) => e.voce === x.v.id) : misurata(rigaDi(a, x.v.id))) || (vista.soloVoci && vista.aperte.has(x.v.id)))
     .filter((x) => !s || `${x.ar.codice} ${x.ar.descrizione} ${x.v.categoria || ''}`.toLowerCase().includes(s))
   const imp = importiAvanzamento(l, a.id)
   const ultimo = !l.avanzamenti.some((x) => x.ordine > a.ordine)
@@ -450,7 +449,7 @@ export function paginaAvanzamento(l: Lavoro, a: Avanzamento, vista: Vista): stri
       : a.tipo === 'salFinale' && scrive
         ? [{ etichetta: '⇩ XPWE', titolo: 'Una contabilità XPWE: confronta i totali con lo stato finale, o ne prende le misure', onclick: 'lvConfrontaXpwe()', stile: 'ghost' }]
         : !cre ? [{ etichetta: '⇄ XPWE', titolo: 'Confronta le misure di questo avanzamento con una contabilità XPWE: voce per voce e nei totali, senza cambiare niente', onclick: 'lvConfrontaXpwe()', stile: 'ghost' }] : [],
-    espandi: { tutteAperte: vis.length > 0 && vis.every((x) => vista.aperte.has(x.v.id)), onclick: 'lvEspandiTutte()' },
+    espandi: { tutteAperte: !vista.soloVoci, onclick: 'lvEspandiTutte()' },
     aggiungi: [
       { etichetta: vista.prezziAperti ? '≡ Prezzi ✓' : '≡ Prezzi', titolo: cre ? "L'elenco prezzi vigente, a destra" : libero ? 'I prezzi a destra: contratto, prezzario, altro progetto — «＋» misura la voce nel SAL' : "L'elenco prezzi di contratto, a destra: «＋» porta la voce nel libretto", onclick: 'lvPzApri()' },
       ...(libero && scrive ? [{ etichetta: '＋ Voce libera', titolo: 'Un articolo nuovo: entra nel contratto e si misura in questo SAL', onclick: 'lvVoceLibera()' }] : []),

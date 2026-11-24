@@ -18,7 +18,7 @@ import {
   aggiungiArticolo, modificaArticolo, aggiungiVoce, modificaVoce, eliminaVoce, duplicaVoce, caricaVoci, impostaDati,
   alberoLavoro, quantitaVoce, NOME_FASE, FASI, type Lavoro, type Revisione, type Fase, type Articolo, type Voce,
 } from '../../shared/lavoro'
-import { paginaRevisione, paginaVuota, paginaAvanzamento, titoloAvanzamento, fmt, type Vista } from './schermata'
+import { paginaRevisione, paginaVuota, paginaAvanzamento, titoloAvanzamento, fmt, misureAVista, type Vista } from './schermata'
 import { daXpwe } from './xpwe'
 import { paginaContabilita } from './contabilita'
 import { vociConsuntivo } from './consuntivo'
@@ -112,7 +112,9 @@ import { anteprimaPdf, anteprimaHTML } from '../../shared/ui/anteprima-pdf'
 let L: Lavoro = nuovoLavoro()
 /** La tappa aperta (id di una revisione o di un avanzamento), o null. */
 let corrente: string | null = null
-const vista: Vista = { q: '', ordine: 'manuale', aperte: new Set() }
+const vista: Vista = { q: '', ordine: 'manuale', aperte: new Set(), chiuse: new Set() }
+/** Mette a vista le misure di una voce, nel foglio e con «solo voci». */
+function apriMisure(id: string): void { vista.aperte.add(id); vista.chiuse?.delete(id) }
 /** Il pannello prezzi a destra: anche lui stato della vista, non del lavoro. */
 const pz = nuovoPannello()
 
@@ -143,7 +145,10 @@ function revDiAv(a: Avanzamento): Revisione { return revisione(L, a.leggeDa) }
 function aggiorna(f: (l: Lavoro) => Lavoro, messaggio?: string): boolean {
   try {
     L = f(L)
-    render(); pubblica()
+    // si è lasciato un campo (Tab, clic altrove): si ridisegna DOPO che il fuoco
+    // è arrivato dove va, così si ritrova quel campo e si continua a scrivere
+    if (window.event?.type === 'change' && !_fuocoDopo) { _ridisegnoInAttesa = true; setTimeout(() => { if (_ridisegnoInAttesa) { _ridisegnoInAttesa = false; render() } }, 0); pubblica() }
+    else { render(); pubblica() }
     if (messaggio) toast(messaggio)
     return true
   } catch (e) {
@@ -156,6 +161,7 @@ function aggiorna(f: (l: Lavoro) => Lavoro, messaggio?: string): boolean {
 
 /** Il campo col fuoco, per ritrovarlo dopo il ridisegno (le misure si scrivono di fila). */
 let _fuocoDopo: string | null = null
+let _ridisegnoInAttesa = false
 function chiaveFuoco(el: Element | null): string | null {
   if (!el || !(el instanceof HTMLElement)) return null
   if (el.id === 'lv-pz-q') return 'id|lv-pz-q'
@@ -180,6 +186,7 @@ function ritrovaFuoco(k: string | null): void {
 }
 
 function render(): void {
+  _ridisegnoInAttesa = false
   const host = $('lv-app'); if (!host) return
   const fuoco = _fuocoDopo ?? chiaveFuoco(document.activeElement)
   _fuocoDopo = null
@@ -331,7 +338,7 @@ function apri(id: string | null): void {
   const esiste = !!id && (L.revisioni.some((r) => r.id === id) || L.avanzamenti.some((a) => a.id === id))
   if (id && !esiste) return
   corrente = esiste ? id : null
-  vista.aperte.clear()
+  vista.aperte.clear(); vista.chiuse?.clear()
   render(); pubblica()
 }
 
@@ -687,7 +694,7 @@ async function lvLibInserisci(): Promise<void> {
     const nv = aggiungiVoce(a.lavoro, r.id, { articolo: a.id }); voceId = nv.id
     return modificaVoce(nv.lavoro, r.id, nv.id, { misure: [{ descrizione: '', quantita: 0 }] })
   }, 'Voce dalla libreria: scrivi codice e prezzo con ✎, e le misure')
-  if (voceId) { vista.aperte.add(voceId); render() }
+  if (voceId) { apriMisure(voceId); render() }
 }
 
 /* ── La struttura: categorie, WBS, modelli ────────────────────────────── */
@@ -1279,7 +1286,7 @@ function misuraNelSalLibero(art: Omit<Articolo, 'id'>, voce: Partial<Voce> = {})
     return riga.misure.length ? x.lavoro : modificaRigaAvanzamento(x.lavoro, a.id, x.voce, { misure: [{ descrizione: '', quantita: 0 }] })
   })
   if (ok && voceId) {
-    vista.aperte.add(voceId); _fuocoDopo = `mis|${voceId}|0:descrizione`; render()
+    apriMisure(voceId); _fuocoDopo = `mis|${voceId}|0:descrizione`; render()
     toast(`${art.codice || art.descrizione || 'Voce'}: scrivi le misure`)
     requestAnimationFrame(() => document.querySelector(`[data-voce="${CSS.escape(voceId)}"]`)?.scrollIntoView({ block: 'center' }))
   }
@@ -1304,7 +1311,7 @@ async function lvVoceLibera(): Promise<void> {
     // nasce con una riga di misura vuota: si scrive subito, senza cercare il comando
     return modificaVoce(v.lavoro, r.id, v.id, { ...x.voce, misure: [{ descrizione: '', quantita: 0 }] })
   })
-  if (voceId) { vista.aperte.add(voceId); _fuocoDopo = `mis|${voceId}|0:descrizione`; render() }
+  if (voceId) { apriMisure(voceId); _fuocoDopo = `mis|${voceId}|0:descrizione`; render() }
 }
 
 async function lvModificaVoce(voceId: string): Promise<void> {
@@ -1408,7 +1415,7 @@ async function lvMisIncollaTutte(voceId: string): Promise<void> {
   try { testo = await navigator.clipboard.readText() } catch { toast('Non riesco a leggere gli appunti: incolla con Ctrl/⌘+V in un campo delle misure'); return }
   const nuove = testoAMisure(testo); if (!nuove.length) { toast('Negli appunti non ci sono righe di misura'); return }
   const x = misureDi(voceId); if (!x) return
-  vista.aperte.add(voceId)
+  apriMisure(voceId)
   aggiorna((l) => x.salva(l, { misure: [...x.v.misure, ...nuove], quantita: undefined }), `${nuove.length} righe incollate`)
 }
 /** Misure da un'altra voce: di questo computo, o del progetto aperto in «Altro progetto». */
@@ -1424,7 +1431,7 @@ async function lvMisDaVoce(voceId: string): Promise<void> {
   const src = v.da.startsWith('q:') ? r.voci.find((x) => x.id === v.da.slice(2)) : altro?.voci.find((x) => x.id === v.da.slice(2))
   const x = misureDi(voceId); if (!src || !x) return
   const righe = copiaRighe(src.misure).map((m) => { const { vediVoce: _v, ...resto } = m; return resto })
-  vista.aperte.add(voceId)
+  apriMisure(voceId)
   aggiorna((l) => x.salva(l, { misure: v.modo === 'sostituisci' ? righe : [...x.v.misure, ...righe], quantita: undefined }), `${righe.length} righe copiate`)
 }
 function lvMisSposta(voceId: string, i: number, delta: number): void {
@@ -1461,25 +1468,35 @@ function lvDropVoce(ev: DragEvent, sopra: string): void {
 /** Invio: la riga sotto (o una nuova, in fondo). Esc: chiude le misure. */
 function lvMisTasti(ev: KeyboardEvent, voceId: string, i: number, c: string): void {
   const x = misureDi(voceId); if (!x) return
-  if (ev.key === 'Escape') { vista.aperte.delete(voceId); render(); return }
+  const el = ev.target as HTMLInputElement
+  const vai = (j: number): void => {
+    const dest = el.closest('tbody')?.querySelector(`[data-voce="${CSS.escape(voceId)}"] [data-mis-input="${j}:${c}"]`)
+    if (dest instanceof HTMLInputElement) { ev.preventDefault(); el.blur(); dest.focus(); dest.select() }
+  }
+  // Esc: lascia il campo com'era
+  if (ev.key === 'Escape') { ev.preventDefault(); el.value = el.defaultValue; _fuocoDopo = null; el.blur(); return }
+  // come in un foglio di calcolo: frecce su e giù, la stessa colonna nella riga accanto
+  if ((ev.key === 'ArrowUp' || ev.key === 'ArrowDown') && !ev.altKey && !ev.ctrlKey && !ev.metaKey) { vai(i + (ev.key === 'ArrowUp' ? -1 : 1)); return }
+  // Alt+↑↓ sposta la riga, Ctrl+D la duplica, Ctrl+Canc la toglie
+  if ((ev.key === 'ArrowUp' || ev.key === 'ArrowDown') && ev.altKey) { ev.preventDefault(); lvMisSet(voceId, i, c, el.value); lvMisSposta(voceId, i, ev.key === 'ArrowUp' ? -1 : 1); return }
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'd') { ev.preventDefault(); lvMisSet(voceId, i, c, el.value); _fuocoDopo = `mis|${voceId}|${i + 1}:${c}`; lvMisDuplica(voceId, i); return }
+  if ((ev.ctrlKey || ev.metaKey) && (ev.key === 'Delete' || ev.key === 'Backspace')) { ev.preventDefault(); _fuocoDopo = `mis|${voceId}|${Math.max(0, i - 1)}:${c}`; lvMisElimina(voceId, i); return }
   if (ev.key !== 'Enter') return
   ev.preventDefault()
-  const el = ev.target as HTMLInputElement
   const ultima = i === x.v.misure.length - 1
   lvMisSet(voceId, i, c, el.value)
+  // Invio: la stessa colonna nella riga sotto; dall'ultima riga, una riga nuova
   if (ultima) lvMisAggiungi(voceId)
   else { _fuocoDopo = `mis|${voceId}|${i + 1}:${c}`; render() }
 }
 function lvToggleMisure(voceId: string): void {
-  if (vista.aperte.has(voceId)) vista.aperte.delete(voceId); else vista.aperte.add(voceId)
+  if (misureAVista(vista, voceId)) { vista.aperte.delete(voceId); vista.chiuse?.add(voceId) } else apriMisure(voceId)
   render()
 }
+/** Il foglio con le misure, o solo le voci (una riga ciascuna). */
 function lvEspandiTutte(): void {
-  const a = av()
-  const r = a ? revDiAv(a) : rev(); if (!r) return
-  const tutte = r.voci.every((v) => vista.aperte.has(v.id))
-  vista.aperte.clear()
-  if (!tutte) r.voci.forEach((v) => vista.aperte.add(v.id))
+  vista.soloVoci = !vista.soloVoci
+  vista.aperte.clear(); vista.chiuse?.clear()
   render()
 }
 function lvCerca(testo: string): void { vista.q = testo; render() }
@@ -1514,8 +1531,9 @@ const azioniDellaTappa = (ev: MouseEvent): VoceMenu => ({
 function lvMenuVoce(ev: MouseEvent, voceId: string): void {
   if (menuNativo(ev)) return
   ev.preventDefault(); ev.stopPropagation()
-  const aperta = vista.aperte.has(voceId)
-  const misure: VoceMenu = { etichetta: aperta ? '▾ Chiudi le misure' : '▸ Apri le misure', azione: () => lvToggleMisure(voceId) }
+  const aperta = misureAVista(vista, voceId)
+  const misure: VoceMenu = { etichetta: aperta ? '▾ Nascondi le misure' : '▸ Mostra le misure', azione: () => lvToggleMisure(voceId) }
+  const copiaMis: VoceMenu = { etichetta: '⧉ Copia le misure', titolo: 'Si incollano in un\'altra voce o in Excel', azione: () => lvMisCopia(voceId) }
   const a = av()
   if (a) {
     const r = revDiAv(a)
@@ -1526,8 +1544,10 @@ function lvMenuVoce(ev: MouseEvent, voceId: string): void {
     apriMenuContestuale(ev.clientX, ev.clientY, [
       ...(v.corpo ? [] : [misure]),
       ...(scrive && !v.corpo ? [
-        { etichetta: '＋ Riga di misura', azione: () => { vista.aperte.add(voceId); lvMisAggiungi(voceId, 1) } },
-        { etichetta: '− Riga in detrazione', azione: () => { vista.aperte.add(voceId); lvMisAggiungi(voceId, -1) } },
+        { etichetta: '＋ Riga di misura', azione: () => { apriMisure(voceId); lvMisAggiungi(voceId, 1) } },
+        { etichetta: '− Riga in detrazione', azione: () => { apriMisure(voceId); lvMisAggiungi(voceId, -1) } },
+        copiaMis,
+        { etichetta: '⎘ Incolla le misure', titolo: 'Righe copiate da Excel o da un\'altra voce', azione: () => void lvMisIncollaTutte(voceId) },
         ...(!riga.misure.length ? [{ etichetta: '= Eseguito come da contratto', titolo: `Scrive l'eseguito a tutto il SAL uguale alla quantità di contratto (${fmt(quantitaVoce(v))} ${ar.um})`, azione: () => aggiorna((l) => modificaRigaAvanzamento(l, a.id, voceId, { quantita: quantitaVoce(v) })) }] : []),
         ...(misurataRiga(riga) ? [{ etichetta: "✕ Azzera l'eseguito", pericolo: true, azione: () => aggiorna((l) => modificaRigaAvanzamento(l, a.id, voceId, { misure: [], quantita: undefined, quotaPct: undefined })) }] : []),
       ] : []),
@@ -1547,8 +1567,8 @@ function lvMenuVoce(ev: MouseEvent, voceId: string): void {
     misure,
     ...(scrive ? [
       { etichetta: '✎ Modifica la voce…', azione: () => void lvModificaVoce(voceId) },
-      { etichetta: '＋ Riga di misura', azione: () => { vista.aperte.add(voceId); lvMisAggiungi(voceId, 1) } },
-      { etichetta: '− Riga in detrazione', azione: () => { vista.aperte.add(voceId); lvMisAggiungi(voceId, -1) } },
+      { etichetta: '＋ Riga di misura', azione: () => { apriMisure(voceId); lvMisAggiungi(voceId, 1) } },
+      { etichetta: '− Riga in detrazione', azione: () => { apriMisure(voceId); lvMisAggiungi(voceId, -1) } },
       { etichetta: '⧉ Ripeti la voce', azione: () => lvDuplica(voceId) },
       'sep' as const,
       { etichetta: '⇣ Misure da un\'altra voce…', azione: () => void lvMisDaVoce(voceId) },
@@ -2126,7 +2146,7 @@ async function lvStampa(): Promise<void> {
 }
 
 function lvAiuto(): void {
-  void openModal({ title: 'Come si lavora qui', message: 'Ogni tappa del lavoro si apre in questa schermata, dalla sidebar. Le voci si aggiungono con «＋ Voce libera» o importando un XPWE; la quantità si scrive nella riga, oppure si apre «▸» per le misure L×L×H (Invio = riga sotto, segno meno = detrazione). Il tasto destro su una voce apre i suoi comandi. Quando la revisione è pronta si consegna: da lì si legge e non si modifica; per cambiarla si fa una revisione nuova.', actions: [{ label: 'Chiudi', variant: 'accent', value: true }] })
+  void openModal({ title: 'Come si lavora qui', message: 'Ogni tappa del lavoro si apre in questa schermata, dalla sidebar. Le voci si aggiungono con «＋ Voce libera» o importando un XPWE; sotto ogni voce ci sono le sue misure, come nel foglio di computo: si scrivono cella per cella (par.ug., lung., larg., H/peso; Tab = cella accanto, Invio = riga sotto, segno meno = detrazione, anche formule come 2x3,5) e la riga SOMMANO porta quantità, prezzo e importo. «☰ Solo voci» nella barra nasconde le misure. Il tasto destro su una voce apre i suoi comandi. Quando la revisione è pronta si consegna: da lì si legge e non si modifica; per cambiarla si fa una revisione nuova.', actions: [{ label: 'Chiudi', variant: 'accent', value: true }] })
 }
 
 /* ── Il pannello prezzi ───────────────────────────────────────────────── */
@@ -2215,7 +2235,7 @@ function prendi(a: Omit<Articolo, 'id'>, prezzario?: { id: string; nome: string;
     return x
   })
   if (ok) {
-    vista.aperte.add(voceId); _fuocoDopo = `mis|${voceId}|0:descrizione`; render()
+    apriMisure(voceId); _fuocoDopo = `mis|${voceId}|0:descrizione`; render()
     toast(`${a.codice || 'Voce'} ${r.tipo === 'perizia' ? 'nella perizia' : 'nel computo'}: scrivi le misure`)
     requestAnimationFrame(() => document.querySelector(`[data-voce="${CSS.escape(voceId)}"]`)?.scrollIntoView({ block: 'center' }))
   }
@@ -2225,7 +2245,7 @@ function lvPzVoceDaArticolo(artId: string): void {
   if (a) {
     // nel SAL l'articolo di contratto c'è già: si porta la sua voce nel libretto, con le misure aperte
     const v = revDiAv(a).voci.find((x) => x.articolo === artId); if (!v) return
-    vista.aperte.add(v.id)
+    apriMisure(v.id)
     const riga = rigaDi(a, v.id)
     if (a.stato === 'bozza' && !riga.misure.length && !v.corpo) { _fuocoDopo = `mis|${v.id}|0:descrizione`; aggiorna((l) => modificaRigaAvanzamento(l, a.id, v.id, { misure: [{ descrizione: '', quantita: 0 }] })) }
     else render()
@@ -2238,7 +2258,7 @@ function lvPzVoceDaArticolo(artId: string): void {
     const v = aggiungiVoce(l, r.id, { articolo: artId }); voceId = v.id
     return modificaVoce(v.lavoro, r.id, v.id, { misure: [{ descrizione: '', quantita: 0 }] })
   })
-  if (ok) { vista.aperte.add(voceId); _fuocoDopo = `mis|${voceId}|0:descrizione`; render() }
+  if (ok) { apriMisure(voceId); _fuocoDopo = `mis|${voceId}|0:descrizione`; render() }
 }
 async function lvPzModificaArticolo(artId: string): Promise<void> {
   const r = rev(); if (!r) return

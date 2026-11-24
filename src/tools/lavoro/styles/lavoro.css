@@ -12,7 +12,7 @@ body { font: 450 var(--fs-base)/1.4 var(--sans); background: var(--bg); color: v
 
 /* La pagina di una tappa: testata, corpo che scorre, piede sempre visibile. */
 .lv-page { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; min-height: 0; background: var(--bg); }
-.lv-body { flex: 1 1 auto; overflow: auto; padding: 4px var(--sp-5) 40px; }
+.lv-body { flex: 1 1 auto; overflow: auto; padding: 4px var(--sp-3) 40px; }
 /* Sola lettura: si vede subito, senza nascondere niente. */
 .lv-page.is-chiusa .ehb-gr > tbody > tr.ehb-gr-voce > td { background: color-mix(in srgb, var(--panel2) 55%, transparent); }
 
@@ -21,8 +21,15 @@ body { font: 450 var(--fs-base)/1.4 var(--sans); background: var(--bg); color: v
 .lv-piega { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 11px; padding: 0 4px; }
 .lv-piega:hover { color: var(--text); }
 
+/* I comandi della voce accanto ai suoi dati: compaiono passandoci sopra. */
+.ehb-gr tr.lv-voce > td.ehb-gr-c--designazione { position: relative; }
+.lv-voce-az { position: absolute; top: 3px; right: 2px; display: inline-flex; gap: 2px; padding-left: 8px; background: linear-gradient(to right, transparent, var(--bg) 8px); visibility: hidden; }
+tr.lv-voce:hover .lv-voce-az, tr.lv-voce:focus-within .lv-voce-az { visibility: visible; }
+.lv-voce-az .ehb-icon-btn { width: 24px; height: 22px; min-width: 0; padding: 0; font-size: 12px; }
+.lv-voce-az .ehb-icon-btn.is-pericolo:hover { color: var(--bad, var(--danger)); }
+
 /* I dati della voce sotto la designazione. */
-.lv-chip { display: inline-flex; align-items: center; padding: 0 6px; border: 1px solid var(--line2); border-radius: 999px; font-size: var(--fs-2xs, 10px); color: var(--muted); white-space: nowrap; }
+.lv-chip { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; padding: 0 6px; border: 1px solid var(--line2); border-radius: 999px; font-size: 11px; line-height: 16px; color: var(--muted); white-space: nowrap; }
 .lv-chip.is-sic { color: var(--warn, var(--accent)); border-color: currentColor; }
 .lv-chip.is-wbs { font-family: var(--mono); }
 .lv-chip.is-var { color: var(--accent-text, var(--accent)); border-color: currentColor; }
@@ -51,7 +58,7 @@ body { font: 450 var(--fs-base)/1.4 var(--sans); background: var(--bg); color: v
    Una colonna, non una finestra: progetto/contratto, prezzario, altro
    progetto. Mai più di un terzo dello schermo; la riga va su due piani —
    codice, unità, prezzo e comandi sopra, la descrizione sotto. */
-.lv-prezzi { flex: 0 0 clamp(250px, 28vw, 360px); min-width: 0; display: flex; flex-direction: column; border-left: 1px solid var(--line2); background: var(--panel); }
+.lv-prezzi { flex: 0 0 clamp(240px, 21vw, 320px); min-width: 0; display: flex; flex-direction: column; border-left: 1px solid var(--line2); background: var(--panel); }
 .lv-pz-hd { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
 .lv-pz-t { flex: 1; min-width: 0; font: 650 var(--fs-sm)/1.25 var(--sans); color: var(--text); }
 .lv-pz-t > span { display: block; font-weight: 400; font-size: var(--fs-xs); color: var(--muted); }
@@ -134,3 +141,7 @@ body { font: 450 var(--fs-base)/1.4 var(--sans); background: var(--bg); color: v
 .lv-str td:first-child input { font-weight: 600; }
 .lv-str tr.lv-str-l1 td:first-child input, .lv-str tr.lv-str-l2 td:first-child input { font-weight: 400; }
 .lv-str-az { white-space: nowrap; text-align: right; }
+
+/* I dati della voce (categoria, WBS, sicurezza…): vanno a capo se serve, e
+   un'etichetta troppo lunga (la categoria) si accorcia coi puntini. */
+.ehb-gr tr.lv-voce .ehb-gr-meta { gap: 4px; }

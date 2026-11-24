@@ -19,7 +19,9 @@
  *  - `td.ehb-gr-c--confronto`          la colonna con cui si confronta
  *  - `tr.ehb-gr-gruppo` / `-sezione` / `-totale` / `-dett`   righe di servizio
  */
-import { COLONNE_NUMERICHE, type IdColonna, type StrutturaFase } from './fase'
+import { COLONNE_MISURA, COLONNE_NUMERICHE, type IdColonna, type StrutturaFase } from './fase'
+import { campoMisuraHtml, TASTI_MISURE, type AzioniMisure } from '../compositore/misure-tabella'
+import { sommaMisurazioni, type MisurazioneRiga } from '../compositore/misurazioni'
 import { cellaVoceHtml, classiCella, type CellaVoce } from './celle'
 
 const esc = (s: unknown): string => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string))
@@ -131,6 +133,88 @@ export function rigaTotaleHtml(fase: Fase, t: Omit<RigaTotale, 'tipo'>, conSelez
   const prima = i + (conSelezione ? 1 : 0)
   const dopo = ids.length - i - 1
   return `<tr class="ehb-gr-totale"><td colspan="${prima}" class="ehb-gr-num">${esc(t.titolo)}</td><td class="ehb-gr-c ehb-gr-num">${esc(t.valore)}</td>${dopo ? `<td colspan="${dopo}"></td>` : ''}</tr>`
+}
+
+/* ── Il foglio: le misure nella griglia, come nei programmi di computo ──── */
+
+/**
+ * Le misure di una voce DENTRO la griglia, una riga ciascuna, nelle stesse
+ * colonne della voce: la descrizione sotto la designazione, par.ug. × lung. ×
+ * larg. × H/peso nelle loro colonne, la quantità parziale sotto la quantità.
+ * Sotto, la riga SOMMANO porta il totale, il prezzo e l'importo. È il foglio
+ * di computo dei programmi di contabilità (PriMus): si scrive come in una
+ * tabella di calcolo, senza aprire finestre o pannelli.
+ */
+export interface OpzioniFoglio {
+  righe: MisurazioneRiga[]
+  um?: string
+  fmt: (n: number) => string
+  soloLettura?: boolean
+  azioni: AzioniMisure
+  /** Etichetta del richiamo «vedi voce» di una riga. */
+  etichettaVediVoce?: (chiave: string) => string
+  /** Attributi su ogni <tr> (data-voce…), per ritrovare le righe della voce. */
+  attributi?: string
+  conSelezione?: boolean
+  /** Le celle della riga SOMMANO: quantità, prezzo, importo (o confronto/differenza). */
+  sommano: Partial<Record<IdColonna, Cella>>
+  /** Etichetta della riga SOMMANO (default «SOMMANO <um>»). */
+  etichetta?: string
+  /** Comandi in più, a sinistra nella riga SOMMANO (HTML già pronto). */
+  comandi?: string
+}
+
+function rigaMisuraFoglio(f: Fase, o: OpzioniFoglio, i: number): string {
+  const m = o.righe[i]
+  const a = o.azioni
+  const neg = (m.quantita || 0) < 0
+  const tr = a.trascina
+  const cella = (id: IdColonna): string => {
+    const c = classiCella(f, id) + ' ehb-gr-mis-c'
+    if (id === 'designazione') {
+      const vv = m.vediVoce && o.etichettaVediVoce ? `<span class="ehb-mis-vv" title="La quantità di quella voce entra come Lung.">↪ ${esc(o.etichettaVediVoce(m.vediVoce))}</span>` : ''
+      // i comandi della riga stanno sulla designazione, e compaiono passandoci sopra
+      // fuori dal giro del Tab: col Tab si passa di cella in cella, come in un foglio
+      const cmd = o.soloLettura ? '' : `<span class="ehb-gr-mis-cmd">${a.vediVoce ? `<button class="ehb-icon-btn" tabindex="-1" onclick="${esc(a.vediVoce(i))}" title="Vedi voce: la quantità di un'altra voce entra come lunghezza">↪</button>` : ''}<button class="ehb-icon-btn" tabindex="-1" onclick="${esc(a.duplica(i))}" title="Duplica la riga (Ctrl+D)">⧉</button><button class="ehb-icon-btn is-pericolo" tabindex="-1" onclick="${esc(a.elimina(i))}" title="Elimina la riga (Ctrl+Canc)">✕</button></span>`
+      return `<td class="${c}">${vv}${campoMisuraHtml(o, i, 'descrizione')}${cmd}</td>`
+    }
+    const mis = COLONNE_MISURA.find((x) => x.id === id)
+    if (mis) return `<td class="${c}">${campoMisuraHtml(o, i, mis.campo)}</td>`
+    if (id === 'quantita') return `<td class="${c} ehb-gr-mis-qt" data-mis-qt>${esc(o.fmt(m.quantita || 0))}</td>`
+    return `<td class="${c}"></td>`
+  }
+  const sel = o.conSelezione
+    ? `<td class="ehb-gr-c ehb-gr-c--sel ehb-gr-mis-c">${tr && !o.soloLettura ? `<span class="ehb-gr-mis-drag" draggable="true" ondragstart="${esc(tr.inizio(i))}" ondragend="${esc(tr.fine)}" title="Trascina la riga">⠿</span>` : ''}</td>`
+    : ''
+  return `<tr class="ehb-gr-mis${neg ? ' is-neg' : ''}"${o.attributi ? ' ' + o.attributi : ''}${a.menu && !o.soloLettura ? ` oncontextmenu="${esc(a.menu(i))}"` : ''}${tr ? ` ondragover="${esc(tr.sopra)}" ondragleave="${esc(tr.esce)}" ondrop="${esc(tr.rilascia(i))}"` : ''}>${sel}${f.colonne.map((c) => cella(c.id)).join('')}</tr>`
+}
+
+/** Le righe di misura e la riga SOMMANO di una voce: HTML di <tr> da mettere dopo la voce. */
+export function righeFoglioHtml(f: Fase, o: OpzioniFoglio): string {
+  const righe = o.righe.map((_, i) => rigaMisuraFoglio(f, o, i)).join('')
+  const ids = f.colonne.map((c) => c.id)
+  const iDes = ids.indexOf('designazione')
+  // la designazione si allarga sulle colonne delle misure: lì stanno i comandi e «SOMMANO»
+  let span = 1
+  while (iDes + span < ids.length && COLONNE_MISURA.some((x) => x.id === ids[iDes + span])) span++
+  const a = o.azioni
+  const tot = sommaMisurazioni(o.righe)
+  const comandi = o.soloLettura ? '' : `<span class="ehb-gr-som-az">
+      <button class="ehb-gr-som-b" onclick="${esc(a.aggiungi)}" title="Una riga di misura in fondo (Invio sull'ultima riga fa lo stesso)">＋ misura</button>
+      ${a.detrazione ? `<button class="ehb-gr-som-b is-neg" onclick="${esc(a.detrazione)}" title="Una riga in detrazione (parti uguali negative)">− detrazione</button>` : ''}
+      ${o.comandi || ''}
+      <span class="ehb-gr-som-tasti" tabindex="-1" title="${esc(TASTI_MISURE)}">⌨</span>
+    </span>`
+  const etichetta = o.etichetta ?? `SOMMANO${o.um ? ' ' + o.um : ''}`
+  const celle = ids.map((id, k) => {
+    if (k === iDes) return `<td class="${classiCella(f, id)} ehb-gr-som-des" colspan="${span}">${comandi}<span class="ehb-gr-som-lab">${esc(etichetta)}${o.righe.length > 1 ? `<span class="ehb-gr-som-n"> · ${o.righe.length} righe</span>` : ''}</span></td>`
+    if (k > iDes && k < iDes + span) return ''
+    const c = o.sommano[id]
+    if (id === 'quantita' && c === undefined) return `<td class="${classiCella(f, id)}" data-mis-tot>${esc(o.fmt(tot))}</td>`
+    return cellaHtml(f, id, c)
+  }).join('')
+  const sel = o.conSelezione ? '<td class="ehb-gr-c ehb-gr-c--sel"></td>' : ''
+  return `${righe}<tr class="ehb-gr-sommano"${o.attributi ? ' ' + o.attributi : ''}>${sel}${celle}</tr>`
 }
 
 /**

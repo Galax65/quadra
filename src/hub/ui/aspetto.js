@@ -36,18 +36,16 @@ export const FONT_LABELS = {
   'jetbrains-mono': 'JetBrains Mono', 'cormorant': 'Cormorant', 'sistema': 'Sistema',
   'pixelify': 'Pixelify Sans', 'fredoka': 'Fredoka',
 };
-/* Il font di sistema ha un DEFAULT che dipende dal profilo (richiesta utente):
-   ogni profilo AZIENDALE parte dal font di sistema (più neutro per il
-   cliente); il profilo personale/admin resta su JetBrains Mono. La scelta
-   ESPLICITA dell'utente (setFont) vince e viene ricordata PER profilo — quello
-   personale usa la chiave storica 'hub:font', le aziende una chiave dedicata. */
+/* Si parte dal carattere di sistema, il più leggibile. La scelta ESPLICITA
+   dell'utente (setFont) vince e viene ricordata PER profilo — quello personale
+   usa la chiave storica 'hub:font', le aziende una chiave dedicata. */
 export function fontKeyFor(profile) {
   return (profile && profile.companyId)
     ? `hub:font:${profile.companyId}:${profile.utente || ''}`
     : 'hub:font';
 }
-export function defaultFontFor(profile) {
-  return (profile && profile.companyId) ? 'sistema' : DEFAULT_FONT;
+export function defaultFontFor() {
+  return DEFAULT_FONT;
 }
 /* Ricalcola il font attivo per il profilo corrente: scelta salvata se valida,
    altrimenti il default del profilo. Da chiamare a ogni cambio di profilo. */
@@ -76,7 +74,7 @@ export function applyFont() {
   if (lbl) {
     const name = FONT_LABELS[suiteFont] || suiteFont;
     lbl.textContent = name;
-    lbl.style.fontFamily = `'${name}'`;
+    lbl.style.fontFamily = suiteFont === 'sistema' ? "-apple-system,'Segoe UI',system-ui,sans-serif" : `'${name}'`;
   }
 }
 export function setFont(name) {

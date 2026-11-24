@@ -77,7 +77,7 @@ export function barraVoci(o: BarraVociOpts): string {
   const ordine = seg('ORDINA', o.ordine)
   const mostra = seg('MOSTRA', o.mostra)
   const espandi = o.espandi
-    ? btn({ etichetta: o.espandi.tutteAperte ? '⊟ Collassa tutte' : '⊞ Espandi tutte', titolo: o.espandi.tutteAperte ? 'Chiudi il dettaglio di tutte le voci' : 'Apri il dettaglio di tutte le voci', onclick: o.espandi.onclick, stile: 'ghost' })
+    ? btn({ etichetta: o.espandi.tutteAperte ? '☰ Solo voci' : '▤ Con le misure', titolo: o.espandi.tutteAperte ? 'Nasconde le misure: una riga per voce' : 'Mostra le misure di tutte le voci, come nel foglio di computo', onclick: o.espandi.onclick, stile: 'ghost' })
     : ''
   const grp = (a: AzioneBarra[] | undefined, nome = ''): string => (a && a.length ? `<span class="ehb-barra__g${nome ? ' ehb-barra__g--' + nome : ''}">${a.map(btn).join('')}</span>` : '')
   const aiuto = o.aiuto ? btn({ etichetta: '?', titolo: o.aiuto.titolo || 'Come funziona questa schermata', onclick: o.aiuto.onclick, stile: 'ghost' }) : ''

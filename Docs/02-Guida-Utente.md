@@ -95,8 +95,12 @@ Come si usano, in pratica:
    sospensioni e proroghe con il termine vigente, anticipazione, ritenuta, penale, IVA).
 2. **Il computo**: «＋ Nuovo computo…» in una fase (PFTE, definitivo, esecutivo), oppure
    «⇩ Importa un computo XPWE…». Le voci si aggiungono dall'**elenco prezzi a destra** (schede
-   *Progetto*, *Prezzario*, *Altro progetto*: doppio clic o «＋») o con «＋ Voce libera»; la
-   quantità si scrive nella riga o nelle misure L×L×H (formule, detrazioni, Invio = riga sotto).
+   *Progetto*, *Prezzario*, *Altro progetto*: doppio clic o «＋») o con «＋ Voce libera».
+   Le misure si scrivono **come nel foglio di computo** (PriMus): sotto ogni voce, una riga per
+   misura nelle colonne Par.ug. · Lung. · Larg. · H/peso, e la riga **SOMMANO** con quantità,
+   prezzo e importo. Tab = cella accanto, Invio = riga sotto (dall'ultima ne apre una nuova),
+   ↑↓ = stessa colonna, Esc = annulla; formule come `2x3,5` o `12+250+65`; una detrazione è una
+   riga con le parti uguali negative («− detrazione»). «☰ Solo voci» mostra una riga per voce.
 3. **Consegna** («✓ Consegna…»): la revisione si chiude e da lì si legge soltanto. Per cambiarla
    se ne fa una nuova («＋ Nuova revisione…», numero proposto e modificabile).
 4. **Contratto** («→ Contratto…» su un computo consegnato): con il ribasso d'asta, e il SAL n. 1

@@ -492,23 +492,9 @@
 .ehb-scroll::-webkit-scrollbar-thumb:hover { background: var(--faint); background-clip: padding-box; }
 .ehb-scroll::-webkit-scrollbar-track { background: transparent; }
 
-/* ── Tabella delle misure (Computo computo + Contabilità libretto) ─────────────────────────
-   Un solo aspetto per un solo gesto: misurare. Il markup lo costruisce
-   shared/compositore/misure-tabella.ts, i colori vengono dai token del tool
-   ospite (--accent cambia, il disegno no). */
-.ehb-mis { padding: 6px 4px 8px; }
-.ehb-mis-barra { display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 5px; }
+/* ── I campi delle misure (shared/compositore/misure-tabella.ts) ──────────────
+   Nel foglio della griglia (più sotto) prendono l'aspetto di celle. */
 .ehb-mis-titolo { font-size: var(--fs-2xs, 10px); text-transform: uppercase; letter-spacing: .06em; color: var(--muted, var(--text3)); }
-.ehb-mis-azioni { display: flex; gap: 4px; flex-wrap: wrap; }
-.ehb-mis-tab { width: 100%; border-collapse: collapse; }
-.ehb-mis-tab thead th { font: 600 var(--fs-2xs, 9px)/1 var(--sans); text-transform: uppercase; letter-spacing: .05em; color: var(--muted, var(--text3)); text-align: center; padding: 2px 4px; white-space: nowrap; }
-.ehb-mis-tab thead th.ehb-mis-th--desc { text-align: left; }
-.ehb-mis-td { padding: 2px 4px; vertical-align: middle; }
-.ehb-mis-td--sel { width: 16px; padding: 2px; }
-.ehb-mis-td--desc { display: flex; align-items: center; gap: 3px; }
-.ehb-mis-td--cmd { white-space: nowrap; text-align: right; }
-.ehb-mis-qt { text-align: right; font-family: var(--mono); font-size: var(--fs-xs); white-space: nowrap; }
-.ehb-mis-riga.is-neg .ehb-mis-qt { color: var(--bad); }
 .ehb-mis-in {
   width: 100%; min-width: 0; text-align: right; padding: 2px 5px;
   font-family: var(--mono); font-size: var(--fs-xs);
@@ -520,18 +506,8 @@
 .ehb-mis-in.is-formula { font-style: italic; text-decoration: underline dotted; }
 .ehb-mis-in.is-richiamo { background: color-mix(in srgb, var(--accent) 12%, transparent); font-weight: 600; }
 .ehb-mis-in[readonly] { opacity: .75; }
-.ehb-mis-drag { cursor: grab; color: var(--muted, var(--text3)); font-size: var(--fs-xs); user-select: none; }
 .ehb-mis-vv { font-size: var(--fs-2xs, 9.5px); color: var(--accent); white-space: nowrap; }
-.ehb-mis-cmd { width: 20px; height: 20px; min-width: 0; padding: 0; font-size: var(--fs-xs); }
-.ehb-mis-vuoto { color: var(--muted, var(--text3)); font-size: var(--fs-xs); padding: 5px 2px; }
-.ehb-mis-piede { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
-.ehb-mis-tasti { font-size: var(--fs-2xs, 9.5px); color: var(--muted, var(--text3)); cursor: help; margin-right: auto; }
-.ehb-mis-totale { font-size: var(--fs-xs); color: var(--muted, var(--text3)); white-space: nowrap; }
-.ehb-mis-totale > b { color: var(--accent); }
 /* colonne: la designazione prende lo spazio, i fattori restano stretti */
-.ehb-mis-tab thead th:not(.ehb-mis-th--desc) { width: 62px; }
-.ehb-mis-tab thead th:last-child { width: 56px; }
-.ehb-mis-nuova { padding: 3px 9px; font: 600 var(--fs-xs)/1.4 var(--sans); cursor: pointer; }
 
 /* ── La barra delle voci ──────────────────────────────────────────────────
    Una sola barra per tutte le schermate che sono un computo: computo di
@@ -607,14 +583,12 @@
 .ehb-gr > tbody > tr > td { padding: 5px 8px; height: 30px; border-bottom: 1px solid var(--line); vertical-align: top; }
 .ehb-gr > tbody > tr.ehb-gr-voce:hover > td { background: color-mix(in srgb, var(--accent) 4%, transparent); }
 .ehb-gr > tbody > tr.ehb-gr-voce:focus-within > td { background: color-mix(in srgb, var(--accent) 7%, transparent); }
-.ehb-gr > tbody > tr.is-sel > td { background: color-mix(in srgb, var(--accent) 9%, transparent); }
 .ehb-gr td.ehb-gr-num { text-align: right; font-family: var(--mono); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ehb-gr td.ehb-gr-c--codice { font-family: var(--mono); font-size: var(--fs-xs); white-space: nowrap; color: var(--accent-text, var(--accent)); }
 .ehb-gr td.ehb-gr-c--designazione { width: 100%; min-width: 160px; }
 .ehb-gr td.ehb-gr-c--confronto { color: var(--muted); }
 .ehb-gr td.ehb-gr-c--importo, .ehb-gr td.ehb-gr-c--differenza { font-weight: 600; color: var(--text); }
 .ehb-gr td.ehb-gr-c--sel, .ehb-gr th.ehb-gr-h--sel { width: 1%; white-space: nowrap; }
-.ehb-gr td.ehb-gr-c--comandi { width: 1%; white-space: nowrap; text-align: right; }
 .ehb-gr input[type="checkbox"] { width: 15px; height: 15px; min-width: 0; padding: 0; margin: 0 6px 0 0; vertical-align: middle; accent-color: var(--accent); }
 /* i campi: quello della fase si vede, gli altri sono testo */
 .ehb-gr td input:not([type="checkbox"]), .ehb-gr td select {
@@ -640,8 +614,6 @@
 .ehb-gr .ehb-gr-dopo { display: block; margin-top: 2px; }
 .ehb-gr .ehb-gr-dopo .ehb-btn { padding: 1px 6px; font-size: var(--fs-2xs, 10px); min-width: 0; }
 /* i comandi di riga uno sopra l'altro: due pulsanti affiancati costavano una colonna */
-.ehb-gr td.ehb-gr-c--comandi { white-space: normal; }
-.ehb-gr td.ehb-gr-c--comandi .ehb-gr-cmd { display: block; margin: 0 0 2px auto; }
 .ehb-gr .ehb-gr-misurata { color: var(--text); }
 .ehb-gr .ehb-gr-muto { color: var(--muted); }
 .ehb-gr .ehb-gr-cod { display: block; }
@@ -650,8 +622,6 @@
 .ehb-gr .ehb-gr-des.is-vuota { color: var(--muted); font-style: italic; }
 .ehb-gr .ehb-gr-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
 .ehb-gr .ehb-gr-meta__nota { font-size: var(--fs-xs); color: var(--muted); }
-.ehb-gr .ehb-gr-cmd { min-width: 0; padding: 2px 6px; }
-.ehb-gr .ehb-gr-cmd.is-pericolo:hover { color: var(--bad, var(--danger)); background: color-mix(in srgb, var(--bad, var(--danger)) 12%, transparent); }
 /* voce piegata su una riga: la designazione si tronca, i dati si nascondono */
 .ehb-gr > tbody > tr.is-compatta > td { padding-top: 3px; padding-bottom: 3px; }
 .ehb-gr tr.is-compatta .ehb-gr-des { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -731,21 +701,88 @@
 .ehb-menu__v:disabled { color: var(--faint, var(--muted)); cursor: default; background: none; }
 .ehb-menu__sep { height: 1px; margin: 4px 6px; background: var(--line); }
 
-/* ── Leggibilità di voci e misure (richiesta di chi le scrive) ─────────────
-   Una riga si deve riconoscere dall'altra mentre si inseriscono le misure:
-   righe alterne, separatore, la riga in cui si scrive evidenziata; campi con
-   più contrasto; le detrazioni si vedono. Ogni voce è separata dalla
-   successiva, e le sue misure aperte portano una banda a sinistra. */
-.ehb-mis-tab tbody tr.ehb-mis-riga > td { border-bottom: 1px solid color-mix(in srgb, var(--text) 10%, transparent); }
-.ehb-mis-tab tbody tr.ehb-mis-riga:nth-child(even) > td { background: color-mix(in srgb, var(--text) 5%, transparent); }
-.ehb-mis-tab tbody tr.ehb-mis-riga:hover > td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
-.ehb-mis-tab tbody tr.ehb-mis-riga:focus-within > td { background: color-mix(in srgb, var(--accent) 18%, transparent); }
-.ehb-mis-tab tbody tr.ehb-mis-riga.is-neg > td { background: color-mix(in srgb, var(--bad) 9%, transparent); }
-.ehb-mis-tab tbody tr.ehb-mis-riga.is-neg:focus-within > td { background: color-mix(in srgb, var(--bad) 16%, transparent); }
-.ehb-mis-in { background: var(--panel); border-color: color-mix(in srgb, var(--text) 24%, transparent); }
-.ehb-mis-in:hover { border-color: color-mix(in srgb, var(--text) 40%, transparent); }
-.ehb-mis-qt { font-weight: 600; }
+/* ── Leggibilità delle voci: ognuna separata dalla successiva ──────────── */
 .ehb-gr > tbody > tr.ehb-gr-voce > td { border-top: 1px solid color-mix(in srgb, var(--text) 16%, transparent); }
 .ehb-gr > tbody > tr.ehb-gr-voce .ehb-gr-cod { font-weight: 700; }
 .ehb-gr > tbody > tr.ehb-gr-dett > td { box-shadow: inset 3px 0 0 var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--panel)); }
 .ehb-gr > tbody > tr.ehb-gr-dett + tr.ehb-gr-voce > td { border-top: 2px solid color-mix(in srgb, var(--text) 22%, transparent); }
+
+/* ── Il foglio di computo (griglia.ts: righeFoglioHtml) ────────────────────
+   Come nei programmi di contabilità (PriMus): la voce in testa, sotto le sue
+   misure nelle stesse colonne (par.ug. × lung. × larg. × H/peso = quantità),
+   e la riga SOMMANO con il totale, il prezzo e l'importo. Le misure si
+   scrivono come in un foglio di calcolo: celle senza riquadro, che si
+   accendono al fuoco; Invio va alla riga sotto, le frecce su e giù pure. */
+.ehb-gr { font-size: 13px; }
+.ehb-gr > thead th { font-size: 11px; letter-spacing: .02em; }
+.ehb-gr td.ehb-gr-num, .ehb-gr td.ehb-gr-c--codice, .ehb-gr td input:not([type="checkbox"]) { font-size: 13px; }
+.ehb-gr .ehb-gr-des { line-height: 1.4; }
+/* le colonne delle misure: strette e fisse, i numeri a destra */
+.ehb-gr th.ehb-gr-h--parti, .ehb-gr td.ehb-gr-c--parti,
+.ehb-gr th.ehb-gr-h--lung, .ehb-gr td.ehb-gr-c--lung,
+.ehb-gr th.ehb-gr-h--larg, .ehb-gr td.ehb-gr-c--larg,
+.ehb-gr th.ehb-gr-h--alt, .ehb-gr td.ehb-gr-c--alt { width: 56px; }
+.ehb-gr > thead th.ehb-gr-h--parti, .ehb-gr > thead th.ehb-gr-h--lung, .ehb-gr > thead th.ehb-gr-h--larg, .ehb-gr > thead th.ehb-gr-h--alt { padding-left: 2px; padding-right: 8px; }
+.ehb-gr > tbody > tr > td.ehb-gr-c--parti, .ehb-gr > tbody > tr > td.ehb-gr-c--lung, .ehb-gr > tbody > tr > td.ehb-gr-c--larg, .ehb-gr > tbody > tr > td.ehb-gr-c--alt { padding-left: 1px; padding-right: 1px; }
+.ehb-gr td.ehb-gr-c--designazione { min-width: 200px; }
+.ehb-gr td.ehb-gr-c--quantita, .ehb-gr td.ehb-gr-c--prezzo, .ehb-gr td.ehb-gr-c--importo { padding-left: 4px; padding-right: 6px; }
+
+/* la voce aperta: la sua testa non ha bordo sotto, le misure la seguono */
+.ehb-gr > tbody > tr.ehb-gr-voce.is-foglio > td { border-bottom: 0; padding-bottom: 2px; }
+
+/* una riga di misura: bassa, senza riquadri, la descrizione rientrata */
+.ehb-gr > tbody > tr.ehb-gr-mis > td { height: 24px; padding: 0 2px; border-bottom: 1px dotted color-mix(in srgb, var(--text) 12%, transparent); vertical-align: middle; }
+.ehb-gr > tbody > tr.ehb-gr-mis > td.ehb-gr-c--sel { text-align: right; }
+.ehb-gr tr.ehb-gr-mis input.ehb-mis-in { width: 100%; box-sizing: border-box; height: 22px; padding: 0 6px; border: 1px solid transparent; border-radius: 3px; background: transparent; color: var(--text); font: inherit; font-size: 13px; }
+.ehb-gr tr.ehb-gr-mis td.ehb-gr-num input.ehb-mis-in { text-align: right; }
+.ehb-gr tr.ehb-gr-mis input.ehb-mis-in--desc { padding-left: 18px; color: var(--text2, var(--text)); font-style: italic; }
+.ehb-gr tr.ehb-gr-mis input.ehb-mis-in::placeholder { color: var(--faint); font-style: italic; }
+.ehb-gr tr.ehb-gr-mis input.ehb-mis-in:hover { border-color: var(--line2); background: var(--panel2); }
+.ehb-gr tr.ehb-gr-mis input.ehb-mis-in:focus { outline: none; border-color: var(--accent); background: var(--panel); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent); font-style: normal; }
+.ehb-gr tr.ehb-gr-mis input.ehb-mis-in.is-formula { color: var(--accent-text, var(--accent)); }
+.ehb-gr tr.ehb-gr-mis input.ehb-mis-in.is-richiamo { color: var(--muted); }
+.ehb-gr tr.ehb-gr-mis:hover > td { background: color-mix(in srgb, var(--accent) 4%, transparent); }
+.ehb-gr tr.ehb-gr-mis:focus-within > td { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.ehb-gr tr.ehb-gr-mis td.ehb-gr-mis-qt { padding-right: 8px; color: var(--muted); }
+.ehb-gr tr.ehb-gr-mis.is-neg td.ehb-gr-mis-qt, .ehb-gr tr.ehb-gr-mis.is-neg input.ehb-mis-in:not(.ehb-mis-in--desc) { color: var(--bad, var(--danger)); }
+.ehb-gr tr.ehb-gr-mis .ehb-mis-vv { margin-left: 18px; margin-right: 4px; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.ehb-gr tr.ehb-gr-mis td.ehb-gr-c--designazione { white-space: nowrap; }
+.ehb-gr tr.ehb-gr-mis .ehb-mis-vv + input.ehb-mis-in--desc { width: auto; padding-left: 4px; }
+/* i comandi di una riga compaiono passandoci sopra: la tabella resta pulita */
+.ehb-gr tr.ehb-gr-mis td.ehb-gr-c--designazione { position: relative; }
+.ehb-gr .ehb-gr-mis-cmd { position: absolute; right: 2px; top: 1px; display: inline-flex; gap: 2px; padding-left: 6px; background: var(--panel); visibility: hidden; }
+.ehb-gr tr.ehb-gr-mis:hover .ehb-gr-mis-cmd, .ehb-gr tr.ehb-gr-mis:focus-within .ehb-gr-mis-cmd { visibility: visible; }
+.ehb-gr .ehb-gr-mis-cmd .ehb-icon-btn { width: 22px; height: 22px; min-width: 0; padding: 0; font-size: 12px; }
+.ehb-gr .ehb-gr-mis-cmd .ehb-icon-btn.is-pericolo:hover { color: var(--bad, var(--danger)); }
+.ehb-gr .ehb-gr-mis-drag { cursor: grab; color: var(--faint); padding: 0 4px; visibility: hidden; }
+.ehb-gr tr.ehb-gr-mis:hover .ehb-gr-mis-drag { visibility: visible; }
+
+/* la riga SOMMANO: chiude la voce, porta quantità, prezzo e importo */
+.ehb-gr > tbody > tr.ehb-gr-sommano > td { height: 28px; padding-top: 3px; padding-bottom: 5px; border-bottom: 1px solid color-mix(in srgb, var(--text) 22%, transparent); vertical-align: middle; }
+.ehb-gr > tbody > tr.ehb-gr-sommano > td.ehb-gr-num { font-weight: 600; color: var(--text); }
+.ehb-gr td.ehb-gr-som-des { white-space: nowrap; }
+.ehb-gr .ehb-gr-som-az { display: inline-flex; gap: 4px; }
+.ehb-gr .ehb-gr-som-lab { float: right; padding-right: 6px; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--muted); line-height: 22px; }
+.ehb-gr .ehb-gr-som-n { font-weight: 400; letter-spacing: 0; }
+.ehb-gr .ehb-gr-som-b { border: 0; background: none; padding: 2px 6px; border-radius: 4px; font: inherit; font-size: 12px; color: var(--accent-text, var(--accent)); cursor: pointer; opacity: .75; }
+.ehb-gr .ehb-gr-som-b:hover { opacity: 1; background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.ehb-gr .ehb-gr-som-b.is-neg { color: var(--bad, var(--danger)); }
+/* Colonne fisse, come in un foglio: i numeri hanno la loro larghezza, la
+   designazione prende tutto il resto e va a capo (non spinge più i numeri
+   fuori dalla pagina). */
+.ehb-gr { table-layout: fixed; }
+.ehb-gr > thead th, .ehb-gr > tbody > tr > td { padding-left: 4px; padding-right: 4px; }
+.ehb-gr > thead th.ehb-gr-h--sel { width: 40px; }
+.ehb-gr > thead th.ehb-gr-h--codice { width: 76px; }
+.ehb-gr > thead th.ehb-gr-h--designazione { width: auto; }
+.ehb-gr > thead th.ehb-gr-h--confronto { width: 84px; }
+.ehb-gr > thead th.ehb-gr-h--quantita { width: 80px; }
+.ehb-gr > thead th.ehb-gr-h--prezzo { width: 76px; }
+.ehb-gr > thead th.ehb-gr-h--importo, .ehb-gr > thead th.ehb-gr-h--differenza { width: 88px; }
+.ehb-gr td.ehb-gr-c--prezzo .ehb-gr-campo { width: 100%; box-sizing: border-box; max-width: none; text-align: right; }
+.ehb-gr td.ehb-gr-c--quantita .ehb-gr-campo { width: calc(100% - 4px); box-sizing: border-box; }
+.ehb-gr td.ehb-gr-c--codice { overflow: hidden; text-overflow: ellipsis; }
+.ehb-gr td.ehb-gr-c--designazione { min-width: 0; }
+.ehb-gr .ehb-gr-meta { min-width: 0; }
+.ehb-gr .ehb-gr-som-tasti { padding: 2px 6px; font-size: 12px; color: var(--faint); cursor: help; }
+.ehb-gr .ehb-gr-som-tasti:hover { color: var(--muted); }

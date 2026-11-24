@@ -422,8 +422,12 @@
      --sans resta alias storico del monospace, così la chrome dell'UI è mono.
      --prose = sans leggibile SOLO per la prosa lunga (descrizioni prezzari, testi
      guida, corpo dei documenti): il mono "a blocco" lì costa leggibilità. */
-  --mono: 'JetBrains Mono', ui-monospace, 'Consolas', monospace;
-  --prose: 'Inter', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  /* Il carattere dell'interfaccia è quello del sistema (SF Pro, Segoe UI): il
+     più leggibile a corpo piccolo e quello che l'occhio conosce. Il nome storico
+     --mono resta perché lo usano tutti i fogli di stile; JetBrains Mono si
+     sceglie nelle Impostazioni. I numeri sono tabulari ovunque (vedi sotto). */
+  --mono: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, 'Helvetica Neue', Arial, sans-serif;
+  --prose: var(--mono);
   --sans: var(--mono);
 
   /* Scala tipografica (ampia, editoriale). */
@@ -488,12 +492,10 @@
 }
 
 /* Font di sistema alternativo scelto dal pannello Impostazioni
-   (ORTOGONALE a tema/palette, come loro). Default = JetBrains Mono (:root sopra).
+   (ORTOGONALE a tema/palette, come loro). Default = carattere di sistema (:root sopra).
    Fallback coerente col mood di ciascun font (serif/sans/display), non tutti mono. */
+:root[data-font="jetbrains-mono"] { --mono: 'JetBrains Mono', ui-monospace, 'Consolas', monospace; }
 :root[data-font="cormorant"]    { --mono: 'Cormorant', 'Iowan Old Style', Georgia, serif; }
-/* "sistema" non spedisce nessun file: usa il sans dell'OS. È il più neutro dei cinque,
-   e rende identico in tutti i tool (non tutti caricano vendor/fonts.css). */
-:root[data-font="sistema"]      { --mono: -apple-system, 'Segoe UI', system-ui, 'Helvetica Neue', Arial, sans-serif; }
 :root[data-font="pixelify"]     { --mono: 'Pixelify Sans', ui-monospace, 'Consolas', monospace; }
 :root[data-font="fredoka"]      { --mono: 'Fredoka', -apple-system, 'Segoe UI', system-ui, sans-serif; }
 
@@ -525,6 +527,8 @@
 :root[data-shadow="deep"] { --shadow-intensity: 1.6; }
 
 .prose { font-family: var(--prose); font-weight: var(--fw-prose); line-height: 1.55; }
+/* Cifre tabulari ovunque: le colonne dei numeri si leggono in verticale. */
+body { font-variant-numeric: tabular-nums; }
 
 /* Tema di SUITE: quando l'hub cambia tema lo applica a tutta la chrome e a tutti
    i frame; questa classe (aggiunta per ~320ms dal cambio) fa sfumare il passaggio

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { FASI, FASE_PERIZIA, FASE_PROGETTO, FASE_SAL, FASE_CONTRATTO, COLONNE_NUMERICHE,  grigliaHtml, rigaDettaglioHtml, rigaGruppoHtml, rigaTotaleHtml, rigaVoceHtml, colonneGriglia, piedeFaseHtml, contenutoCella, type IdColonna } from '../../src/shared/griglia'
+import { FASI, FASE_PERIZIA, FASE_PROGETTO, FASE_SAL, FASE_CONTRATTO, COLONNE_NUMERICHE,  grigliaHtml, rigaDettaglioHtml, rigaGruppoHtml, rigaTotaleHtml, rigaVoceHtml, righeFoglioHtml, colonneGriglia, piedeFaseHtml, contenutoCella, COLONNE_MISURA, type IdColonna, type AzioniMisure } from '../../src/shared/griglia'
 
 /**
  * LA GRIGLIA CONDIVISA (tappa 4 di Docs/06-Interfaccia-unica.md): computo,
@@ -12,7 +12,7 @@ import { FASI, FASE_PERIZIA, FASE_PROGETTO, FASE_SAL, FASE_CONTRATTO, COLONNE_NU
 const ROOT = resolve(__dirname, '../..')
 const leggi = (p: string): string => readFileSync(resolve(ROOT, p), 'utf8')
 const eur = (n: number): string => '€ ' + n.toFixed(2).replace('.', ',')
-const ORDINE: IdColonna[] = ['codice', 'designazione', 'confronto', 'quantita', 'prezzo', 'importo', 'differenza', 'comandi']
+const ORDINE: IdColonna[] = ['codice', 'designazione', 'confronto', 'parti', 'lung', 'larg', 'alt', 'quantita', 'prezzo', 'importo', 'differenza']
 
 describe('il descrittore di fase', () => {
   it('ogni fase scrive una colonna che ha, e confronta una colonna che ha', () => {
@@ -50,7 +50,7 @@ describe('la griglia', () => {
   })
   it("l'intestazione viene dalla fase, con la casella «tutte» in testa", () => {
     const th = [...html.matchAll(/<th[^>]*>(.*?)<\/th>/g)].map((m) => m[1].replace(/<[^>]+>/g, ''))
-    expect(th).toEqual(['', 'Codice', 'Designazione', 'Eseguito a tutto il SAL', 'Prezzo unit.', 'Importo', ''])
+    expect(th).toEqual(['', 'Codice', 'Designazione dei lavori', 'Par.ug.', 'Lung.', 'Larg.', 'H/peso', 'Eseguito a tutto il SAL', 'Prezzo unit.', 'Importo'])
     expect(html).toContain('onchange="libSelTutte(this.checked)"')
     expect(html).toContain('data-fase="sal"')
   })
@@ -77,15 +77,16 @@ describe('la griglia', () => {
     }
   })
   it('il totale di un gruppo sta sotto l\'importo (o sotto la differenza, in perizia)', () => {
-    expect(rigaTotaleHtml(FASE_SAL, { titolo: 'T', valore: '€ 1' }, true)).toMatch(/^<tr class="ehb-gr-totale"><td colspan="5"/)
-    expect(rigaTotaleHtml(FASE_PERIZIA, { titolo: 'T', valore: '€ 1' })).toMatch(/<td colspan="4"[^>]*>T<\/td><td class="ehb-gr-c ehb-gr-num">€ 1<\/td><\/tr>$/)
+    expect(rigaTotaleHtml(FASE_SAL, { titolo: 'T', valore: '€ 1' }, true)).toMatch(/^<tr class="ehb-gr-totale"><td colspan="9"/)
+    expect(rigaTotaleHtml(FASE_PERIZIA, { titolo: 'T', valore: '€ 1' })).toMatch(/<td colspan="8"[^>]*>T<\/td><td class="ehb-gr-c ehb-gr-num">€ 1<\/td><\/tr>$/)
   })
   it('i numeri vanno a destra, i testi no', () => {
     for (const id of ['quantita', 'prezzo', 'importo', 'differenza', 'confronto'] as IdColonna[]) expect(COLONNE_NUMERICHE.has(id)).toBe(true)
-    for (const id of ['codice', 'designazione', 'comandi'] as IdColonna[]) expect(COLONNE_NUMERICHE.has(id)).toBe(false)
+    for (const id of ['parti', 'lung', 'larg', 'alt'] as IdColonna[]) expect(COLONNE_NUMERICHE.has(id)).toBe(true)
+    for (const id of ['codice', 'designazione'] as IdColonna[]) expect(COLONNE_NUMERICHE.has(id)).toBe(false)
   })
   it('una griglia vuota lo dice, sull\'intera larghezza', () => {
-    expect(grigliaHtml({ fase: FASE_PERIZIA, righe: [], vuoto: 'Niente <qui>' })).toContain(`<td colspan="5">Niente &lt;qui&gt;</td>`)
+    expect(grigliaHtml({ fase: FASE_PERIZIA, righe: [], vuoto: 'Niente <qui>' })).toContain(`<td colspan="9">Niente &lt;qui&gt;</td>`)
   })
 })
 
@@ -140,11 +141,6 @@ describe('le celle: lo strumento dice che cosa, la griglia dice come', () => {
     expect(d).toContain('<div class="ehb-gr-meta"><span class="ehb-gr-meta__nota">a misura</span><i>chip</i></div>')
     expect(contenutoCella({ tipo: 'designazione', testo: '', vuoto: 'voce libera' })).toContain('class="ehb-gr-des is-vuota">voce libera')
   })
-  it('i comandi di riga sono pulsanti del design system, e quelli distruttivi si dichiarano', () => {
-    const h = contenutoCella({ tipo: 'comandi', comandi: [{ icona: '🗑', titolo: 'Elimina', onclick: "delVoce('p1',1)", pericolo: true }] })
-    expect(h).toContain('class="ehb-btn ehb-btn--sm ehb-btn--ghost ehb-gr-cmd is-pericolo"')
-    expect(h).toContain('aria-label="Elimina"')
-  })
   it('la voce piegata è uno stato della griglia, non dello strumento', () => {
     expect(rigaVoceHtml(FASE_PROGETTO, { celle: {}, compatta: true })).toContain('class="ehb-gr-voce is-compatta"')
   })
@@ -157,3 +153,65 @@ describe('la barra: due righe, i comandi su una sola', () => {
     expect(css).toContain('@container azioni')
   })
 })
+
+/**
+ * IL FOGLIO, come nei programmi di computo (PriMus): sotto la voce le sue
+ * misure, nelle STESSE colonne della griglia, e la riga SOMMANO con quantità,
+ * prezzo e importo. Si scrive cella per cella, senza pannelli.
+ */
+describe('il foglio: le misure dentro la griglia', () => {
+  const azioni: AzioniMisure = {
+    set: (i, c) => `set(${i},'${c}')`, tasti: (i, c) => `tasti(${i},'${c}')`,
+    duplica: (i) => `dup(${i})`, elimina: (i) => `del(${i})`, aggiungi: 'agg()', detrazione: 'det()',
+  }
+  const righe = [
+    { descrizione: 'tratto nord', l1: 120, l2: 2.5, h: 0.4, quantita: 120 },
+    { descrizione: 'a dedurre', n: -1, l1: 2, l2: 1, h: 0.5, quantita: -1 },
+  ]
+  const html = (soloLettura = false): string => righeFoglioHtml(FASE_PROGETTO, {
+    righe, um: 'm³', fmt: (n) => n.toFixed(2).replace('.', ','), azioni, soloLettura, conSelezione: true,
+    sommano: { prezzo: { tipo: 'numero', testo: '9,80' }, importo: { tipo: 'numero', testo: '1.166,20' } },
+  })
+  const celle = (tr: string): string[] => [...tr.matchAll(/<td class="([^"]*)"/g)].map((m) => m[1])
+
+  it('ogni fase che misura ha par.ug., lung., larg. e H/peso subito prima della quantità', () => {
+    for (const f of [FASE_PROGETTO, FASE_SAL, FASE_PERIZIA]) {
+      const ids = f.colonne.map((c) => c.id)
+      const q = ids.indexOf('quantita')
+      expect(ids.slice(q - 4, q), f.fase).toEqual(COLONNE_MISURA.map((c) => c.id))
+    }
+    expect(FASE_CONTRATTO.colonne.map((c) => c.id)).not.toContain('parti')
+  })
+  it('una riga di misura ha una cella per ogni colonna, e i fattori stanno nelle loro', () => {
+    const tr = html().split('</tr>')[0]
+    expect(celle(tr)).toHaveLength(colonneGriglia(FASE_PROGETTO, true))
+    expect(tr).toContain('data-mis-input="0:descrizione"')
+    for (const c of COLONNE_MISURA) expect(tr).toMatch(new RegExp(`ehb-gr-c--${c.id}[^"]*"><input[^>]*data-mis-input="0:${c.campo}"`))
+    expect(tr).toMatch(/ehb-gr-c--quantita[^"]*" data-mis-qt>120,00</)
+  })
+  it('la detrazione si vede come tale', () => {
+    expect(html().split('</tr>')[1]).toContain('class="ehb-gr-mis is-neg"')
+  })
+  it('la riga SOMMANO porta il totale delle misure, il prezzo e l\'importo, allineati', () => {
+    const som = html().split('</tr>').find((x) => x.includes('ehb-gr-sommano'))!
+    expect(som).toContain('SOMMANO m³')
+    expect(som).toContain('data-mis-tot>119,00')
+    expect(som).toContain('9,80')
+    expect(som).toContain('1.166,20')
+    // la designazione si allarga sulle quattro colonne delle misure: le celle tornano lo stesso numero
+    const span = Number(som.match(/colspan="(\d+)"/)![1])
+    expect(celle(som).length + span - 1).toBe(colonneGriglia(FASE_PROGETTO, true))
+    expect(som).toContain('onclick="agg()"')
+    expect(som).toContain('onclick="det()"')
+  })
+  it('in sola lettura si legge e basta', () => {
+    const h = html(true)
+    expect(h).not.toContain('agg()')
+    expect(h).not.toContain('dup(0)')
+    expect(h).toContain('readonly')
+  })
+  it('i comandi di una riga non rubano il Tab: si va di cella in cella', () => {
+    expect(html()).toMatch(/<button class="ehb-icon-btn" tabindex="-1" onclick="dup\(0\)"/)
+  })
+})
+
