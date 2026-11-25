@@ -1,6 +1,6 @@
 {
   "name": "quadra",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "Quadra — computo metrico, elenco prezzi e contabilità dei lavori pubblici, offline-first (derivato da Open E.Hub)",
   "main": "main.js",
   "author": "Galax65 (basato su Open E.Hub di Davide Bottura)",
