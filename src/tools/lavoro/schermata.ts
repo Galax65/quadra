@@ -16,10 +16,11 @@ import {
 } from '../../shared/griglia'
 import {
   NOME_FASE, importiRevisione, importiContratto, importiAvanzamento, prezzoIn, quantitaVoce, quantitaEseguita, rigaDi, misurata, contratto,
-  numeroDi, revisione, sigla, vociEccedenti, totaleSotto, quotaDaSotto, importiPerizia, contoFinale, vigente, offertaModificabile, ribassoArticolo, type ImportiPerizia, type Lavoro, type Revisione, type Voce, type Articolo, type Avanzamento,
+  numeroDi, revisione, sigla, strutturaDi, vociEccedenti, totaleSotto, quotaDaSotto, importiPerizia, contoFinale, vigente, offertaModificabile, ribassoArticolo, type ImportiPerizia, type Lavoro, type Revisione, type Voce, type Articolo, type Avanzamento,
 } from '../../shared/lavoro'
 import { importoQta } from '../../shared/importo'
 import { CAT_SEP } from '../../shared/xpwe/xpwe'
+import { ordinaVoci } from '../../shared/ordine-computo'
 
 const esc = (s: unknown): string => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string))
 /** Un id dentro un attributo onclick tra apici singoli. */
@@ -135,8 +136,8 @@ function rigaVoce(r: Revisione, v: Voce, a: Articolo, vista: Vista, n: number, c
   const meta: string[] = []
   if (a.sicurezza) meta.push('<span class="lv-chip is-sic" title="Oneri della sicurezza: non soggetti a ribasso">sicurezza</span>')
   if (v.corpo) meta.push('<span class="lv-chip" title="Lavoro a corpo">a corpo</span>')
-  if (v.categoria) meta.push(`<span class="lv-chip" title="Categoria: ${esc(v.categoria.split(CAT_SEP).join(' › '))}">${esc(v.categoria.split(CAT_SEP).join(' › '))}</span>`)
-  if (v.wbs) meta.push(`<span class="lv-chip is-wbs" title="WBS">WBS ${esc(v.wbs)}</span>`)
+  // categoria e WBS non stanno sulla riga della voce: le dice l'intestazione del
+  // gruppo, nelle viste per categoria e per WBS; nell'ordine manuale la riga resta libera
   if (cfr) meta.push(...chipPerizia(v, a, cfr))
   if (r.tipo !== 'computo') meta.push(...chipRibasso(c, r, a))
   if (offerto) {
@@ -184,8 +185,18 @@ export function vociVisibili(r: Revisione, vista: Vista): { voce: Voce; articolo
   const s = vista.q.trim().toLowerCase()
   const cercate = s ? tutte.filter((x) => `${x.articolo.codice} ${x.articolo.descrizione} ${x.voce.categoria || ''}`.toLowerCase().includes(s)) : tutte
   if (vista.ordine === 'manuale') return cercate
-  const chiave = (x: { voce: Voce }): string => vista.ordine === 'wbs' ? (x.voce.wbs || '￿') : (x.voce.categoria || '￿')
-  return [...cercate].sort((a, b) => chiave(a).localeCompare(chiave(b), 'it') || a.n - b.n)
+  // l'ordine è quello della STRUTTURA (pagina «Categorie e WBS»: rami spostati con ↑↓,
+  // WBS per codice), non quello alfabetico; dentro un gruppo, l'ordine del computo
+  const st = strutturaDi(r)
+  const ids = cercate.map((x) => x.voce.id)
+  const ordinati = ordinaVoci(ids, vista.ordine, {
+    ordine: r.voci.map((v) => v.id),
+    categoria: Object.fromEntries(cercate.map((x) => [x.voce.id, x.voce.categoria || ''])),
+    wbs: Object.fromEntries(cercate.map((x) => [x.voce.id, x.voce.wbs || ''])),
+    ordineLivelli: st.ordineLivelli,
+  })
+  const per = new Map(cercate.map((x) => [x.voce.id, x]))
+  return ordinati.map((k) => per.get(k)!)
 }
 
 export function grigliaRevisione(r: Revisione, vista: Vista, cfr?: ImportiPerizia, offerta?: boolean, c: Revisione | null = null): string {
@@ -195,7 +206,9 @@ export function grigliaRevisione(r: Revisione, vista: Vista, cfr?: ImportiPerizi
   let gruppo: string | null = null
   for (const x of vis) {
     if (vista.ordine !== 'manuale') {
-      const g = vista.ordine === 'wbs' ? (x.voce.wbs ? `WBS ${x.voce.wbs}` : 'Senza WBS') : (x.voce.categoria ? x.voce.categoria.split(CAT_SEP).join(' › ') : 'Senza categoria')
+      const g = vista.ordine === 'wbs'
+        ? (x.voce.wbs ? `WBS ${x.voce.wbs}${strutturaDi(r).wbsNodi[x.voce.wbs] ? ` — ${strutturaDi(r).wbsNodi[x.voce.wbs]}` : ''}` : 'Senza WBS')
+        : (x.voce.categoria ? x.voce.categoria.split(CAT_SEP).join(' › ') : 'Senza categoria')
       if (g !== gruppo) { gruppo = g; righe.push({ tipo: 'gruppo', titolo: g }) }
     }
     righe.push(rigaVoce(r, x.voce, x.articolo, vista, x.n, cfr, offerta, c))

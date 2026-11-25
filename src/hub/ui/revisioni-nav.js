@@ -107,7 +107,9 @@ function nodoHTML(n) {
   const id = n.apre.id || n.apre.cosa;
   const docs = Array.isArray(n.documenti) ? n.documenti : [];
   const apertiDoc = docAperti.has(id);
-  const attivo = correnteLavoro && (n.apre.id === correnteLavoro || (n.apre.cosa === 'pagina' && `§${n.apre.id}` === correnteLavoro));
+  const attivo = correnteLavoro && (n.apre.id === correnteLavoro || (n.apre.cosa === 'pagina' && `§${n.apre.id}` === correnteLavoro)
+    || ((n.apre.cosa === 'dati' || n.apre.cosa === 'contabilita') && `§${n.apre.cosa}` === correnteLavoro)
+    || (n.apre.cosa === 'prezzario' && `§prezzario:${n.apre.id}` === correnteLavoro));
   return `
     <div class="rev-item lv-nodo${n.stato === 'aperta' ? ' is-bozza' : ''}${attivo ? ' is-attivo' : ''}" role="button" tabindex="0"
          onclick="apriNodoLavoro('${escHtml(n.apre.cosa)}','${escHtml(n.apre.id || '')}')"

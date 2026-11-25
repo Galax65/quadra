@@ -167,3 +167,6 @@ tr.lv-voce:hover .lv-voce-az, tr.lv-voce:focus-within .lv-voce-az { visibility: 
 .lv-el-tab td.lv-el-cod b { font-weight: 600; }
 .lv-el-tab tr.is-inutile td { color: var(--muted); }
 .lv-el-tab tfoot td { padding-top: 8px; border-bottom: 0; color: var(--muted); }
+/* il prezzario a tutta pagina: la descrizione va a capo su due righe al massimo */
+.lv-pp-des { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.lv-pp-tab td.lv-pp-ru { width: 70px; }

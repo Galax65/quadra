@@ -24,7 +24,9 @@ import { paginaContabilita } from './contabilita'
 import { vociConsuntivo } from './consuntivo'
 import { paginaAnalisi } from './analisi-pagina'
 import { paginaQE, paginaOfferte } from './progetto-pagine'
-import { paginaStruttura } from './struttura-pagina'
+import { paginaStruttura, scelteStruttura } from './struttura-pagina'
+import { paginaDati } from './dati-pagina'
+import { paginaPrezzario, nuovoStatoPrezzario, BLOCCO } from './prezzario-pagina'
 import { paginaElencoPrezzi, nuovoStatoElenco, corrispondeRicerca, type FiltroElenco } from './elenco-prezzi-pagina'
 import { leggiLibreria, scriviLibreria, aggiungiALibreria, testoLibreria } from '../../shared/compositore/libreria-personale'
 import {
@@ -78,7 +80,8 @@ import { applicaStileStampa } from '../../shared/doc/stile-stampa'
 import { marcaBozza } from '../../shared/doc/doc'
 import { pannelloPrezziHtml, nuovoPannello, filtraPrezzario, type SchedaPrezzi } from './prezzi'
 import { prezzariDisponibili, caricaPrezzario, cercaNelPrezzario } from '../../shared/prezzari/carica'
-import { salvaPrezzario, ultimoPrezzario, ricordaUltimo } from '../../shared/prezzari/archivio'
+import { salvaPrezzario, ultimoPrezzario, ricordaUltimo, fileArchivio, aggiornaRighePrezzario, togliPrezzario } from '../../shared/prezzari/archivio'
+import type { PriceRow } from '../computo/engine/types'
 import { leggiPrezzarioFile, type LibXlsx } from '../../shared/prezzari/leggi-file'
 import { parseProgettoQuadra } from '../../shared/progetto-quadra'
 import {
@@ -93,7 +96,7 @@ import { leggiNumeroTesto } from '../../shared/campo-numero'
 import { leggiCampo } from '../../shared/compositore/misure-edit'
 import { openModal } from '../../shared/ui/components/modal'
 import { apriMenuContestuale, type RigaMenu, type VoceMenu } from '../../shared/ui/components/menu'
-import { formDatiGenerali, normalizzaDatiGenerali, type DatiGenerali } from '../../shared/dati-generali'
+import { CAMPI_DATI_GENERALI, normalizzaDatiGenerali } from '../../shared/dati-generali'
 import { parseXpwe, xpweToVoci, type VoceComputo } from '../../shared/xpwe/xpwe'
 import { impostaStudioStampe, impostaStileStampaPdf } from '../../shared/stampa/registro-pdf'
 import { leggiPreferenzeStampa } from '../../shared/stampe/preferenze'
@@ -167,6 +170,7 @@ function chiaveFuoco(el: Element | null): string | null {
   if (!el || !(el instanceof HTMLElement)) return null
   if (el.id === 'lv-pz-q') return 'id|lv-pz-q'
   if (el.id === 'lv-el-q') return 'id|lv-el-q'
+  if (el.id === 'lv-pp-q') return 'id|lv-pp-q'
   const mis = el.getAttribute('data-mis-input')
   const voce = el.closest('[data-voce]')?.getAttribute('data-voce')
   if (mis && voce) return `mis|${voce}|${mis}`
@@ -199,6 +203,8 @@ function render(): void {
   // il colore dice la FASE: progetto verde, contratto e contabilità porpora
   document.documentElement.setAttribute('data-tool', a || (r && r.tipo !== 'computo') ? 'contabilita' : 'computo')
   const pagina = corrente === PAGINA_CONTABILITA ? paginaContabilita(L, oggi())
+    : corrente === '§dati' ? paginaDati(L)
+    : corrente?.startsWith('§prezzario') ? paginaPrezzario(_pp, { prezzari: pz.prezzari, destinazione: destinazionePrezzario() })
     : corrente?.startsWith('§analisi:') && apAperta() ? paginaAnalisi(L, apAperta()!, revAperta())
     : corrente?.startsWith('§struttura:') && revDaPagina() ? paginaStruttura(revDaPagina()!, modelliStruttura())
     : corrente?.startsWith('§elenco:') && revDaPagina() ? paginaElencoPrezzi(L, revDaPagina()!, _el)
@@ -232,7 +238,7 @@ function pubblica(): void {
         { sezione: 'computo', etichetta: '＋ Nuovo computo…', comando: 'nuovo-computo', titolo: 'Una revisione di computo, in una fase qualunque' },
         { sezione: 'computo', etichetta: '⇩ Importa un computo XPWE…', comando: 'importa-xpwe', titolo: 'Da un altro programma che esporta il formato XPWE' },
       ]),
-      { sezione: 'prezzi', etichetta: '＋ Prezzario…', comando: 'carica-prezzario', titolo: 'Scegli un prezzario del programma, o importane uno, e pesca le voci' },
+      { sezione: 'prezzi', etichetta: '≣ Prezzari del programma…', comando: 'carica-prezzario', titolo: 'I prezzari regionali e i listini, a tutta pagina: si consultano, si importano, e quelli dell\'archivio si modificano' },
       { sezione: 'analisi', etichetta: '＋ Nuova analisi…', comando: 'nuova-analisi', titolo: "Un prezzo composto: manodopera, materiali, noli, spese generali e utile" },
       { sezione: 'analisi', etichetta: '★ Dalla libreria…', comando: 'libreria', titolo: 'Voci e analisi salvate su questo dispositivo' },
       ...(contratto(L) ? [{ sezione: 'contabilita', etichetta: '⭳ Contabilità in formato aperto…', comando: 'formato-aperto', titolo: 'Uno zip con JSON, CSV e un leggimi: leggibile anche senza Quadra' }] : []),
@@ -329,7 +335,7 @@ function revAperta(): Revisione | null {
 const PAGINA_CONTABILITA = '§contabilita'
 
 function apri(id: string | null): void {
-  if (id === 'dati') { void lvApriDati(); return }
+  if (id === 'dati') { corrente = '§dati'; pz.aperto = false; render(); pubblica(); return }
   if (id === 'contabilita') { corrente = PAGINA_CONTABILITA; pz.aperto = false; render(); pubblica(); return }
   if (id && id.startsWith('pagina:')) {
     corrente = `§${id.slice(7)}`; pz.aperto = false; render(); pubblica()
@@ -337,7 +343,7 @@ function apri(id: string | null): void {
     return
   }
   if (id === 'analisi') { pz.aperto = true; pz.scheda = 'progetto'; pz.soloNp = true; render(); return }
-  if (id && id.startsWith('prezzario:')) { void lvPzScegli(id.slice(10)); lvPzApri('prezzario'); return }
+  if (id && id.startsWith('prezzario:')) { void lvPpScegli(id.slice(10)); return }
   const esiste = !!id && (L.revisioni.some((r) => r.id === id) || L.avanzamenti.some((a) => a.id === id))
   if (id && !esiste) return
   corrente = esiste ? id : null
@@ -898,18 +904,20 @@ function lvElPannello(revId: string): void { apri(revId); lvPzApri('prezzario') 
 
 /* ── Le analisi prezzi ─────────────────────────────────────────────────── */
 
-async function lvApNuova(): Promise<void> {
-  const v = await finestra('Nuova analisi prezzi', `
-    <p class="lv-nota">Un prezzo composto: manodopera, materiali, noli e varie, più spese generali e utile d'impresa. Le righe si scrivono o si pescano dal prezzario.</p>
-    <div class="lv-righe">
-      ${campo('codice', 'Codice', '', 'placeholder="AP.01 (proposto)" style="width:130px"')}
-      ${campo('um', 'U.M.', '', 'style="width:80px"')}
-    </div>
-    ${campo('descrizione', 'Descrizione', '')}`, 'Crea')
-  if (!v) return
+/**
+ * Una nuova analisi: si crea subito, con il codice proposto, e si apre la sua
+ * pagina con il cursore sulla descrizione. Niente finestra prima: codice,
+ * descrizione e unità si scrivono nella pagina, insieme a tutto il resto.
+ */
+function lvApNuova(): void {
   let id = ''
-  aggiorna((l) => { const a = nuovaAnalisi(l, { codice: v.codice, descrizioneBreve: v.descrizione, um: v.um }); id = a.id; return a.lavoro })
-  if (id) { apri(`pagina:analisi:${id}`); lvPzApri('prezzario') }
+  aggiorna((l) => { const a = nuovaAnalisi(l, { descrizioneBreve: '' }); id = a.id; return a.lavoro })
+  if (!id) return
+  apri(`pagina:analisi:${id}`); lvPzApri('prezzario')
+  requestAnimationFrame(() => {
+    const d = document.querySelector<HTMLInputElement>('input[name="descrizioneBreve"]')
+    if (d) { d.focus(); d.select() }
+  })
 }
 function lvAp(id: string, k: string, testo: string): void {
   const t = String(testo).trim()
@@ -1304,9 +1312,16 @@ function regolaRibasso(): string {
   return `ribassato del ${fmt(c.contratto?.ribassoPct ?? 0, 4)}%`
 }
 
+/** Le voci di un elenco di struttura, con «nessuna» in testa e il valore attuale anche se non è più in struttura. */
+function opzioniStruttura(voci: { valore: string; etichetta: string }[], attuale: string | undefined, nessuna: string): [string, string][] {
+  const out: [string, string][] = [['', `— ${nessuna} —`], ...voci.map((x): [string, string] => [x.valore, x.etichetta])]
+  if (attuale && !voci.some((x) => x.valore === attuale)) out.push([attuale, attuale])
+  return out
+}
 async function finestraVoce(r: Revisione, a: Partial<Articolo>, v: Partial<Voce>, titolo: string): Promise<{ art: Partial<Articolo>; voce: Partial<Voce> } | null> {
   const usi = a.id ? r.voci.filter((x) => x.articolo === a.id).length : 0
   // la scelta del ribasso serve ai nuovi prezzi (o a un articolo già segnato), dove c'è un contratto
+  const sc = scelteStruttura(r)
   const conRibasso = !!contratto(L) && r.tipo !== 'computo' && !a.sicurezza && (a.origine === 'np' || a.origine === 'analisi' || a.soggettoRibasso != null)
   const x = await finestra(titolo, `
     <div class="lv-righe">
@@ -1317,9 +1332,10 @@ async function finestraVoce(r: Revisione, a: Partial<Articolo>, v: Partial<Voce>
     ${campo('descrizione', 'Descrizione', a.descrizione || '')}
     <label class="lv-f"><span>Descrizione estesa</span><textarea name="estesa" rows="4">${esc(a.estesa || '')}</textarea></label>
     <div class="lv-righe">
-      ${campo('categoria', 'Categoria', v.categoria || '', 'placeholder="es. Opere edili · Scavi"')}
-      ${campo('wbs', 'WBS', v.wbs || '', 'style="width:110px" placeholder="01.02"')}
+      ${scelta('categoria', 'Categoria', opzioniStruttura(sc.categorie, v.categoria, 'nessuna categoria'), v.categoria || '')}
+      ${scelta('wbs', 'WBS', opzioniStruttura(sc.wbs, v.wbs, 'nessuna WBS'), v.wbs || '')}
     </div>
+    <p class="lv-nota">Categorie e nodi WBS si scelgono dall'elenco: si creano e si ordinano nella pagina «Categorie e WBS» (sidebar, DATI DEL LAVORO).</p>
     <div class="lv-righe">${spunta('sicurezza', 'Oneri della sicurezza (non soggetti a ribasso)', !!a.sicurezza)}${spunta('corpo', 'Lavoro a corpo', !!v.corpo)}</div>
     ${conRibasso ? scelta('ribasso', "Ribasso d'asta", [
       ['', `come da contratto: ${regolaRibasso()}`],
@@ -1715,11 +1731,12 @@ function mostraNelPannello(codice: string): void {
 
 /* ── I dati del lavoro ────────────────────────────────────────────────── */
 
-async function lvApriDati(): Promise<void> {
-  let nuovi: DatiGenerali = normalizzaDatiGenerali(L.dati)
-  const body = formDatiGenerali(nuovi, (dg) => { nuovi = dg })
-  const ok = await openModal({ title: 'Dati del lavoro', body, actions: [{ label: 'Annulla', variant: 'ghost', value: false }, { label: 'Salva', variant: 'accent', value: true }] })
-  if (ok === true) aggiorna((l) => impostaDati(l, nuovi), 'Dati del lavoro salvati')
+/** I dati del lavoro: una pagina, come «Contratto, tempi e pagamenti» (non più una finestra). */
+function lvApriDati(): void { apri('dati') }
+/** Un dato del lavoro scritto nella sua pagina: si salva uscendo dal campo. */
+function lvDato(chiave: string, valore: string): void {
+  if (!CAMPI_DATI_GENERALI.some((c) => c.chiave === chiave)) return
+  aggiorna((l) => impostaDati(l, { [chiave]: String(valore).trim() }))
 }
 
 /* ── Import XPWE ──────────────────────────────────────────────────────── */
@@ -2376,10 +2393,184 @@ async function filePrezzario(input: HTMLInputElement): Promise<void> {
     await salvaPrezzario({ filename: f.name, format: p.formato, regione: p.regione, anno: p.anno, tipo: p.tipo, rows: p.rows, salvato: Date.now() })
     ricordaUltimo(f.name)
     await aggiornaPrezzari()
-    pz.scheda = 'prezzario'; pz.aperto = true
-    await lvPzScegli(`arc:${f.name}`)
+    if (corrente?.startsWith('§prezzario')) await lvPpScegli(`arc:${f.name}`)
+    else { pz.scheda = 'prezzario'; pz.aperto = true; await lvPzScegli(`arc:${f.name}`) }
     toast(`${f.name}: ${p.rows.length.toLocaleString('it-IT')} voci (${p.regione}${p.anno ? ' ' + p.anno : ''}), nell'archivio del programma`)
   } catch (e) { toast('Prezzario non leggibile: ' + ((e as Error).message || e)) }
+}
+
+/* ── Il prezzario a tutta pagina (prezzario-pagina.ts) ──────────────────
+   Le voci sono le stesse in memoria del pannello (caricaPrezzario le tiene
+   in cache): una correzione qui si vede anche là. Quelle dell'archivio si
+   riscrivono in IndexedDB poco dopo l'ultima modifica. */
+let _pp = nuovoStatoPrezzario()
+
+/** Dove porta «＋»: la revisione aperta (computo o perizia), detta in chiaro. */
+function destinazionePrezzario(): string | null {
+  const r = revAperta()
+  return r ? `${r.tipo === 'perizia' ? 'perizia' : 'computo'} ${sigla(r.numero)}` : null
+}
+/** Apre la pagina sul prezzario dell'ultima volta (o il primo del programma). */
+async function lvPpApri(): Promise<void> {
+  if (!pz.prezzari.length) await aggiornaPrezzari()
+  const ult = L.prezzari.at(-1)?.id, ricordato = ultimoPrezzario()
+  const id = _pp.id || [ult, ricordato ? `arc:${ricordato}` : null].find((x) => x && pz.prezzari.some((p) => p.id === x)) || pz.prezzari[0]?.id
+  if (id) await lvPpScegli(id)
+  else { corrente = '§prezzario'; pz.aperto = false; render(); pubblica() }
+}
+async function lvPpScegli(id: string): Promise<void> {
+  if (!id) return
+  if (!pz.prezzari.length) await aggiornaPrezzari()
+  _pp = { ...nuovoStatoPrezzario(), id, stato: 'Carico il prezzario…' }
+  corrente = `§prezzario:${id}`; pz.aperto = false
+  render(); pubblica()
+  try {
+    const righe = await caricaPrezzario(id)
+    if (_pp.id !== id) return
+    _pp = { ..._pp, righe, stato: '' }
+  } catch (e) { _pp = { ..._pp, stato: 'Prezzario non caricabile: ' + ((e as Error).message || e) } }
+  if (corrente === `§prezzario:${id}`) render()
+}
+let _ppT: number | undefined
+function lvPpCerca(testo: string): void {
+  clearTimeout(_ppT)
+  _ppT = window.setTimeout(() => { _pp = { ..._pp, q: testo, mostra: BLOCCO }; render() }, 200)
+}
+function lvPpFiltro(campo: string, valore: string): void {
+  let f = { ..._pp.filtri }
+  if (!campo) f = {}
+  else {
+    f = { ...f, [campo]: valore || undefined }
+    if (campo === 'disciplina') { delete f.sistema; delete f.settore }
+    if (campo === 'sistema') delete f.settore
+  }
+  _pp = { ..._pp, filtri: f, mostra: BLOCCO }; render()
+}
+function lvPpAltre(): void { _pp = { ..._pp, mostra: _pp.mostra + BLOCCO }; render() }
+
+/** Il prezzario aperto si scrive solo se è dell'archivio. */
+function ppArchivio(): string | null {
+  const f = _pp.id ? fileArchivio(_pp.id) : null
+  if (!f) { toast('Il prezzario installato si consulta: «✎ Copia modificabile» per cambiarlo'); return null }
+  return f
+}
+let _ppSalva: number | undefined
+function ppSalva(): void {
+  const f = _pp.id ? fileArchivio(_pp.id) : null; if (!f) return
+  const righe = _pp.righe
+  clearTimeout(_ppSalva)
+  _ppSalva = window.setTimeout(() => {
+    aggiornaRighePrezzario(f, righe).catch((e) => toast('Prezzario non salvato: ' + ((e as Error).message || e)))
+  }, 500)
+}
+const numeroPp = (t: string): number | null => {
+  const x = String(t).trim(); if (!x) return 0
+  const n = /[+*/x:()]/i.test(x) ? leggiCampo(x).valore ?? NaN : leggiNumeroTesto(x)
+  return n != null && Number.isFinite(n) ? n : null
+}
+function lvPpSet(i: number, campo: string, valore: string): void {
+  if (!ppArchivio()) return
+  const r = _pp.righe[i]; if (!r) return
+  if (campo === 'prezzo' || campo === 'ru') {
+    const n = numeroPp(valore)
+    if (n == null) { toast('Numero non valido'); render(); return }
+    r[campo] = n
+  } else if (campo === 'codice' || campo === 'um') r[campo] = String(valore).trim()
+  else if (campo === 'desc_short') {
+    const v = String(valore).trim()
+    if (!r.declaratoria || r.declaratoria === r.desc_short) r.declaratoria = v
+    r.desc_short = v
+  } else return
+  ppSalva()
+}
+/** Una riga vuota del prezzario, con tutti i campi (si scrivono poi nella tabella). */
+function rigaVuota(): PriceRow {
+  return { codice: '', declaratoria: '', desc_short: '', um: '', prezzo: 0, importo_netto: 0, ru: 0, liv1: '', liv2: '', liv3: '', liv4: '', materia: '', disciplina: '', sistema: '', attivita: '', settore: '', keywords: '', tipologia: '', regione: '', anno: '' } as PriceRow
+}
+function lvPpNuova(): void {
+  if (!ppArchivio()) return
+  _pp.righe.push(rigaVuota())
+  const i = _pp.righe.length - 1
+  _pp = { ..._pp, q: '', filtri: {}, mostra: Math.max(_pp.mostra, _pp.righe.length) }
+  ppSalva(); render()
+  requestAnimationFrame(() => {
+    const inp = document.querySelector<HTMLInputElement>(`#pp-${i}-codice input`)
+    inp?.scrollIntoView({ block: 'center' }); inp?.focus()
+  })
+}
+function lvPpTogli(i: number): void {
+  if (!ppArchivio()) return
+  const r = _pp.righe[i]; if (!r) return
+  _pp.righe.splice(i, 1)
+  ppSalva(); render()
+  toast(`${r.codice || 'Voce'} tolta dal prezzario`)
+}
+async function lvPpVoce(i: number): Promise<void> {
+  const r = _pp.righe[i]; if (!r) return
+  const scrive = !!(_pp.id && fileArchivio(_pp.id))
+  if (!scrive) {
+    await finestra(r.codice || 'Voce', `<p><b>${esc(r.desc_short || '')}</b></p>${r.declaratoria && r.declaratoria !== r.desc_short ? `<p class="lv-nota">${esc(r.declaratoria)}</p>` : ''}
+      <p class="lv-nota">${esc(r.um)} · € ${fmt(r.prezzo)}${r.ru ? ` · manodopera ${fmt(r.ru, 2)}%` : ''}</p>
+      ${[r.disciplina, r.sistema, r.settore].filter(Boolean).length ? `<p class="lv-nota">${esc([r.disciplina, r.sistema, r.settore].filter(Boolean).join(' › '))}</p>` : ''}`, 'Chiudi')
+    return
+  }
+  const x = await finestra(`${r.codice || 'Voce'} — modifica`, `
+    <div class="lv-righe">
+      ${campo('codice', 'Codice', r.codice || '', 'style="width:160px"')}
+      ${campo('um', 'U.M.', r.um || '', 'style="width:70px"')}
+      ${campo('prezzo', 'Prezzo €', fmt(r.prezzo), 'inputmode="decimal" style="width:110px"')}
+      ${campo('ru', 'Manodopera %', r.ru ? fmt(r.ru, 2) : '', 'inputmode="decimal" style="width:110px"')}
+    </div>
+    ${campo('desc_short', 'Descrizione', r.desc_short || '')}
+    <label class="lv-f"><span>Descrizione estesa (declaratoria)</span><textarea name="declaratoria" rows="6">${esc(r.declaratoria || '')}</textarea></label>`, 'Salva')
+  if (!x) return
+  const prezzo = numeroPp(x.prezzo), ru = numeroPp(x.ru)
+  if (prezzo == null || ru == null) { toast('Numero non valido'); return }
+  Object.assign(r, { codice: x.codice.trim(), um: x.um.trim(), prezzo, ru, desc_short: x.desc_short.trim(), declaratoria: x.declaratoria.trim() || x.desc_short.trim() })
+  ppSalva(); render()
+}
+/** «＋»: la voce entra nella revisione aperta (computo o perizia), e si resta sul prezzario. */
+function lvPpPrendi(i: number): void {
+  const x = _pp.righe[i]; if (!x) return
+  const r = revAperta(); if (!r) { toast('Nessun computo o perizia aperti in cui portare la voce'); return }
+  const p = pz.prezzari.find((y) => y.id === _pp.id)
+  const a: Omit<Articolo, 'id'> = {
+    codice: x.codice || '', descrizione: (x.desc_short || x.declaratoria || '').trim(),
+    ...(x.declaratoria && x.declaratoria !== x.desc_short ? { estesa: x.declaratoria } : {}),
+    um: x.um || '', prezzo: Number.isFinite(x.prezzo) ? x.prezzo : null, origine: 'prezzario', ...(_pp.id ? { prezzario: _pp.id } : {}),
+    ...(x.ru ? { incMdo: x.ru } : {}),
+  }
+  aggiorna((l) => {
+    const y = p ? registraPrezzario(l, { id: p.id, nome: p.nome, ...(p.regione ? { regione: p.regione } : {}), ...(p.anno ? { anno: p.anno } : {}) }) : l
+    return voceDaArticolo(y, r.id, r.tipo === 'perizia' ? { ...a, origine: 'np', codiceOrig: a.codice } : a).lavoro
+  }, `${a.codice || 'Voce'} nel ${r.tipo === 'perizia' ? 'la perizia' : 'computo'} ${sigla(r.numero)}`)
+}
+/** Copia di un prezzario installato nell'archivio: lì si può modificare. */
+async function lvPpCopia(): Promise<void> {
+  const p = pz.prezzari.find((y) => y.id === _pp.id); if (!p || !_pp.righe.length) return
+  const x = await finestra('Copia modificabile', `<p class="lv-nota">Il prezzario installato resta com'è: la copia va nell'archivio del programma su questo computer, e si modifica quella. Le voci sono ${_pp.righe.length.toLocaleString('it-IT')}.</p>
+    ${campo('nome', 'Nome della copia', `${p.nome} (studio)`)}`, 'Crea la copia')
+  if (!x) return
+  const base = x.nome.trim() || `${p.nome} (copia)`
+  const esistenti = new Set(pz.prezzari.filter((y) => y.origine === 'archivio').map((y) => y.filename))
+  let nome = base, k = 2
+  while (esistenti.has(nome)) nome = `${base} ${k++}`
+  try {
+    await salvaPrezzario({ filename: nome, format: 'copia', regione: p.regione ?? x.nome, anno: p.anno, tipo: p.categoria, rows: _pp.righe.map((r) => ({ ...r })), salvato: Date.now() })
+    await aggiornaPrezzari()
+    await lvPpScegli(`arc:${nome}`)
+    toast(`«${nome}»: copia nell'archivio, ora si modifica`)
+  } catch (e) { toast('Copia non riuscita: ' + ((e as Error).message || e)) }
+}
+async function lvPpTogliPrezzario(): Promise<void> {
+  const f = ppArchivio(); if (!f) return
+  const ok = await openModal({ title: 'Togliere il prezzario dall\'archivio?', message: `«${f}» non sarà più tra i prezzari del programma su questo computer. Le voci già portate nei lavori restano, con il loro prezzo.`, actions: [{ label: 'Annulla', variant: 'ghost', value: false }, { label: 'Togli', variant: 'accent', value: true }] })
+  if (ok !== true) return
+  await togliPrezzario(f)
+  if (pz.prezzario === _pp.id) { pz.prezzario = null; pz.righe = []; pz.trovate = [] }
+  _pp = nuovoStatoPrezzario()
+  await aggiornaPrezzari()
+  await lvPpApri()
 }
 
 /* ── Il dialogo con l'hub ─────────────────────────────────────────────── */
@@ -2409,7 +2600,7 @@ onHubMessage((hm) => {
     else if (c === 'formato-aperto') void lvFormatoAperto()
     else if (c === 'fascicolo-analisi') lvApFascicolo()
     else if (c === 'importa-xpwe-perizia') void lvImportaXpwePerizia()
-    else if (c === 'carica-prezzario') lvPzApri('prezzario')
+    else if (c === 'carica-prezzario') void lvPpApri()
     else if (c === 'promuovi') void lvPromuovi()
     else if (c === 'nuovo-sal') void lvNuovoSal()
     else if (c === 'sal-finale') void lvSalFinale()
@@ -2425,10 +2616,11 @@ Object.assign(window, {
   lvContabilitaLibera, lvContabilitaXpwe, lvImportoPattuito, lvPzFiltro, lvVariaPrezzi, lvPrezziDaPrezzario, lvRendiNP, lvConfrontaCodice, lvLibSalvaVoce, lvLibSalvaAnalisi, lvLibInserisci, lvStrRinomina, lvStrElimina, lvStrSposta, lvStrNuova, lvWbsCodice, lvWbsDescr, lvWbsNuovo, lvWbsElimina, lvModSalva, lvModApplica,
   lvMisVediVoce, lvMisIncolla, lvMisCopia, lvMisIncollaTutte, lvMisDaVoce, lvMisSposta, lvVoceSposta, lvDragVoce, lvDragSopra, lvDragFine, lvDropVoce,
   lvAq, lvAqMax, lvAqNuovo, lvAqApp, lvAqTogli, lvScNuova, lvSc, lvScTogli, lvScEseg, lvDatiSal, lvCtCF, lvFattNuova, lvFatt, lvFattTogli, lvFattStampa, lvRegistroAttiStampa, lvQE, lvQESic, lvQENuova, lvQETogli, lvOffNuova, lvOff, lvOffPrezzi, lvOffTogli, lvOffContratto, lvStampaRev,
+  lvPpScegli, lvPpCerca, lvPpFiltro, lvPpAltre, lvPpSet, lvPpNuova, lvPpTogli, lvPpVoce, lvPpPrendi, lvPpCopia, lvPpTogliPrezzario,
   lvElRev, lvElFiltro, lvElCerca, lvElSet, lvElModifica, lvElNP, lvElTogli, lvElNuovo, lvElPannello,
   lvApNuova, lvAp, lvApRigaNuova, lvApRiga, lvApRigaTogli, lvApApplica, lvApDuplica, lvApTogli, lvApAggiorna, lvApStampa, lvApFascicolo, lvMenuAnalisi,
   lvGioNuovo, lvGio, lvGioTogli, lvGioStampa, lvAttoNuovo, lvAtto, lvAttoTogli, lvAttoStampa, lvRisNuova, lvRis, lvRisTogli, lvRisStampa,
-  lvEcoNuova, lvEco, lvEcoTogli, lvEcoRigaNuova, lvEcoRiga, lvEcoRigaTogli, lvEcoStampa, lvScadStampa, lvCt, lvSospNuova, lvSosp, lvSospTogli, lvProrogaNuova, lvProroga, lvProrogaTogli, lvApri: (id: string) => apri(id), lvSalQta, lvSalQuota, lvMostra, lvApriDati, lvImportaXpwe, lvStampa, lvAiuto,
+  lvEcoNuova, lvEco, lvEcoTogli, lvEcoRigaNuova, lvEcoRiga, lvEcoRigaTogli, lvEcoStampa, lvScadStampa, lvCt, lvSospNuova, lvSosp, lvSospTogli, lvProrogaNuova, lvProroga, lvProrogaTogli, lvApri: (id: string) => apri(id), lvSalQta, lvSalQuota, lvMostra, lvApriDati, lvDato, lvImportaXpwe, lvStampa, lvAiuto,
   lvFileXpwe: fileXpwe,
   lvPzApri, lvPzChiudi, lvPzScheda, lvPzSoloNp, lvPzCerca, lvPzScegli, lvPzVoceDaArticolo, lvPzModificaArticolo, lvPzDaPrezzario,
   lvPzApriAltro, lvPzRevAltro, lvPzDaAltro, lvPzImportaXpwe, lvFileAltro: fileAltro, lvFilePrezzario: filePrezzario,

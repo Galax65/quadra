@@ -20,7 +20,7 @@ export function paginaAnalisi(l: Lavoro, a: AnalisiPrezzi, aperta: Revisione | n
   const t = calcolaAnalisi(a)
   const id = a.id
   const campo = (k: string, etichetta: string, v: string, extra = ''): string =>
-    `<label class="lv-f"><span>${esc(etichetta)}</span><input value="${esc(v)}" onchange="lvAp(${q(id)},'${k}',this.value)" ${extra}></label>`
+    `<label class="lv-f"><span>${esc(etichetta)}</span><input name="${k}" value="${esc(v)}" onchange="lvAp(${q(id)},'${k}',this.value)" ${extra}></label>`
   const cella = (i: number, k: string, v: string, extra = ''): string => `<input value="${esc(v)}" onchange="lvApRiga(${q(id)},${i},'${k}',this.value)" ${extra}>`
   const righe = a.righe.map((r, i) => `<tr>
       <td><select onchange="lvApRiga(${q(id)},${i},'tipo',this.value)">${TIPI_RIGA.map(([v, e]) => `<option value="${v}"${r.tipo === v ? ' selected' : ''}>${esc(e)}</option>`).join('')}</select></td>

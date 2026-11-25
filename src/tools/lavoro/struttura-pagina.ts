@@ -15,6 +15,24 @@ const esc = (s: unknown): string => String(s ?? '').replace(/[&<>"']/g, (c) => (
 const pj = (p: string[]): string => `'${JSON.stringify(p).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
 const q = (s: string): string => `'${String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`
 
+/**
+ * Le scelte per una voce: le categorie e i nodi WBS della revisione,
+ * nell'ordine della struttura. Categoria e WBS si scelgono da qui, non si
+ * scrivono a mano (un refuso farebbe un ramo nuovo); i rami e i nodi nuovi
+ * si creano nella pagina «Categorie e WBS».
+ */
+export function scelteStruttura(r: Revisione): { categorie: { valore: string; etichetta: string }[]; wbs: { valore: string; etichetta: string }[] } {
+  const st = strutturaDi(r)
+  const categoria = Object.fromEntries(r.voci.map((v) => [v.id, v.categoria]))
+  const nodi = appiattisci(alberoCategorie(categoria, r.voci.map((v) => v.id), {}, st.dichiarate, st.ordineLivelli))
+  const wbs = alberoWbs(Object.fromEntries(r.voci.map((v) => [v.id, v.wbs])), st.wbsNodi)
+  const rientro = (n: number): string => '\u00a0\u00a0\u00a0'.repeat(n)
+  return {
+    categorie: nodi.map((n) => ({ valore: n.percorso.join(' · '), etichetta: `${rientro(n.livello)}${n.nome}` })),
+    wbs: wbs.map((n) => ({ valore: n.codice, etichetta: `${rientro(n.livello)}${n.codice}${n.descrizione ? ` — ${n.descrizione}` : ''}` })),
+  }
+}
+
 export function paginaStruttura(r: Revisione, modelli: ModelloStruttura[]): string {
   const scrive = r.stato === 'aperta'
   const st = strutturaDi(r)
@@ -42,11 +60,11 @@ export function paginaStruttura(r: Revisione, modelli: ModelloStruttura[]): stri
       <td class="lv-str-az">${scrive ? `<button class="ehb-icon-btn" title="Un nodo figlio" onclick="lvWbsNuovo(${q(n.codice)})">＋</button><button class="ehb-icon-btn" title="Togli il nodo e i figli: le voci restano senza WBS" onclick="lvWbsElimina(${q(n.codice)})">✕</button>` : ''}</td>
     </tr>`).join('')
   return `<section class="lv-page lv-dati">
-    ${testataHtml({ titolo: `Struttura — ${sigla(r.numero)}`, sottotitolo: `${nodi.length} rami · ${w.length} nodi WBS${scrive ? '' : ' · in sola lettura'}`, pastiglie: [{ testo: 'struttura', tono: 'fase' }] })}
+    ${testataHtml({ titolo: 'Categorie e WBS', revisione: sigla(r.numero), sottotitolo: `${nodi.length} rami · ${w.length} nodi WBS${scrive ? '' : ' · in sola lettura'}`, pastiglie: [{ testo: 'struttura', tono: 'fase' }] })}
     <div class="lv-body lv-dati__corpo">
       <section class="lv-ct">
         <h2>Categorie</h2>
-        <p class="lv-nota">Supercategoria › Categoria › Subcategoria, con voci e importi. Rinominare, spostare o togliere un ramo vale per tutte le sue voci; la categoria della singola voce si sceglie con ✎ sulla voce.</p>
+        <p class="lv-nota">Supercategoria › Categoria › Subcategoria, con voci e importi. L'ordine che si dà qui con ↑↓ è quello della vista «Categorie» del computo e delle stampe per categoria. Rinominare, spostare o togliere un ramo vale per tutte le sue voci; la categoria della singola voce si sceglie da un elenco, entrando nella voce con ✎.</p>
         ${righeCat ? `<table class="lv-ct-tab lv-str"><thead><tr><th>Ramo</th><th>Voci</th><th>Importo</th><th></th></tr></thead><tbody>${righeCat}</tbody></table>` : '<p class="lv-nota">Nessuna categoria.</p>'}
         ${scrive ? `<button class="ehb-btn ehb-btn--sm ehb-btn--ghost" onclick="lvStrNuova('[]')">＋ Supercategoria</button>` : ''}
       </section>

@@ -286,6 +286,10 @@ app.whenReady().then(() => {
   })
 })
 
+/* Chiusa l'ultima finestra si chiude il programma, anche su Mac: la
+   convenzione del Mac (l'app resta aperta nel Dock, senza finestre) qui
+   costringeva a chiudere due volte — prima la finestra, con la domanda
+   «Salva?», poi Quadra. Il salvataggio l'ha già chiesto la finestra. */
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit()
+  app.quit()
 })

@@ -119,6 +119,14 @@ function nodoAvanzamento(l: Lavoro, a: Avanzamento): NodoAlbero {
   }
 }
 
+/** Categorie e WBS: la struttura della revisione su cui si lavora (l'ultima fuori dal contratto). */
+function nodoStruttura(l: Lavoro): NodoAlbero[] {
+  const ord = [...l.revisioni].sort((a, b) => a.ordine - b.ordine)
+  const r = ord.filter((x) => x.tipo !== 'contratto').pop() ?? ord.pop()
+  if (!r) return []
+  return [{ apre: { cosa: 'pagina', id: `struttura:${r.id}` }, etichetta: 'Categorie e WBS', sigla: sigla(r.numero), nota: r.stato === 'aperta' ? 'si ordinano e si creano qui' : 'si consultano' }]
+}
+
 /** L'elenco prezzi del lavoro, a tutta pagina: quello dell'ultima revisione (le altre si scelgono dalla pagina). */
 function nodoElenco(l: Lavoro): NodoAlbero[] {
   const ult = [...l.revisioni].sort((a, b) => a.ordine - b.ordine).pop()
@@ -166,6 +174,7 @@ export function alberoLavoro(l: Lavoro): SezioneAlbero[] {
     { id: 'dati', titolo: 'DATI DEL LAVORO', nodi: [
       { apre: { cosa: 'dati' }, etichetta: titolo },
       { apre: { cosa: 'contabilita' }, etichetta: 'Contratto, tempi e pagamenti', nota: notaTempi(l) },
+      ...nodoStruttura(l),
     ] },
     // le analisi del lavoro, una pagina ciascuna; poi i nuovi prezzi della revisione, nel pannello
     { id: 'analisi', titolo: 'ANALISI PREZZI', nodi: [

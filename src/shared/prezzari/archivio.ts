@@ -89,6 +89,22 @@ export async function righePrezzarioSalvato(filename: string): Promise<PriceRow[
   return rec?.rows || []
 }
 
+/**
+ * Riscrive le voci di un prezzario dell'archivio (dopo una modifica fatta a
+ * mano), tenendo tutto il resto del record. I prezzari installati col
+ * programma non stanno qui: per cambiarli se ne fa prima una copia.
+ */
+export async function aggiornaRighePrezzario(filename: string, rows: PriceRow[]): Promise<void> {
+  const rec = await tx<RecordArchivio>('readonly', (st) => st.get(filename))
+  if (!rec) throw new Error('Prezzario non più in archivio')
+  await tx('readwrite', (st) => st.put({ ...rec, rows, salvato: Date.now(), modificato: true }))
+}
+
+/** Toglie un prezzario dall'archivio del programma. */
+export async function togliPrezzario(filename: string): Promise<void> {
+  await tx('readwrite', (st) => st.delete(filename))
+}
+
 const CHIAVE_ULTIMO = 'miu:ultimo-prezzario'
 export function ricordaUltimo(filename: string): void { try { localStorage.setItem(CHIAVE_ULTIMO, filename) } catch { /* ok */ } }
 export function ultimoPrezzario(): string | null { try { return localStorage.getItem(CHIAVE_ULTIMO) } catch { return null } }

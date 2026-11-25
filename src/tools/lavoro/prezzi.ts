@@ -117,7 +117,7 @@ function schedaPrezzario(r: Revisione | null, p: Pannello, o: OpzioniPannello): 
     ${filtri}${attivi ? '<button class="lv-pz-link lv-pz-piede" onclick="lvPzFiltro(\'\',\'\')">togli i filtri</button>' : ''}
     <p class="lv-pz-nota">${esc(nota)}${o.inSal && o.libero ? ' · «＋»: l\'articolo entra nel contratto e si misura nel SAL' : o.inSal ? ' · in un SAL si consulta: un prezzo nuovo è un nuovo prezzo, cioè una perizia' : !scrive && r ? ' · la revisione è chiusa: qui si consulta' : ''}</p>
     ${righe || (p.prezzario ? `<p class="lv-pz-vuoto">${p.q ? 'Nessuna voce corrisponde.' : ''}</p>` : '')}
-    <div class="lv-pz-piede"><button class="lv-pz-link" onclick="lvPzImportaXpwe()" title="XML o Excel regionale, XPWE, listino Excel, CSV del Cratere">⇩ Importa un prezzario…</button></div>`
+    <div class="lv-pz-piede">${p.prezzario ? `<button class="lv-pz-link" onclick="lvApri('prezzario:${esc(p.prezzario)}')" title="Il prezzario a tutta pagina: si consulta, e se è dell'archivio si modifica">⤢ A tutta pagina</button> · ` : ''}<button class="lv-pz-link" onclick="lvPzImportaXpwe()" title="XML o Excel regionale, XPWE, listino Excel, CSV del Cratere">⇩ Importa un prezzario…</button></div>`
 }
 
 function schedaAltro(r: Revisione | null, p: Pannello, o: OpzioniPannello): string {
