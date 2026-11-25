@@ -786,3 +786,42 @@
 .ehb-gr .ehb-gr-meta { min-width: 0; }
 .ehb-gr .ehb-gr-som-tasti { padding: 2px 6px; font-size: 12px; color: var(--faint); cursor: help; }
 .ehb-gr .ehb-gr-som-tasti:hover { color: var(--muted); }
+
+/* ── Foglio compatto e leggibile ───────────────────────────────────────────
+   Più righe nello schermo (corpo 12 px, righe basse) e misure che si
+   distinguono a colpo d'occhio: il blocco delle misure sta su una fascia
+   del colore della fase con la barra a sinistra, le righe si alternano
+   (come in un foglio di calcolo), i separatori sono pieni e il testo è a
+   pieno contrasto. Le celle numeriche hanno il loro filetto verticale. */
+.ehb-gr { font-size: 12px; }
+.ehb-gr > thead th { font-size: 10.5px; padding-top: 6px; padding-bottom: 6px; }
+.ehb-gr td.ehb-gr-num, .ehb-gr td.ehb-gr-c--codice, .ehb-gr td input:not([type="checkbox"]) { font-size: 12px; }
+.ehb-gr > tbody > tr > td { height: 26px; padding-top: 4px; padding-bottom: 4px; }
+.ehb-gr .ehb-gr-des { line-height: 1.35; }
+
+.ehb-gr > tbody > tr.ehb-gr-mis > td {
+  height: 22px; padding-top: 0; padding-bottom: 0;
+  background: color-mix(in srgb, var(--accent) 5%, var(--panel));
+  border-bottom: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+}
+.ehb-gr > tbody > tr.ehb-gr-mis:nth-child(even) > td { background: color-mix(in srgb, var(--accent) 11%, var(--panel)); }
+.ehb-gr > tbody > tr.ehb-gr-mis > td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.ehb-gr > tbody > tr.ehb-gr-mis > td.ehb-gr-num { border-left: 1px solid color-mix(in srgb, var(--text) 10%, transparent); }
+.ehb-gr tr.ehb-gr-mis input.ehb-mis-in { height: 20px; font-size: 12px; }
+.ehb-gr tr.ehb-gr-mis input.ehb-mis-in--desc { color: var(--text); font-style: normal; }
+.ehb-gr tr.ehb-gr-mis input.ehb-mis-in::placeholder { color: var(--muted); }
+.ehb-gr tr.ehb-gr-mis td.ehb-gr-mis-qt { color: var(--text); font-weight: 600; }
+.ehb-gr tr.ehb-gr-mis:hover > td { background: color-mix(in srgb, var(--accent) 16%, var(--panel)); }
+.ehb-gr tr.ehb-gr-mis:focus-within > td { background: color-mix(in srgb, var(--accent) 20%, var(--panel)); }
+.ehb-gr .ehb-gr-mis-cmd { background: transparent; }
+
+/* SOMMANO: chiude la fascia, ben staccato dalla voce dopo */
+.ehb-gr > tbody > tr.ehb-gr-sommano > td {
+  height: 24px; padding-top: 2px; padding-bottom: 3px;
+  background: color-mix(in srgb, var(--accent) 5%, var(--panel));
+  border-top: 1px solid color-mix(in srgb, var(--text) 30%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--text) 28%, transparent);
+}
+.ehb-gr > tbody > tr.ehb-gr-sommano > td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.ehb-gr .ehb-gr-som-lab { font-size: 10.5px; color: var(--text); }
+.ehb-gr .ehb-gr-som-b { font-size: 11.5px; }

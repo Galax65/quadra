@@ -100,7 +100,8 @@ function sommanoHTML(p: Partita, riga: RigaSal | undefined): string {
 function librettoAMisuraHTML(partite: Partita[], sal: Sal, ord: Map<string, number>, opz?: OpzioniAtto): string {
   const rigaById = new Map(sal.righe.map((r) => [r.partitaId, r]))
   // SOLO le voci misurate: un libretto non elenca ciò che non è stato rilevato
-  const misura = partite.filter((p) => p.modalita === 'misura' && voceVisibileInSal(p, sal.numero) && misurataInSal(p, rigaById.get(p.id), sal.numero))
+  const misura = partite.filter((p) => p.modalita === 'misura' && voceVisibileInSal(p, sal.numero) && ord.has(p.id) && misurataInSal(p, rigaById.get(p.id), sal.numero))
+    .sort((x, y) => (ord.get(x.id)! - ord.get(y.id)!))
   if (!misura.length) return ''
   const body = misura.map((p) => righeMisuraHTML(p, rigaById.get(p.id), sal.numero, ord.get(p.id) ?? 0, sal.data, opz)).join('')
   return `
@@ -124,7 +125,8 @@ function librettoAMisuraHTML(partite: Partita[], sal: Sal, ord: Map<string, numb
 
 function librettoACorpoHTML(partite: Partita[], sal: Sal, ord: Map<string, number>): string {
   const rigaById = new Map(sal.righe.map((r) => [r.partitaId, r]))
-  const corpo = partite.filter((p) => p.modalita === 'corpo' && voceVisibileInSal(p, sal.numero) && misurataInSal(p, rigaById.get(p.id), sal.numero))
+  const corpo = partite.filter((p) => p.modalita === 'corpo' && voceVisibileInSal(p, sal.numero) && ord.has(p.id) && misurataInSal(p, rigaById.get(p.id), sal.numero))
+    .sort((x, y) => (ord.get(x.id)! - ord.get(y.id)!))
   if (!corpo.length) return ''
   const body = corpo.map((p) => {
     const r = rigaById.get(p.id)
@@ -173,8 +175,9 @@ function librettoEconomiaHTML(liste: ListaEconomia[] | undefined, sal: Sal): str
     </table>`
 }
 
-export function librettoHTML(appalto: Appalto, partite: Partita[], sal: Sal, liste?: ListaEconomia[], consegne?: Consegna[], opz?: OpzioniAtto): string {
-  const ord = ordineIscrizione(partite)
+export function librettoHTML(appalto: Appalto, partite: Partita[], sal: Sal, liste?: ListaEconomia[], consegne?: Consegna[], opz?: OpzioniAtto, sals?: Sal[]): string {
+  // i numeri d'ordine sono quelli del registro: si contano sui SAL fino a questo
+  const ord = ordineIscrizione(partite, (sals || [sal]).filter((s) => s.numero <= sal.numero))
   const misuraHTML = librettoAMisuraHTML(partite, sal, ord, opz)
   const corpoHTML = librettoACorpoHTML(partite, sal, ord)
   const economiaHTML = librettoEconomiaHTML(liste, sal)

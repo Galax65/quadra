@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { ordineIscrizione, rifLibretto, paginaIniziale, pagineEmesse, atoContinua, notaSeguito } from '../../src/tools/contabilita/engine/atti-rif'
-import { librettoHTML, registroHTML, sommarioHTML } from '../../src/tools/contabilita/engine'
+import { librettoHTML, registroHTML, sommarioHTML, salHTML } from '../../src/tools/contabilita/engine'
 import { rifRC } from '../../src/tools/contabilita/engine/sommario'
 import type { Appalto, Partita, Sal, Consegna } from '../../src/tools/contabilita/engine/types'
 
@@ -117,5 +117,43 @@ describe('un solo registro, pagine che continuano', () => {
     const html = registroHTML(appalto(), partite(), sals())
     expect(html).toContain('Un solo registro')
     expect(html).toContain('vidimati')
+  })
+})
+
+/**
+ * SOLO CIÒ CHE È CONTABILIZZATO HA UN NUMERO. Il registro trascrive le partite
+ * dei libretti: una voce del contratto mai misurata non c'è, e le voci
+ * iscritte si numerano 1, 2, 3… nell'ordine in cui entrano in contabilità —
+ * lo stesso numero nel libretto, nel registro, nel sommario e nel SAL.
+ */
+describe('numero d\'ordine delle sole voci contabilizzate', () => {
+  // in testa al contratto una voce mai misurata: non deve prendere il n. 1
+  const conMai = (): Partita[] => [
+    { id: 'z', modalita: 'misura', codice: 'Z.9', descrizione: 'Voce mai eseguita', um: 'mq', prezzoUnitario: 99, qtyProgetto: 10, categoria: 'Opere edili', introdottaSal: 1 },
+    ...partite(),
+  ]
+  const salsConZero = (): Sal[] => sals().map((s) => ({ ...s, righe: [{ partitaId: 'z', quantitaProgressiva: 0 }, ...s.righe] }))
+  it('numera progressivamente solo le voci con qualcosa di eseguito, SAL per SAL', () => {
+    const ord = ordineIscrizione(conMai(), salsConZero())
+    expect(ord.has('z')).toBe(false)
+    expect([ord.get('a'), ord.get('b'), ord.get('c')]).toEqual([1, 2, 3])
+  })
+  it('il registro non riporta le voci del contratto non contabilizzate', () => {
+    const html = registroHTML(appalto(), conMai(), salsConZero())
+    expect(html).not.toContain('Voce mai eseguita')
+    expect(html).toContain('LM 1 · n. 1')
+    expect(html).toContain('LM 2 · n. 3')
+  })
+  it('il sommario e il libretto non la riportano', () => {
+    expect(sommarioHTML(appalto(), conMai(), salsConZero(), 2)).not.toContain('Voce mai eseguita')
+    expect(librettoHTML(appalto(), conMai(), salsConZero()[0], undefined, undefined, undefined, salsConZero())).not.toContain('Voce mai eseguita')
+  })
+  it('il SAL ha la colonna del numero d\'ordine, con i numeri del registro', () => {
+    const html = salHTML(appalto(), conMai(), salsConZero(), 2)
+    expect(html).toContain('<th class="num">N.</th>')
+    expect(html).not.toContain('Voce mai eseguita')
+    const i1 = html.indexOf('>Scavo<'), i3 = html.indexOf('>Rinforzo<')
+    expect(i1).toBeGreaterThan(0)
+    expect(i3).toBeGreaterThan(i1)
   })
 })

@@ -33,6 +33,7 @@ export function azioniTappa(L: Lavoro, id: string): AzioneTappa[] {
     const c = contratto(L)
     return [
       t('apri', 'Apri'), t('stampa', '⎙ Stampa…'), 'sep',
+      t('elenco', '≣ Elenco prezzi…'),
       ...(r.tipo !== 'contratto' ? [t('struttura', '⌸ Struttura: categorie e WBS…')] : []),
       ...(r.tipo === 'computo' ? [t('qe', '⌸ Quadro economico…'), t('offerte', '⌸ Offerte e gara…'), 'sep' as const] : []),
       ...(r.tipo === 'computo' ? (aperta

@@ -15,7 +15,7 @@ import { sendToHub, onHubMessage, applySuiteAesthetics, bindThemeShortcut, loadP
 import { loadXLSX } from '../../shared/vendor'
 import {
   nuovoLavoro, nuovoComputo, rinumera, descrivi, chiudi, riapri, revisione, numeroProposto, sigla, modificabile, importiRevisione,
-  aggiungiArticolo, modificaArticolo, aggiungiVoce, modificaVoce, eliminaVoce, duplicaVoce, caricaVoci, impostaDati,
+  aggiungiArticolo, modificaArticolo, togliArticolo, aggiungiVoce, modificaVoce, eliminaVoce, duplicaVoce, caricaVoci, impostaDati,
   alberoLavoro, quantitaVoce, NOME_FASE, FASI, type Lavoro, type Revisione, type Fase, type Articolo, type Voce,
 } from '../../shared/lavoro'
 import { paginaRevisione, paginaVuota, paginaAvanzamento, titoloAvanzamento, fmt, misureAVista, type Vista } from './schermata'
@@ -25,6 +25,7 @@ import { vociConsuntivo } from './consuntivo'
 import { paginaAnalisi } from './analisi-pagina'
 import { paginaQE, paginaOfferte } from './progetto-pagine'
 import { paginaStruttura } from './struttura-pagina'
+import { paginaElencoPrezzi, nuovoStatoElenco, corrispondeRicerca, type FiltroElenco } from './elenco-prezzi-pagina'
 import { leggiLibreria, scriviLibreria, aggiungiALibreria, testoLibreria } from '../../shared/compositore/libreria-personale'
 import {
   rinominaCategoria, eliminaCategoria, spostaNelLivello, alberoCategorie, ricodificaWbs, eliminaWbs, prossimoCodiceWbs, modelloDaProgetto, applicaModello, normalizzaModelli,
@@ -165,6 +166,7 @@ let _ridisegnoInAttesa = false
 function chiaveFuoco(el: Element | null): string | null {
   if (!el || !(el instanceof HTMLElement)) return null
   if (el.id === 'lv-pz-q') return 'id|lv-pz-q'
+  if (el.id === 'lv-el-q') return 'id|lv-el-q'
   const mis = el.getAttribute('data-mis-input')
   const voce = el.closest('[data-voce]')?.getAttribute('data-voce')
   if (mis && voce) return `mis|${voce}|${mis}`
@@ -199,6 +201,7 @@ function render(): void {
   const pagina = corrente === PAGINA_CONTABILITA ? paginaContabilita(L, oggi())
     : corrente?.startsWith('§analisi:') && apAperta() ? paginaAnalisi(L, apAperta()!, revAperta())
     : corrente?.startsWith('§struttura:') && revDaPagina() ? paginaStruttura(revDaPagina()!, modelliStruttura())
+    : corrente?.startsWith('§elenco:') && revDaPagina() ? paginaElencoPrezzi(L, revDaPagina()!, _el)
     : corrente?.startsWith('§qe:') && revDaPagina() ? paginaQE(revDaPagina()!)
     : corrente?.startsWith('§offerte:') && revDaPagina() ? paginaOfferte(L, revDaPagina()!, vociPerStampa(revDaPagina()!))
     : corrente === '§giornale' ? paginaGiornale(L)
@@ -259,7 +262,7 @@ function eseguiAzioneTappa(comando: string): void {
     promuovi: lvPromuovi, 'nuova-da': lvNuovaDaQuesta, riapri: lvRiapri, descrivi: lvDescrivi,
     ribasso: lvRibasso, 'prezzi-unitari': lvPrezziUnitari, sal: lvNuovoSal, 'ribasso-np': lvRibassoNp,
     'varia-prezzi': lvVariaPrezzi, 'prezzi-prezzario': lvPrezziDaPrezzario,
-    qe: () => apri(`pagina:qe:${id}`), offerte: () => apri(`pagina:offerte:${id}`), struttura: () => apri(`pagina:struttura:${id}`),
+    qe: () => apri(`pagina:qe:${id}`), offerte: () => apri(`pagina:offerte:${id}`), struttura: () => apri(`pagina:struttura:${id}`), elenco: () => apri(`pagina:elenco:${id}`),
     emetti: lvEmetti, 'xpwe-sal': lvImportaXpweSal, 'dati-sal': lvDatiSal, confronta: lvConfrontaXpwe, 'sal-finale': lvSalFinale, cre: lvCre,
   }
   void fa[azione]?.()
@@ -314,7 +317,7 @@ function apAperta(): AnalisiPrezzi | null {
 }
 /** La revisione di una pagina di progetto (quadro economico, offerte). */
 function revDaPagina(): Revisione | null {
-  const m = /^§(?:qe|offerte|struttura):(.+)$/.exec(corrente || '')
+  const m = /^§(?:qe|offerte|struttura|elenco):(.+)$/.exec(corrente || '')
   return m ? L.revisioni.find((r) => r.id === m[1]) ?? null : null
 }
 /** La revisione dove si scrive adesso: il computo in lavorazione o la perizia in bozza (l'ultima). */
@@ -830,6 +833,68 @@ async function lvStampaRev(revId: string, tipo: string): Promise<void> {
   corrente = revId
   try { await stampaDocumento(tipo) } finally { corrente = prima }
 }
+
+/* ── L'elenco prezzi a tutta pagina ─────────────────────────────────────
+   Ricerca e filtro sono della vista, non del lavoro: restano finché si
+   passa da una revisione all'altra. */
+let _el = nuovoStatoElenco()
+
+function lvElRev(revId: string): void { apri(`pagina:elenco:${revId}`) }
+function lvElFiltro(f: string): void { _el = { ..._el, filtro: f as FiltroElenco }; render() }
+/** La ricerca si fa sulle righe già disegnate: si scrive senza ridisegnare la pagina. */
+function lvElCerca(testo: string): void {
+  _el = { ..._el, q: testo }
+  let n = 0, tot = 0
+  document.querySelectorAll<HTMLTableRowElement>('.lv-el-tab tbody tr[data-cerca]').forEach((tr) => {
+    const si = corrispondeRicerca(tr.dataset.cerca || '', testo)
+    tr.hidden = !si; tot++; if (si) n++
+  })
+  const c = $('lv-el-conta'); if (c) c.textContent = testo.trim() ? `${n} su ${tot}` : ''
+}
+/** Un campo dell'articolo scritto sul posto: codice, descrizione, unità, prezzo, sicurezza. */
+function lvElSet(revId: string, artId: string, campo: string, valore: string | boolean): void {
+  let patch: Partial<Articolo>
+  if (campo === 'prezzo') {
+    const t = String(valore).trim()
+    const n = !t ? null : /[+*/x:()]/i.test(t) ? leggiCampo(t).valore ?? NaN : leggiNumeroTesto(t)
+    if (n != null && !Number.isFinite(n)) { toast('Prezzo non valido'); render(); return }
+    patch = { prezzo: n }
+  } else if (campo === 'sicurezza') patch = { sicurezza: valore === true || undefined }
+  else if (campo === 'codice' || campo === 'descrizione' || campo === 'um') patch = { [campo]: String(valore).trim() }
+  else return
+  if (!aggiorna((l) => modificaArticolo(l, revId, artId, patch))) render()
+}
+async function lvElModifica(revId: string, artId: string): Promise<void> {
+  const r = L.revisioni.find((x) => x.id === revId); if (!r) return
+  const a = r.articoli.find((x) => x.id === artId); if (!a) return
+  if (r.stato !== 'aperta') {
+    await finestra(`${a.codice || 'Articolo'}`, `<p><b>${esc(a.descrizione)}</b></p>${a.estesa ? `<p class="lv-nota">${esc(a.estesa)}</p>` : ''}
+      <p class="lv-nota">${esc(a.um)} · ${a.prezzo != null ? '€ ' + fmt(a.prezzo) : 'senza prezzo'}${a.sicurezza ? ' · oneri della sicurezza' : ''}</p>
+      ${a.storico?.length ? `<p class="lv-nota"><b>Storico del prezzo</b>${a.prezzoListino != null ? ` — listino € ${fmt(a.prezzoListino)}` : ''}</p><ul class="lv-nota">${a.storico.map((x) => `<li>${esc(x.data)}: ${x.da != null ? '€ ' + fmt(x.da) : '—'} → ${x.a != null ? '€ ' + fmt(x.a) : '—'}${x.nota ? ` (${esc(x.nota)})` : ''}</li>`).join('')}</ul>` : ''}`, 'Chiudi')
+    return
+  }
+  const x = await finestraVoce(r, a, {}, `${a.codice || 'Articolo'} — modifica`)
+  if (x) aggiorna((l) => modificaArticolo(l, revId, artId, x.art))
+}
+function lvElNP(revId: string, artId: string): void {
+  let codice = ''
+  aggiorna((l) => { const x = rendiNuovoPrezzo(l, revId, artId); codice = x.codice; return x.lavoro })
+  if (codice) toast(`Ora è il nuovo prezzo ${codice}: il prezzo si può concordare`)
+}
+function lvElTogli(revId: string, artId: string): void {
+  const a = L.revisioni.find((x) => x.id === revId)?.articoli.find((x) => x.id === artId); if (!a) return
+  aggiorna((l) => togliArticolo(l, revId, artId), `${a.codice || 'Articolo'} tolto dall'elenco`)
+}
+async function lvElNuovo(revId: string): Promise<void> {
+  const r = L.revisioni.find((x) => x.id === revId); if (!r) return
+  const np = r.tipo === 'perizia'
+  const x = await finestraVoce(r, { origine: np ? 'np' : 'manuale' }, {}, np ? 'Nuovo prezzo' : 'Articolo nuovo')
+  if (!x) return
+  aggiorna((l) => aggiungiArticolo(l, revId, { codice: '', descrizione: '', um: '', prezzo: null, ...x.art, origine: np ? 'np' : 'manuale' }).lavoro, 'Articolo aggiunto in fondo all\'elenco')
+  requestAnimationFrame(() => { const b = $('lv-body'); if (b) b.scrollTop = b.scrollHeight })
+}
+/** Il prezzario si pesca dalla revisione: la si apre col pannello a destra. */
+function lvElPannello(revId: string): void { apri(revId); lvPzApri('prezzario') }
 
 /* ── Le analisi prezzi ─────────────────────────────────────────────────── */
 
@@ -1949,7 +2014,7 @@ async function documentoContabile(tipo: string): Promise<{ titolo: string; gener
       fascicolo: async () => {
         const pv = partiteVigenti(m.partite, m.perizie, n)
         return { html: fondiAtti([
-          librettoHTML(m.appalto, pv, sal!, m.liste, m.consegne),
+          librettoHTML(m.appalto, pv, sal!, m.liste, m.consegne, undefined, m.sals),
           ...(corpiConSottoComputo(m.partite, n).length ? [librettoSottoComputiHTML(m.appalto, m.partite, sal!)] : []),
           registroHTML(m.appalto, pv, m.sals, m.riserve, m.liste, m.consegne, oggiISO()),
           sommarioHTML(m.appalto, pv, m.sals, n, m.liste),
@@ -2360,6 +2425,7 @@ Object.assign(window, {
   lvContabilitaLibera, lvContabilitaXpwe, lvImportoPattuito, lvPzFiltro, lvVariaPrezzi, lvPrezziDaPrezzario, lvRendiNP, lvConfrontaCodice, lvLibSalvaVoce, lvLibSalvaAnalisi, lvLibInserisci, lvStrRinomina, lvStrElimina, lvStrSposta, lvStrNuova, lvWbsCodice, lvWbsDescr, lvWbsNuovo, lvWbsElimina, lvModSalva, lvModApplica,
   lvMisVediVoce, lvMisIncolla, lvMisCopia, lvMisIncollaTutte, lvMisDaVoce, lvMisSposta, lvVoceSposta, lvDragVoce, lvDragSopra, lvDragFine, lvDropVoce,
   lvAq, lvAqMax, lvAqNuovo, lvAqApp, lvAqTogli, lvScNuova, lvSc, lvScTogli, lvScEseg, lvDatiSal, lvCtCF, lvFattNuova, lvFatt, lvFattTogli, lvFattStampa, lvRegistroAttiStampa, lvQE, lvQESic, lvQENuova, lvQETogli, lvOffNuova, lvOff, lvOffPrezzi, lvOffTogli, lvOffContratto, lvStampaRev,
+  lvElRev, lvElFiltro, lvElCerca, lvElSet, lvElModifica, lvElNP, lvElTogli, lvElNuovo, lvElPannello,
   lvApNuova, lvAp, lvApRigaNuova, lvApRiga, lvApRigaTogli, lvApApplica, lvApDuplica, lvApTogli, lvApAggiorna, lvApStampa, lvApFascicolo, lvMenuAnalisi,
   lvGioNuovo, lvGio, lvGioTogli, lvGioStampa, lvAttoNuovo, lvAtto, lvAttoTogli, lvAttoStampa, lvRisNuova, lvRis, lvRisTogli, lvRisStampa,
   lvEcoNuova, lvEco, lvEcoTogli, lvEcoRigaNuova, lvEcoRiga, lvEcoRigaTogli, lvEcoStampa, lvScadStampa, lvCt, lvSospNuova, lvSosp, lvSospTogli, lvProrogaNuova, lvProroga, lvProrogaTogli, lvApri: (id: string) => apri(id), lvSalQta, lvSalQuota, lvMostra, lvApriDati, lvImportaXpwe, lvStampa, lvAiuto,

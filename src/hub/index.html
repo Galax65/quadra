@@ -77,6 +77,11 @@
             <span class="side-set-lbl">Backup dati</span>
             <span class="side-set-caret" aria-hidden="true">→</span>
           </button>
+          <div class="side-set-legal">
+            <button type="button" onclick="openCredits()">Crediti</button>
+            <span aria-hidden="true">·</span>
+            <button type="button" onclick="openLegal()">Note legali</button>
+          </div>
           <div class="set-row" id="set-profile" hidden>
             <div class="set-row__lbl">Profilo</div>
             <div class="set-prof" id="set-prof-who"><!-- icona utente + azienda (via JS) --></div>
@@ -155,8 +160,10 @@
       <input type="file" id="ehub-file" accept=".quadra,.ehub,.json,application/json" style="display:none" onchange="onEhubFile(this)">
     </div>
 
-    <!-- Welcome screen -->
-    <div id="welcome">
+    <!-- Schermata di ripiego: non si mostra più all'avvio (si apre subito
+         Lavoro, l'unico strumento). Compare solo se Lavoro non si può caricare,
+         per dire che cosa manca e da dove ripartire. -->
+    <div id="welcome" class="hidden">
       <div class="wlc-inner">
         <div class="wlc-hero">
           <div class="wlc-mark"><svg class="ehb-mark-svg" viewBox="40 40 920 920" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M230 80H650A150 150 0 0 1 800 230V650A150 150 0 0 1 650 800H230A150 150 0 0 1 80 650V230A150 150 0 0 1 230 80ZM240 185A55 55 0 0 0 185 240V640A55 55 0 0 0 240 695H640A55 55 0 0 0 695 640V240A55 55 0 0 0 640 185ZM424 185H456V695H424ZM185 424H695V456H185ZM692.4 607.6L892.4 807.6L807.6 892.4L607.6 692.4Z" fill="currentColor"/><circle cx="862" cy="862" r="88" fill="#e5484d"/></svg></div>

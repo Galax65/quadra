@@ -9,13 +9,20 @@ import type { Appalto, Partita, Sal, ListaEconomia, Verbale } from './types'
 import { calcolaSals, round2, type SalResult } from './contabilita'
 import { avvisoRibassoHTML } from './dati-contratto'
 import { datiGeneraliHTML } from './dati-generali'
+import { ordineIscrizione } from './atti-rif'
 import { enteDi, footerFieldsDi, headMetaDi, kickerDi, firmeHTML, ilDirettore } from './doc-common'
 
 const rigaKv = (k: string, v: string, cls = ''): string => `<tr class="${cls}"><td>${escHtml(k)}</td><td class="num">${v}</td></tr>`
 
-/** Tabella riepilogo per partita (descrizione · progressivo · importo eseguito). */
-function dettaglioHTML(res: SalResult): string {
-  const rows = res.righe.filter((r) => r.eseguito > 0 || r.progressivo != null).map((r) => `<tr>
+/**
+ * Tabella riepilogo per partita: SOLO le voci contabilizzate, col NUMERO
+ * D'ORDINE del registro (lo stesso del libretto e del sommario), in ordine di
+ * iscrizione — così ogni riga del SAL si ritrova negli altri atti.
+ */
+function dettaglioHTML(res: SalResult, ord: Map<string, number>): string {
+  const rows = res.righe.filter((r) => ord.has(r.partita.id))
+    .sort((a, b) => (ord.get(a.partita.id)! - ord.get(b.partita.id)!)).map((r) => `<tr>
+      <td class="num">${ord.get(r.partita.id)}</td>
       <td class="code">${escHtml(r.partita.codice)}</td>
       <td>${escHtml(r.partita.descrizione)}<span class="sub">${r.partita.modalita === 'corpo' ? 'a corpo' : 'a misura'}</span></td>
       <td class="num">${r.progressivo == null ? '—' : (r.partita.modalita === 'corpo' ? pct(r.progressivo, 1) : num(r.progressivo) + (r.partita.um ? ' ' + escHtml(r.partita.um) : ''))}</td>
@@ -23,7 +30,7 @@ function dettaglioHTML(res: SalResult): string {
     </tr>`).join('')
   if (!rows) return '<p class="note"><i>Nessuna lavorazione eseguita registrata per questo SAL.</i></p>'
   return `<table class="dtable">
-    <thead><tr><th>Codice</th><th>Designazione</th><th class="num">% / Qtà</th><th class="num">Importo a tutto il SAL</th></tr></thead>
+    <thead><tr><th class="num">N.</th><th>Codice</th><th>Designazione</th><th class="num">% / Qtà</th><th class="num">Importo a tutto il SAL</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>`
 }
@@ -71,7 +78,7 @@ export function salHTML(appalto: Appalto, partite: Partita[], sals: Sal[], numer
     ${avvisoRibassoHTML(appalto, partite)}
     ${datiGeneraliHTML(appalto, partite, verbali, oggiIt || sals.find((s) => s.numero === numero)?.data)}
     <h2 class="sec-h">Riepilogo delle lavorazioni</h2>
-    ${dettaglioHTML(res)}
+    ${dettaglioHTML(res, ordineIscrizione(partite, sals.filter((s) => s.numero <= numero)))}
     ${cascata}
     ${firmeHTML([{ ruolo: ilDirettore(appalto), nome: appalto.direttoreLavori }, { ruolo: 'Il RUP', nome: appalto.rup }])}
   `

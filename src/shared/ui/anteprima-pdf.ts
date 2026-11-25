@@ -91,7 +91,11 @@ export function anteprimaPdf(bytes: Uint8Array | ArrayBuffer | Blob, o: Anteprim
     setTimeout(() => {
       try {
         const d = frame.contentDocument
-        const vuoto = d && d.body && d.body.childElementCount === 0 && !d.querySelector('embed')
+        /* Da Electron 45 (Chromium col visore «fuori processo») il documento
+           PDF ha il corpo VUOTO anche quando il visore funziona: il visore sta
+           in un riquadro a parte. Se il documento si dichiara PDF, il visore
+           l'ha preso: si avvisa solo quando non è così. */
+        const vuoto = d && d.contentType !== 'application/pdf' && d.body && d.body.childElementCount === 0 && !d.querySelector('embed')
         if (vuoto) senzaVisore()
       } catch { /* documento non ispezionabile: il visore l'ha preso in carico */ }
     }, 2500)

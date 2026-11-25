@@ -261,6 +261,7 @@ export function paginaRevisione(l: Lavoro, r: Revisione, vista: Vista): string {
     espandi: { tutteAperte: !vista.soloVoci, onclick: 'lvEspandiTutte()' },
     aggiungi: [
       { etichetta: vista.prezziAperti ? '≡ Prezzi ✓' : '≡ Prezzi', titolo: vista.prezziAperti ? "L'elenco prezzi è aperto a destra" : "Riapri a destra l'elenco prezzi: progetto, prezzario, altro progetto", onclick: 'lvPzApri()' },
+      { etichetta: '≣ Elenco', titolo: "L'elenco prezzi a tutta pagina: si consulta, si cerca e (se la revisione è aperta) si corregge", onclick: `lvElRev('${r.id}')` },
       ...(scrive ? [{ etichetta: '＋ Voce libera', titolo: 'Una voce nuova: codice, descrizione e prezzo si scrivono con ✎', onclick: 'lvVoceLibera()' }, { etichetta: '★ Libreria', titolo: 'Una voce o un\'analisi dalla libreria dello studio', onclick: 'lvLibInserisci()' }] : []),
     ],
     dati: scrive && (r.tipo === 'computo' || perizia) ? [{ etichetta: '⇩ XPWE', titolo: perizia ? 'Importa la perizia preparata con un altro programma (XPWE): i prezzi di contratto restano, gli articoli nuovi sono NP' : 'Importa un computo XPWE (da un altro programma) in questa revisione', onclick: 'lvImportaXpwe()', stile: 'ghost' }] : [],

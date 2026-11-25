@@ -20,7 +20,7 @@ import { HUB_GUIDE } from './data/guida'
 import { applyDensity, applyFont, applyMotion, applyShadow, applyTextSize, nudgeUiScale, setDensity, setFont, setMotion, setShadow, setTextSize, setUiScale, setUiScalePct } from './ui/aspetto.js'
 import { ascoltaAzienda, enabledApps, initAuth } from './ui/auth.js'
 import { backupEsporta, backupImporta, closeBackup, openBackup } from './ui/backup.js'
-import { closeSession, goHome, initFolder, launchApp, reloadApp } from './ui/frames.js'
+import { closeSession, goHome, initFolder, launchApp, lavoroDisponibile, reloadApp } from './ui/frames.js'
 import { apriAtto, apriRamo, apriRevisione, comandoAlbero, espandiRami, renderRevisioni, toggleSezioneLavoro, toggleDocLavoro, apriNodoLavoro, apriDocumentoLavoro, menuNodoLavoro, menuSezioneLavoro, menuDocLavoro } from './ui/revisioni-nav.js'
 import { closeAppearance, closeCredits, closeGuide, closeLegal, initHubExtras, openAppearance, openCredits, openGuide, openLegal, startHubTour } from './ui/guida.js'
 import { apriLavoro, filterList, renderList, renderWelcomeCards } from './ui/navigazione.js'
@@ -55,7 +55,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.ehubNative) setTimeout(() => hubToast(UNSIGNED_NOTICE, { variant: 'bad' }), 700);
 
   // Risolvi subito i tool: bridge Electron (desktop) o fetch relativo (edizione web).
-  initFolder();
+  // Poi si apre direttamente Lavoro, con l'albero: niente schermata di scelta.
+  // Se Lavoro non si può caricare, compare la schermata di ripiego.
+  initFolder().then(() => {
+    if (lavoroDisponibile() && enabledApps().some(a => a.id === 'lavoro')) apriLavoro();
+    else document.getElementById('welcome').classList.remove('hidden');
+  }).catch(() => document.getElementById('welcome').classList.remove('hidden'));
 
   // Densità UI applicata all'avvio + stato attivo dei controlli settings.
   applyDensity();

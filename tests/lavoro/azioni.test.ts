@@ -28,23 +28,23 @@ function computo(): { l: Lavoro; id: string; voce: string } {
 describe('le azioni di ogni tappa, per il suo stato', () => {
   it('computo aperto: voce, import, consegna; consegnato: contratto, nuova revisione, riapri', () => {
     const { l, id } = computo()
-    expect(azioni(l, id)).toEqual(['apri', 'stampa', 'struttura', 'qe', 'offerte', 'voce', 'xpwe', 'varia-prezzi', 'prezzi-prezzario', 'consegna', 'descrivi'])
+    expect(azioni(l, id)).toEqual(['apri', 'stampa', 'elenco', 'struttura', 'qe', 'offerte', 'voce', 'xpwe', 'varia-prezzi', 'prezzi-prezzario', 'consegna', 'descrivi'])
     const c = chiudi(l, id, D)
-    expect(azioni(c, id)).toEqual(['apri', 'stampa', 'struttura', 'qe', 'offerte', 'promuovi', 'nuova-da', 'descrivi', 'riapri'])
+    expect(azioni(c, id)).toEqual(['apri', 'stampa', 'elenco', 'struttura', 'qe', 'offerte', 'promuovi', 'nuova-da', 'descrivi', 'riapri'])
   })
 
   it('contratto: offerta correggibile e SAL n. 1; poi il SAL emesso propone il successivo e il finale', () => {
     const { l: l0, id, voce } = computo()
     const c = promuoviAContratto(chiudi(l0, id, D), id, { data: D, ribassoPct: 10 })
     let l = c.lavoro
-    expect(azioni(l, c.id)).toEqual(['apri', 'stampa', 'ribasso', 'prezzi-unitari', 'sal'])
+    expect(azioni(l, c.id)).toEqual(['apri', 'stampa', 'elenco', 'ribasso', 'prezzi-unitari', 'sal'])
     const s = nuovoSal(l, D); l = modificaRigaAvanzamento(s.lavoro, s.id, voce, { quantita: 2 })
     expect(azioni(l, s.id)).toEqual(['apri', 'stampa', 'xpwe-sal', 'dati-sal', 'emetti'])
     l = emetti(l, s.id, D)
     expect(azioni(l, s.id)).toEqual(['apri', 'stampa', 'confronta', 'sal', 'sal-finale', 'riapri'])
     expect(azioni(l, c.id)).not.toContain('ribasso')    // c'è un SAL emesso: l'offerta non si cambia più
     const p = nuovaPerizia(l, { data: D })
-    expect(azioni(p.lavoro, p.id)).toEqual(['apri', 'stampa', 'struttura', 'voce', 'xpwe', 'ribasso-np', 'consegna', 'descrivi'])
+    expect(azioni(p.lavoro, p.id)).toEqual(['apri', 'stampa', 'elenco', 'struttura', 'voce', 'xpwe', 'ribasso-np', 'consegna', 'descrivi'])
   })
 
   it('i nodi dei dati e dei prezzari: aprire', () => {

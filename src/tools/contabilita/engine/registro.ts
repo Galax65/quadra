@@ -10,7 +10,7 @@ import type { Appalto, Partita, Sal, Riserva, ListaEconomia, Consegna } from './
 import { calcolaSals, eseguitoPartita, voceVisibileInSal, voceSoppressaInSal, round2 } from './contabilita'
 import { economiaATuttoSal } from './economia'
 import { enteDi, footerFieldsDi, headMetaDi, kickerDi, firmeHTML, ilDirettore, testoVoceHTML, type OpzioniAtto } from './doc-common'
-import { ordineIscrizione, rifLibretto, notaSeguito } from './atti-rif'
+import { ordineIscrizione, salDiIscrizione, rifLibretto, notaSeguito } from './atti-rif'
 import { riserveRegistroHTML, firmaEsecutoreNota } from './riserve'
 
 function partiteHTML(appalto: Appalto, partite: Partita[], sals: Sal[], liste?: ListaEconomia[], opz?: OpzioniAtto): string {
@@ -18,16 +18,20 @@ function partiteHTML(appalto: Appalto, partite: Partita[], sals: Sal[], liste?: 
   const ultimo = results[results.length - 1]
   const salN = ultimo?.numero ?? 1
   const economia = economiaATuttoSal(liste, salN)
-  const ord = ordineIscrizione(partite)
+  // si iscrivono SOLO le voci contabilizzate, col loro numero d'ordine, in ordine di iscrizione
+  const fino = sals.filter((s) => s.numero <= salN)
+  const ord = ordineIscrizione(partite, fino)
+  const lmDi = salDiIscrizione(fino)
   const rigaById = new Map((ultimo ? sals.find((s) => s.numero === ultimo.numero)?.righe : [])?.map((r) => [r.partitaId, r]) || [])
   const progById = new Map((ultimo?.righe || []).map((r) => [r.partita.id, r.progressivo]))
-  const rows = partite.filter((p) => voceVisibileInSal(p, salN)).map((p) => {
+  const rows = partite.filter((p) => voceVisibileInSal(p, salN) && ord.has(p.id))
+    .sort((a, b) => (ord.get(a.id)! - ord.get(b.id)!)).map((p) => {
     const r = rigaById.get(p.id)
     const soppressa = voceSoppressaInSal(p, salN)
     const eseg = eseguitoPartita(p, r, salN)
     const n = ord.get(p.id) ?? 0
     // da quale libretto viene la partita: quello del SAL in cui è entrata in contabilità
-    const lm = p.introdottaSal ?? 1
+    const lm = lmDi.get(p.id) ?? p.introdottaSal ?? 1
     // la quantità è quella progressiva del SAL: dal totale attestato o dalla somma
     // delle righe di misura (sono due modi di scrivere lo stesso dato, non due dati)
     const prog = progById.get(p.id)

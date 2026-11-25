@@ -18,21 +18,57 @@
  * Nessun numero inventato: se le pagine già emesse non si conoscono, la
  * numerazione riparte da 1 e l'atto non dichiara un «segue» falso.
  */
-import type { Consegna, Partita } from './types'
+import type { Consegna, Partita, RigaSal, Sal } from './types'
+
+/** La riga del SAL scrive davvero qualcosa per la voce (quantità, quota o misure non nulle)? */
+export function rigaConEseguito(r: RigaSal | undefined): boolean {
+  if (!r) return false
+  if (r.misurazioni?.length && r.misurazioni.some((m) => Math.abs(m.quantita || 0) > 1e-9)) return true
+  if (r.quantitaProgressiva) return true
+  if (r.quotaPct) return true
+  return !!r.sotto?.some((x) => x.quantitaProgressiva || x.misurazioni?.some((m) => Math.abs(m.quantita || 0) > 1e-9))
+}
 
 /**
  * NUMERO D'ORDINE DI ISCRIZIONE di ogni partita nel registro di contabilità.
- * È il numero con cui la partita entra in contabilità e NON cambia più: le
- * voci si iscrivono nell'ordine in cui compaiono (prima quelle del contratto,
- * poi quelle introdotte dalle perizie, SAL per SAL). Una voce soppressa
- * conserva il suo numero — negli atti pubblici non si cancella nulla.
+ * È il numero con cui la partita entra in contabilità e NON cambia più.
+ *
+ * Con i SAL (il caso degli atti): si numerano SOLO le voci contabilizzate,
+ * progressivamente, nell'ordine in cui entrano in contabilità — prima quelle
+ * del primo SAL che le misura, nell'ordine dell'elenco, poi quelle del SAL
+ * dopo, e così via. Una voce del contratto mai contabilizzata non ha numero
+ * (e non sta nel registro). Una voce soppressa dopo essere stata
+ * contabilizzata conserva il suo numero — negli atti pubblici non si cancella
+ * nulla.
+ *
+ * Senza SAL: tutte le partite, prima quelle del contratto, poi quelle
+ * introdotte dalle perizie, SAL per SAL.
  */
-export function ordineIscrizione(partite: Partita[]): Map<string, number> {
+export function ordineIscrizione(partite: Partita[], sals?: Sal[]): Map<string, number> {
   const ord = new Map<string, number>()
+  if (sals) {
+    const perId = new Map(partite.map((p, i) => [p.id, i]))
+    let k = 0
+    for (const s of [...sals].sort((a, b) => a.numero - b.numero)) {
+      const nuove = s.righe.filter((r) => perId.has(r.partitaId) && !ord.has(r.partitaId) && rigaConEseguito(r))
+        .sort((a, b) => (perId.get(a.partitaId)! - perId.get(b.partitaId)!))
+      for (const r of nuove) ord.set(r.partitaId, ++k)
+    }
+    return ord
+  }
   const perSal = [...partite].map((p, i) => ({ p, i, sal: p.introdottaSal ?? 1 }))
   perSal.sort((a, b) => (a.sal - b.sal) || (a.i - b.i))
   perSal.forEach((x, k) => ord.set(x.p.id, k + 1))
   return ord
+}
+
+/** SAL in cui ogni voce è entrata in contabilità (il libretto da cui il registro la trascrive). */
+export function salDiIscrizione(sals: Sal[]): Map<string, number> {
+  const m = new Map<string, number>()
+  for (const s of [...sals].sort((a, b) => a.numero - b.numero)) {
+    for (const r of s.righe) if (!m.has(r.partitaId) && rigaConEseguito(r)) m.set(r.partitaId, s.numero)
+  }
+  return m
 }
 
 /**

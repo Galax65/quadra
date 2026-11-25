@@ -119,6 +119,14 @@ function nodoAvanzamento(l: Lavoro, a: Avanzamento): NodoAlbero {
   }
 }
 
+/** L'elenco prezzi del lavoro, a tutta pagina: quello dell'ultima revisione (le altre si scelgono dalla pagina). */
+function nodoElenco(l: Lavoro): NodoAlbero[] {
+  const ult = [...l.revisioni].sort((a, b) => a.ordine - b.ordine).pop()
+  if (!ult) return []
+  const n = ult.articoli.length
+  return [{ apre: { cosa: 'pagina', id: `elenco:${ult.id}` }, etichetta: 'Elenco prezzi del lavoro', sigla: sigla(ult.numero), nota: `${n} articol${n === 1 ? 'o' : 'i'}${ult.stato === 'aperta' ? '' : ' · si consulta'}` }]
+}
+
 /** Quanti nuovi prezzi e prezzi da analisi ha l'ultima revisione: ANALISI PREZZI. */
 function npDellUltima(l: Lavoro): number {
   const ult = [...l.revisioni].sort((a, b) => a.ordine - b.ordine).pop()
@@ -167,7 +175,7 @@ export function alberoLavoro(l: Lavoro): SezioneAlbero[] {
       }),
       ...(npDellUltima(l) ? [{ apre: { cosa: 'analisi' as const }, etichetta: 'Nuovi prezzi della revisione', nota: `${npDellUltima(l)} articol${npDellUltima(l) === 1 ? 'o' : 'i'}` }] : []),
     ] },
-    { id: 'prezzi', titolo: 'ELENCO PREZZI', nodi: l.prezzari.map((p) => ({ apre: { cosa: 'prezzario' as const, id: p.id }, etichetta: p.nome, nota: ((n) => (n && n !== p.nome ? n : undefined))([p.regione, p.anno].filter(Boolean).join(' ')) })) },
+    { id: 'prezzi', titolo: 'ELENCO PREZZI', nodi: [...nodoElenco(l), ...l.prezzari.map((p) => ({ apre: { cosa: 'prezzario' as const, id: p.id }, etichetta: p.nome, nota: ((n) => (n && n !== p.nome ? n : undefined))([p.regione, p.anno].filter(Boolean).join(' ')) }))] },
     { id: 'computo', titolo: 'COMPUTO', nodi: computi.map(nodoRevisione) },
     { id: 'contratto', titolo: 'CONTRATTO', nodi: contr.map(nodoRevisione) },
     { id: 'contabilita', titolo: 'CONTABILITÀ', nodi: conta.map((t) => (t.famiglia === 'avanzamento' ? nodoAvanzamento(l, t) : nodoRevisione(t))) },

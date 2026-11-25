@@ -75,28 +75,36 @@ describe('hub — avvio reale in jsdom', () => {
     expect(document.querySelector('#welcome-cards')?.children.length, 'card di benvenuto').toBeGreaterThan(0)
   })
 
-  it('la sidebar parte chiusa e il toggle la apre e la richiude', () => {
-    const w = window as unknown as { toggleSidebar: () => void }
-    const sidebar = document.getElementById('sidebar')!
-    expect(sidebar.classList.contains('collapsed'), 'chiusa all\'avvio').toBe(true)
-    w.toggleSidebar()
-    expect(sidebar.classList.contains('collapsed'), 'aperta dal toggle').toBe(false)
-    w.toggleSidebar()
-    expect(sidebar.classList.contains('collapsed'), 'richiusa').toBe(true)
+  it('all\'avvio si apre subito Lavoro, con l\'albero: niente schermata di scelta', async () => {
+    await new Promise((r) => setTimeout(r, 50))
+    expect(document.getElementById('welcome')?.classList.contains('hidden'), 'benvenuto nascosto').toBe(true)
+    expect(document.getElementById('nav-lavoro')?.classList.contains('active') || !!document.querySelector('#frames iframe'), 'Lavoro aperto').toBe(true)
+    expect(document.getElementById('sidebar')?.classList.contains('collapsed'), 'sidebar aperta').toBe(false)
   })
 
-  it('lanciare un tool mostra il frame, e «home» torna alla schermata di benvenuto', async () => {
-    const w = window as unknown as { launchApp: (id: string) => Promise<void>, goHome: () => void, newProgettoQuadra: () => Promise<void> }
-    // Nessun project-gate: all'avvio c'è già un progetto (vuoto) attivo, il tool si apre subito.
+  it('il toggle chiude e riapre la sidebar', () => {
+    const w = window as unknown as { toggleSidebar: () => void }
+    const sidebar = document.getElementById('sidebar')!
+    const prima = sidebar.classList.contains('collapsed')
+    w.toggleSidebar()
+    expect(sidebar.classList.contains('collapsed')).toBe(!prima)
+    w.toggleSidebar()
+    expect(sidebar.classList.contains('collapsed')).toBe(prima)
+  })
+
+  it('«home» torna a Lavoro, non a una schermata di benvenuto', async () => {
+    const w = window as unknown as { launchApp: (id: string) => Promise<void>, goHome: () => void }
     await w.launchApp('lavoro')
     expect(document.getElementById('welcome')?.classList.contains('hidden'), 'benvenuto nascosto').toBe(true)
     expect(document.getElementById('app-bar')?.classList.contains('visible'), 'barra app visibile').toBe(true)
     expect(document.querySelectorAll('#frames iframe').length, 'iframe del tool creato').toBeGreaterThan(0)
-    // l'accento della chrome segue il tool aperto
     // «Lavoro» porta l'identità visiva del computo (segno e colore): è da lì che un lavoro comincia
     expect(document.getElementById('app-bar')?.dataset.tool).toBe('computo')
+    await w.launchApp('amministrazione')
     w.goHome()
-    expect(document.getElementById('welcome')?.classList.contains('hidden'), 'benvenuto di nuovo visibile').toBe(false)
+    await new Promise((r) => setTimeout(r, 0))
+    expect(document.getElementById('welcome')?.classList.contains('hidden'), 'benvenuto ancora nascosto').toBe(true)
+    expect(document.getElementById('nav-lavoro')?.classList.contains('active'), 'di nuovo in Lavoro').toBe(true)
   })
 
   it('il tema di suite si applica e il toggle lo commuta', () => {

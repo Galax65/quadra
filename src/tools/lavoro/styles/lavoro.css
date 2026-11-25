@@ -145,3 +145,25 @@ tr.lv-voce:hover .lv-voce-az, tr.lv-voce:focus-within .lv-voce-az { visibility: 
 /* I dati della voce (categoria, WBS, sicurezza…): vanno a capo se serve, e
    un'etichetta troppo lunga (la categoria) si accorcia coi puntini. */
 .ehb-gr tr.lv-voce .ehb-gr-meta { gap: 4px; }
+
+/* ── L'elenco prezzi a tutta pagina (elenco-prezzi-pagina.ts) ─────────── */
+.lv-el { display: flex; flex-direction: column; gap: 10px; padding-top: 12px; }
+.lv-el > .lv-nota { margin: 0; max-width: 980px; }
+.lv-el-barra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lv-el-barra select, .lv-el-rev { font: inherit; font-size: var(--fs-sm); color: var(--text); background: var(--panel); border: 1px solid var(--line2); border-radius: var(--radius-sm); padding: 5px 7px; }
+.lv-el-q { flex: 0 1 320px; font: inherit; font-size: var(--fs-sm); color: var(--text); background: var(--panel); border: 1px solid var(--line2); border-radius: var(--radius-sm); padding: 6px 8px; }
+.lv-el-tab { table-layout: auto; }
+.lv-el-tab th { position: sticky; top: 0; background: var(--bg); z-index: 1; padding: 6px 4px; border-bottom: 1px solid var(--line2); }
+.lv-el-tab td { vertical-align: middle; border-bottom: 1px solid var(--line); }
+.lv-el-tab td:nth-child(1), .lv-el-tab td:nth-child(2) { width: auto; }
+.lv-el-tab td.lv-el-cod { width: 150px; }
+.lv-el-tab td.lv-el-des { min-width: 280px; }
+.lv-el-tab td.lv-el-um { width: 64px; }
+.lv-el-tab .lv-el-pr { width: 100px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lv-el-tab .lv-el-pr input { text-align: right; }
+.lv-el-tab td.lv-el-or { width: 80px; }
+.lv-el-tab td.lv-el-sic { width: 36px; text-align: center; }
+.lv-el-tab td.lv-el-sic input { width: auto; }
+.lv-el-tab td.lv-el-cod b { font-weight: 600; }
+.lv-el-tab tr.is-inutile td { color: var(--muted); }
+.lv-el-tab tfoot td { padding-top: 8px; border-bottom: 0; color: var(--muted); }

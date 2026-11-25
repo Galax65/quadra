@@ -221,9 +221,9 @@ export function closeSession(id, ev) {
     ? `"${name}" ha una sessione attiva e il progetto Quadra ha modifiche non salvate.\n\nChiudendo la sessione lo stato non salvato andrà perso.\nAnnulla per salvarlo prima ("Salva progetto").\n\nChiudere comunque?`
     : `Chiudere la sessione di "${name}"?\nLo stato corrente di questa sessione andrà perso.`;
   if (!window.confirm(msg)) return;
-  if (currentId === id) goHome();
   f.remove();
   delete loadedFrames[id];
+  if (currentId === id) goHome();
   filterList();          // aggiorna l'indicatore "attiva" nella lista
   renderWelcomeCards();  // e nelle card del welcome
 }
@@ -231,8 +231,19 @@ export function closeSession(id, ev) {
 /* ══════════════════════════════════════════════
    GO HOME
    ══════════════════════════════════════════════ */
+/* «Casa» è il lavoro: Lavoro è l'unico strumento, e una pagina che serviva a
+   scegliere fra più strumenti non ha più niente da far scegliere. Esc,
+   «Nuovo progetto» e il ritorno da Amministrazione riportano lì. La schermata
+   di benvenuto resta solo come ripiego, se Lavoro non si può caricare. */
+export function lavoroDisponibile() {
+  const lav = APP_REGISTRY.find(a => a.id === 'lavoro');
+  return !!lav && lav.resolvedFile !== null;
+}
 export function goHome() {
-  if (!currentId && !document.getElementById('error-overlay').classList.contains('show')) return;
+  const errore = document.getElementById('error-overlay').classList.contains('show');
+  if (!errore && currentId === 'lavoro' && loadedFrames.lavoro) return;
+  if (!errore && lavoroDisponibile()) { launchApp('lavoro'); return; }
+  if (!currentId && !errore && !document.getElementById('welcome').classList.contains('hidden')) return;
   currentId = null;
   // Tornati alla home: ripristina il tema del contesto hub.
   setContextTool('hub');

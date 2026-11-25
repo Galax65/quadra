@@ -40,7 +40,7 @@ export function buildSommario(appalto: Appalto, partite: Partita[], sals: Sal[],
     return m
   }
   const curMap = esegById(cur), prevMap = esegById(prev)
-  const ord = ordineIscrizione(partite)
+  const ord = ordineIscrizione(partite, sals.filter((s) => s.numero <= numero))
   const gruppi = new Map<string, RigaSommario>()
   for (const p of partite) {
     if (!voceVisibileInSal(p, numero)) continue // le voci introdotte dopo questo SAL non esistono ancora
@@ -74,7 +74,7 @@ function vociHTML(appalto: Appalto, partite: Partita[], sals: Sal[], numero: num
   // progressivo (quantità, o quota % per le voci a corpo) ed eseguito di ogni voce a ogni SAL
   const prog = new Map<number, Map<string, { q: number; imp: number }>>()
   for (const r of res) prog.set(r.numero, new Map(r.righe.map((x) => [x.partita.id, { q: x.progressivo ?? 0, imp: x.eseguito }])))
-  const ord = ordineIscrizione(partite)
+  const ord = ordineIscrizione(partite, fino)
   const pv = partiteVigenti(partite, appalto.perizie, numero)
   const testa = `<thead><tr>
       <th class="num">N.</th><th>Tariffa</th>
@@ -85,7 +85,8 @@ function vociHTML(appalto: Appalto, partite: Partita[], sals: Sal[], numero: num
   let totale = 0
   const sezioni: string[] = []
   for (const sez of SEZIONI) {
-    const voci = pv.filter((p) => sezioneDi(p) === sez && voceVisibileInSal(p, numero) && (prog.get(numero)?.get(p.id)?.imp || prog.get(numero)?.get(p.id)?.q))
+    const voci = pv.filter((p) => sezioneDi(p) === sez && voceVisibileInSal(p, numero) && ord.has(p.id))
+      .sort((a, b) => (ord.get(a.id)! - ord.get(b.id)!))
     if (!voci.length) continue
     let parziale = 0
     const righe = voci.map((p) => {

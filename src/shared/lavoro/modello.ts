@@ -549,6 +549,26 @@ export function modificaArticolo(l: Lavoro, revId: string, artId: string, patch:
   })
 }
 
+/**
+ * Toglie un articolo dall'elenco prezzi della revisione aperta. Solo se
+ * nessuna voce lo usa: un prezzo che regge una voce non sparisce di nascosto
+ * (si toglie prima la voce). Con l'articolo va via il suo prezzo offerto.
+ */
+export function togliArticolo(l: Lavoro, revId: string, artId: string): Lavoro {
+  return conRevisioneAperta(l, revId, (r) => {
+    const a = r.articoli.find((x) => x.id === artId)
+    if (!a) throw new Error('Articolo non trovato')
+    const usi = r.voci.filter((v) => v.articolo === artId).length
+    if (usi) throw new Error(`${a.codice || 'L\'articolo'} è usato da ${usi} voc${usi === 1 ? 'e' : 'i'}: togli prima ${usi === 1 ? 'la voce' : 'le voci'}`)
+    let contratto = r.contratto
+    if (contratto?.prezziOfferti && artId in contratto.prezziOfferti) {
+      const { [artId]: _via, ...resto } = contratto.prezziOfferti
+      contratto = { ...contratto, prezziOfferti: resto }
+    }
+    return { ...r, articoli: r.articoli.filter((x) => x.id !== artId), ...(contratto ? { contratto } : {}) }
+  })
+}
+
 const oggiIt = (): string => { const d = new Date(); return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}` }
 
 /** Variazione % dei prezzi in blocco (tutti, o gli articoli indicati); la sicurezza resta. */
