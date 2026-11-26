@@ -6,7 +6,7 @@
   var V = {
     "app": {
       "name": "Quadra",
-      "version": "0.18.0"
+      "version": "0.19.0"
     },
     "developer": {
       "name": "Galax65",
