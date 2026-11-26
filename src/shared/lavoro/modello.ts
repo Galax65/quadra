@@ -742,8 +742,18 @@ export function voceDaArticolo(l: Lavoro, revId: string, a: Omit<Articolo, 'id'>
 export function elencoArticoli(r: Revisione): (Articolo & { usi: number })[] {
   const usi = new Map<string, number>()
   for (const v of r.voci) usi.set(v.articolo, (usi.get(v.articolo) || 0) + 1)
-  return r.articoli.map((a) => ({ ...a, usi: usi.get(a.id) || 0 }))
+  return r.articoli.map((a) => ({ ...a, usi: usi.get(a.id) || 0 })).sort(cmpArticoli)
 }
+
+/** L'ordine dell'elenco prezzi: per codice, in ordine alfanumerico naturale
+ *  (A.2 prima di A.10), poi per descrizione; gli articoli senza codice in fondo. */
+export function cmpCodici(a: string, b: string): number {
+  const x = (a || '').trim(), y = (b || '').trim()
+  if (!x !== !y) return x ? -1 : 1
+  return x.localeCompare(y, 'it', { numeric: true, sensitivity: 'base' })
+}
+export const cmpArticoli = (a: Pick<Articolo, 'codice' | 'descrizione'>, b: Pick<Articolo, 'codice' | 'descrizione'>): number =>
+  cmpCodici(a.codice, b.codice) || (a.descrizione || '').localeCompare(b.descrizione || '', 'it', { sensitivity: 'base' })
 
 /* ── Le misure di un avanzamento (SAL, SAL finale) ───────────────────────
    Si misura l'ESEGUITO A TUTTO IL SAL, voce per voce del contratto (o della

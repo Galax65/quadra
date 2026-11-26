@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 /**
- * CONTROLLI PROGETTO E.HUB — Apri/Salva (.ehub) in DUE contesti + project-gate.
+ * CONTROLLI PROGETTO — Nuovo/Apri/Salva in un posto solo (il piede della sidebar).
  *
  * In passato i pulsanti erano in 2 contesti (app-bar + welcome), poi
  * RIPRISTINATI anche nella sidebar (3 contesti). Su richiesta utente la
@@ -32,43 +32,35 @@ function count(haystack: string, needle: string): number {
   return n
 }
 
-describe('hub index.html — controlli progetto Quadra (app-bar + sidebar)', () => {
-  it('espone 3 pulsanti "Apri progetto" (app-bar + sidebar + avvio rapido in home)', () => {
-    expect(count(HTML, 'onclick="openProgettoQuadra()"')).toBe(3)
+describe('hub index.html — controlli progetto Quadra (sidebar + avvio rapido)', () => {
+  // la barra in alto (#app-bar) resta sotto la pagina del tool, che occupa
+  // tutto lo spazio: i suoi pulsanti erano invisibili e doppioni della sidebar
+  it('Apri e Nuovo: sidebar + avvio rapido in home', () => {
+    expect(count(HTML, 'onclick="openProgettoQuadra()"')).toBe(2)
+    expect(count(HTML, 'onclick="newProgettoQuadra()"')).toBe(2)
   })
 
-  it('espone 2 pulsanti "Salva progetto" (app-bar + sidebar)', () => {
-    expect(count(HTML, 'onclick="saveProgettoQuadra()"')).toBe(2)
+  it('Salva progetto una volta sola (sidebar)', () => {
+    expect(count(HTML, 'onclick="saveProgettoQuadra()"')).toBe(1)
+    expect(count(HTML, 'js-save-project')).toBe(1)
   })
 
-  it('espone 3 pulsanti "Nuovo progetto" (app-bar + sidebar + avvio rapido in home)', () => {
-    expect(count(HTML, 'onclick="newProgettoQuadra()"')).toBe(3)
-  })
-
-  it('la sidebar ha il blocco #side-proj nel footer (ripristinato)', () => {
+  it('la sidebar ha il blocco #side-proj nel footer', () => {
     expect(HTML).toContain('id="side-proj"')
     expect(count(HTML, 'class="side-proj-btn"')).toBe(3) // Nuovo + Apri + Salva con nome (sidebar)
     expect(count(HTML, 'class="side-proj-btn js-save-project"')).toBe(1) // Salva (sidebar)
   })
 
-  it('mantiene #sidebar-footer e #stat-row (le statistiche restano)', () => {
+  it('mantiene #sidebar-footer e #stat-row (con la versione)', () => {
     expect(HTML).toContain('id="sidebar-footer"')
     expect(HTML).toContain('id="stat-row"')
+    expect(HTML).toContain('id="stat-hubver"')
   })
 
-  it('tutte le istanze "Salva" portano l\'hook dirty .js-save-project (2)', () => {
-    expect(count(HTML, 'js-save-project')).toBe(2)
-  })
-
-  it('app-bar usa lo stile unificato .proj-act (welcome non li duplica più)', () => {
-    expect(count(HTML, 'class="proj-act"')).toBe(3) // Nuovo + Apri + Salva con nome (app-bar)
-    expect(count(HTML, 'class="proj-act js-save-project"')).toBe(1) // Salva progetto (app-bar)
-  })
-
-  it('non usa più .bar-act / .wlc-theme-opt per i pulsanti progetto', () => {
-    // l'unico .bar-act rimasto in #bar-actions è "Ricarica"
-    expect(count(HTML, 'class="bar-act"')).toBe(1)
-    expect(HTML).not.toContain('class="wlc-theme-opt" onclick="openProgettoQuadra()"')
+  it('niente più pulsanti nella barra coperta (.proj-act / .bar-act)', () => {
+    expect(HTML).not.toContain('class="proj-act')
+    expect(HTML).not.toContain('class="bar-act"')
+    expect(HTML).not.toContain('id="bar-actions"')
   })
 
   it('conserva l\'input file nascosto #ehub-file con il suo handler', () => {

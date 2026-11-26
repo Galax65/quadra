@@ -118,8 +118,7 @@
       <!-- Logo azienda DISCRETO (solo profilo aziendale; admin → nascosto). -->
       <div id="side-company" hidden></div>
       <div id="stat-row">
-        <div class="stat-item"><div class="stat-val" id="stat-n">—</div><div class="stat-lbl">tools</div></div>
-        <div class="stat-item"><div class="stat-val" id="stat-hubver">—</div><div class="stat-lbl">hub ver</div></div>
+        <div class="stat-item" title="Versione di Quadra"><div class="stat-lbl">versione</div><div class="stat-val" id="stat-hubver">—</div></div>
         <button id="theme-btn" onclick="toggleTheme()" title="Tema chiaro/scuro (T)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
         </button>
@@ -135,28 +134,8 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
       </button>
       <div id="bar-title"></div>
-      <div id="bar-actions">
-        <button class="proj-act" onclick="newProgettoQuadra()" title="Nuovo progetto Quadra: azzera tutto e riparte da zero">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M12 11v6M9 14h6"/></svg>
-          Nuovo
-        </button>
-        <button class="proj-act" onclick="openProgettoQuadra()" title="Apri un progetto Quadra (.quadra): ripristina lo stato dei tool">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-          Apri progetto
-        </button>
-        <button class="proj-act js-save-project" onclick="saveProgettoQuadra()" title="Salva l'intero stato del programma in un file .quadra">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
-          Salva progetto
-        </button>
-        <button class="proj-act" onclick="saveProgettoQuadraAs()" title="Salva con nome: scegli nome del progetto e cartella di destinazione">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/><path d="M12 3v4"/></svg>
-          Salva con nome…
-        </button>
-        <button class="bar-act" onclick="reloadApp()" title="Ricarica (R)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
-          Ricarica
-        </button>
-      </div>
+      <!-- Niente comandi qui: Nuovo/Apri/Salva stanno nel piede della sidebar, e
+           questa barra resta sotto la pagina del tool (che occupa tutto lo spazio). -->
       <input type="file" id="ehub-file" accept=".quadra,.ehub,.json,application/json" style="display:none" onchange="onEhubFile(this)">
     </div>
 

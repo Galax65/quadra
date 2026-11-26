@@ -220,7 +220,8 @@ function render(): void {
   // nel SAL l'elenco prezzi è quello del contratto: si consulta, e «＋» porta la voce nel libretto
   host.innerHTML = pagina + (a ? pannelloPrezziHtml(revDiAv(a), pz, { scrive: a.stato === 'bozza' && a.tipo !== 'cre', inSal: true, libero: !!contratto(L)?.contratto?.libero })
     : apAperta() ? pannelloPrezziHtml(revAperta(), pz, { perAnalisi: true })
-    : pannelloPrezziHtml(r, pz))
+    // le pagine di dati (dati, prezzari, elenco, contabilità…) occupano tutta la larghezza: niente colonna vuota
+    : r ? pannelloPrezziHtml(r, pz) : '')
   const body = $('lv-body'); if (body) body.scrollTop = scroll
   const bpz = $('lv-pz-body'); if (bpz) bpz.scrollTop = scrollPz
   ritrovaFuoco(fuoco)
@@ -236,11 +237,12 @@ function pubblica(): void {
       // dopo il contratto un computo nuovo è una perizia: le azioni del computo non si propongono più
       ...(contratto(L) ? [] : [
         { sezione: 'computo', etichetta: '＋ Nuovo computo…', comando: 'nuovo-computo', titolo: 'Una revisione di computo, in una fase qualunque' },
-        { sezione: 'computo', etichetta: '⇩ Importa un computo XPWE…', comando: 'importa-xpwe', titolo: 'Da un altro programma che esporta il formato XPWE' },
+        // con un computo già aperto l'import sta nella sua barra («⇩ XPWE»): qui solo per cominciare
+        ...(L.revisioni.some((r) => r.tipo === 'computo') ? [] : [{ sezione: 'computo', etichetta: '⇩ Importa un computo XPWE…', comando: 'importa-xpwe', titolo: 'Da un altro programma che esporta il formato XPWE' }]),
       ]),
       { sezione: 'prezzi', etichetta: '≣ Prezzari del programma…', comando: 'carica-prezzario', titolo: 'I prezzari regionali e i listini, a tutta pagina: si consultano, si importano, e quelli dell\'archivio si modificano' },
       { sezione: 'analisi', etichetta: '＋ Nuova analisi…', comando: 'nuova-analisi', titolo: "Un prezzo composto: manodopera, materiali, noli, spese generali e utile" },
-      { sezione: 'analisi', etichetta: '★ Dalla libreria…', comando: 'libreria', titolo: 'Voci e analisi salvate su questo dispositivo' },
+      { sezione: 'analisi', etichetta: '★ Analisi dalla libreria…', comando: 'libreria', titolo: 'Le analisi salvate su questo dispositivo' },
       ...(contratto(L) ? [{ sezione: 'contabilita', etichetta: '⭳ Contabilità in formato aperto…', comando: 'formato-aperto', titolo: 'Uno zip con JSON, CSV e un leggimi: leggibile anche senza Quadra' }] : []),
       ...(analisiDi(L).length ? [{ sezione: 'analisi', etichetta: '⎙ Fascicolo delle analisi…', comando: 'fascicolo-analisi', titolo: 'Tutte le analisi del lavoro, con l\'indice' }] : []),
       ...azioniContabili(),
@@ -680,12 +682,17 @@ function lvLibSalvaAnalisi(id: string): void {
   toast(scriviLibreria(lib) ? 'Analisi salvata nella libreria' : 'Non riesco a salvare la libreria su questo dispositivo')
 }
 /** Dalla libreria: una voce (nella revisione aperta) o un'analisi (nel lavoro). */
-async function lvLibInserisci(): Promise<void> {
-  const lib = leggiLibreria()
-  if (!lib.length) { toast('La libreria è vuota: «★ Salva nella libreria» dal tasto destro su una voce o da un\'analisi'); return }
-  const v = await finestra('Dalla libreria', `
-    <p class="lv-nota">Le voci e le analisi salvate su questo dispositivo. Una voce entra nella revisione aperta come voce libera (il prezzo si scrive); un'analisi entra fra le analisi del lavoro.</p>
-    ${scelta('id', 'Voce', lib.map((x): [string, string] => [x.id, `${x.analisiPrezzi ? '[analisi] ' : ''}${x.nome} (${x.um})`]))}`, 'Inserisci')
+/** Dalla libreria dello studio: le VOCI dalla barra della revisione (entrano
+ *  nella revisione aperta), le ANALISI dalla sidebar (entrano fra le analisi). */
+async function lvLibInserisci(tipo: 'voci' | 'analisi' = 'voci'): Promise<void> {
+  const lib = leggiLibreria().filter((x) => (tipo === 'analisi') === !!x.analisiPrezzi)
+  if (!lib.length) {
+    toast(tipo === 'analisi' ? 'Nessuna analisi nella libreria: «★ Salva nella libreria» dal tasto destro su un\'analisi'
+      : 'Nessuna voce nella libreria: «★ Salva nella libreria» dal tasto destro su una voce'); return
+  }
+  const v = await finestra(tipo === 'analisi' ? 'Analisi dalla libreria' : 'Voce dalla libreria', `
+    <p class="lv-nota">${tipo === 'analisi' ? 'Le analisi salvate su questo dispositivo: quella scelta entra fra le analisi del lavoro.' : 'Le voci salvate su questo dispositivo: quella scelta entra nella revisione aperta come voce libera (il prezzo si scrive).'}</p>
+    ${scelta('id', tipo === 'analisi' ? 'Analisi' : 'Voce', lib.map((x): [string, string] => [x.id, `${x.nome} (${x.um})`]))}`, 'Inserisci')
   if (!v) return
   const x = lib.find((y) => y.id === v.id); if (!x) return
   if (x.analisiPrezzi) {
@@ -1602,6 +1609,15 @@ function lvMenuPagina(ev: MouseEvent): void {
   menuDaAzioni(ev.clientX, ev.clientY, azioni.filter((v) => v === 'sep' || !v.comando.startsWith('t:apri:')), titoloCorrente())
 }
 
+/** «⋯ Altro» nella barra: lo stesso menu del tasto destro, sotto il pulsante. */
+function lvMenuAltro(ev: MouseEvent): void {
+  if (!corrente) return
+  const azioni = azioniTappa(L, corrente).filter((v) => v === 'sep' || !v.comando.startsWith('t:apri:'))
+  if (!azioni.length) return
+  const b = (ev.currentTarget as HTMLElement | null)?.getBoundingClientRect()
+  menuDaAzioni(b ? b.left : ev.clientX, b ? b.bottom + 4 : ev.clientY, azioni, titoloCorrente())
+}
+
 /** In fondo a ogni menu di riga: le azioni della tappa, a un clic. */
 const azioniDellaTappa = (ev: MouseEvent): VoceMenu => ({
   etichetta: `${titoloCorrente()}: azioni…`, titolo: 'Consegna, stampe, import e le altre azioni di questa tappa',
@@ -2233,6 +2249,8 @@ function lvAiuto(): void {
 
 /* ── Il pannello prezzi ───────────────────────────────────────────────── */
 
+/** «≡ Prezzi» nella barra: apre e chiude la colonna dei prezzi. */
+function lvPzAlterna(): void { pz.aperto = !pz.aperto; render() }
 function lvPzApri(scheda?: SchedaPrezzi): void { pz.aperto = true; if (scheda && scheda !== pz.scheda) { pz.scheda = scheda; pz.q = ''; trova() } render() }
 function lvPzChiudi(): void { pz.aperto = false; render() }
 function lvPzScheda(s: SchedaPrezzi): void { pz.scheda = s; pz.q = ''; pz.soloNp = false; if (s === 'prezzario' && !pz.prezzario) void scegliIniziale(); render() }
@@ -2596,7 +2614,7 @@ onHubMessage((hm) => {
     else if (c === 'nuova-analisi') void lvApNuova()
     else if (c === 'contabilita-libera') void lvContabilitaLibera()
     else if (c === 'contabilita-xpwe') void lvContabilitaXpwe()
-    else if (c === 'libreria') void lvLibInserisci()
+    else if (c === 'libreria') void lvLibInserisci('analisi')
     else if (c === 'formato-aperto') void lvFormatoAperto()
     else if (c === 'fascicolo-analisi') lvApFascicolo()
     else if (c === 'importa-xpwe-perizia') void lvImportaXpwePerizia()
@@ -2612,7 +2630,7 @@ onHubMessage((hm) => {
 Object.assign(window, {
   lvNuovoComputo, lvNuovaDaQuesta, lvDescrivi, lvConsegna, lvRiapri, lvVoceLibera, lvModificaVoce, lvSetQta, lvSetPrezzo,
   lvDuplica, lvElimina, lvMisSet, lvMisAggiungi, lvMisDuplica, lvMisElimina, lvMisTasti, lvToggleMisure, lvEspandiTutte,
-  lvCerca, lvOrdine, lvMenuVoce, lvPromuovi, lvRibasso, lvNuovoSal, lvEmetti, lvNuovaPerizia, lvSalFinale, lvCre, lvImportaXpweSal, lvConfrontaXpwe, lvPrezziUnitari, lvSetOfferto, lvRibassoNp, lvMenuPagina, lvMisMenu, lvPzMenu,
+  lvCerca, lvOrdine, lvMenuVoce, lvMenuAltro, lvPzAlterna, lvPromuovi, lvRibasso, lvNuovoSal, lvEmetti, lvNuovaPerizia, lvSalFinale, lvCre, lvImportaXpweSal, lvConfrontaXpwe, lvPrezziUnitari, lvSetOfferto, lvRibassoNp, lvMenuPagina, lvMisMenu, lvPzMenu,
   lvContabilitaLibera, lvContabilitaXpwe, lvImportoPattuito, lvPzFiltro, lvVariaPrezzi, lvPrezziDaPrezzario, lvRendiNP, lvConfrontaCodice, lvLibSalvaVoce, lvLibSalvaAnalisi, lvLibInserisci, lvStrRinomina, lvStrElimina, lvStrSposta, lvStrNuova, lvWbsCodice, lvWbsDescr, lvWbsNuovo, lvWbsElimina, lvModSalva, lvModApplica,
   lvMisVediVoce, lvMisIncolla, lvMisCopia, lvMisIncollaTutte, lvMisDaVoce, lvMisSposta, lvVoceSposta, lvDragVoce, lvDragSopra, lvDragFine, lvDropVoce,
   lvAq, lvAqMax, lvAqNuovo, lvAqApp, lvAqTogli, lvScNuova, lvSc, lvScTogli, lvScEseg, lvDatiSal, lvCtCF, lvFattNuova, lvFatt, lvFattTogli, lvFattStampa, lvRegistroAttiStampa, lvQE, lvQESic, lvQENuova, lvQETogli, lvOffNuova, lvOff, lvOffPrezzi, lvOffTogli, lvOffContratto, lvStampaRev,

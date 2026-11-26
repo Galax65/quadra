@@ -3,7 +3,7 @@
 import { APP_REGISTRY } from '../data/registry'
 import { resolveFiles } from '../engine/index'
 import { effectiveFont, effectiveMotion, effectiveShadow, effectiveTextSize, suiteUiScale } from './aspetto.js'
-import { currentCompanyBrand, enabledApps } from './auth.js'
+import { currentCompanyBrand } from './auth.js'
 import { pushStateToFrame } from './bus.js'
 import { filterList, renderWelcomeCards, setFocusIndex } from './navigazione.js'
 import { flushPendingRestore, projectDirty } from './progetto.js'
@@ -70,7 +70,6 @@ export async function initFolder() {
   await scanFolder();                         // resolveFiles() popola resolvedFile/version
   filterList();
   renderWelcomeCards();
-  document.getElementById('stat-n').textContent = enabledApps().length;
 }
 
 /* ══════════════════════════════════════════════

@@ -37,7 +37,7 @@ describe('le azioni di ogni tappa, per il suo stato', () => {
     const { l: l0, id, voce } = computo()
     const c = promuoviAContratto(chiudi(l0, id, D), id, { data: D, ribassoPct: 10 })
     let l = c.lavoro
-    expect(azioni(l, c.id)).toEqual(['apri', 'stampa', 'elenco', 'ribasso', 'prezzi-unitari', 'sal'])
+    expect(azioni(l, c.id)).toEqual(['apri', 'stampa', 'elenco', 'ribasso', 'prezzi-unitari', 'sal', 'descrivi'])
     const s = nuovoSal(l, D); l = modificaRigaAvanzamento(s.lavoro, s.id, voce, { quantita: 2 })
     expect(azioni(l, s.id)).toEqual(['apri', 'stampa', 'xpwe-sal', 'dati-sal', 'emetti'])
     l = emetti(l, s.id, D)

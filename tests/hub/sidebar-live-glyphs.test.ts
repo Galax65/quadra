@@ -108,8 +108,8 @@ describe('welcome de-duplicato: il riepilogo app in uso in UNA sola sede', () =>
     expect(doc.getElementById('welcome-cards')).not.toBeNull()
   })
 
-  it('le azioni di progetto (.proj-act) restano presenti nel welcome', () => {
-    expect(doc.querySelectorAll('.proj-act').length).toBeGreaterThan(0)
+  it('le azioni di progetto stanno nel piede della sidebar (#side-proj)', () => {
+    expect(doc.querySelectorAll('#side-proj .side-proj-btn').length).toBeGreaterThan(0)
   })
 
   it('main.js non definisce più updateActiveSummary né la chiama', () => {

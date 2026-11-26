@@ -100,6 +100,8 @@
 }
 .ehb-btn--ghost { background: transparent; box-shadow: none; color: var(--muted); }
 .ehb-btn--ghost:hover { background: var(--panel2); color: var(--text); box-shadow: none; transform: none; }
+/* un interruttore acceso (la colonna dei prezzi aperta): il tono dell'accento, senza segni in più */
+.ehb-btn[aria-pressed="true"] { background: var(--accent-soft, var(--panel2)); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .ehb-btn--sm { font-size: var(--fs-sm); padding: 6px 10px; min-height: 30px; }
 .ehb-btn--icon { padding: 8px; min-width: 32px; min-height: 32px; justify-content: center; }
 /* Accessibilità: garantisce un'area cliccabile adeguata sui bottoni standard. */

@@ -71,7 +71,7 @@ describe('hub — avvio reale in jsdom', () => {
 
   it('il boot ha renderizzato la lista dei tool e le card di benvenuto', () => {
     expect(document.querySelectorAll('.nav-item').length, 'voci di navigazione').toBeGreaterThan(0)
-    expect(document.getElementById('stat-n')?.textContent, 'contatore tool').not.toBe('')
+    expect(document.getElementById('stat-hubver')?.textContent, 'versione').not.toBe('')
     expect(document.querySelector('#welcome-cards')?.children.length, 'card di benvenuto').toBeGreaterThan(0)
   })
 

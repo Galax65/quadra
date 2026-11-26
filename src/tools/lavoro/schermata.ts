@@ -237,7 +237,6 @@ export function paginaRevisione(l: Lavoro, r: Revisione, vista: Vista): string {
       { testo: statoRevisione(r), ...(scrive ? { tono: 'bozza' as const } : {}) },
       ...(scrive ? [] : [{ testo: offerta ? '🔒 voci · offerta correggibile' : '🔒 sola lettura' }]),
     ],
-    azioni: `<button class="ehb-btn ehb-btn--sm ehb-btn--ghost" onclick="lvDescrivi()" title="Numero di revisione, fase, nome e data">✎ ${esc(sigla(r.numero))}</button>`,
     stampa: { onclick: 'lvStampa()', titolo: 'Le stampe di questa revisione: computo metrico, elenco prezzi, stima dei lavori' },
   })
   const perizia = r.tipo === 'perizia'
@@ -273,9 +272,8 @@ export function paginaRevisione(l: Lavoro, r: Revisione, vista: Vista): string {
     ...(perizia ? { mostra: { valore: vista.mostra === 'variate' ? 'variate' : 'tutte', opzioni: FASE_PERIZIA.mostra || [], onclickTpl: "lvMostra('%v')" } } : {}),
     espandi: { tutteAperte: !vista.soloVoci, onclick: 'lvEspandiTutte()' },
     aggiungi: [
-      { etichetta: vista.prezziAperti ? '≡ Prezzi ✓' : '≡ Prezzi', titolo: vista.prezziAperti ? "L'elenco prezzi è aperto a destra" : "Riapri a destra l'elenco prezzi: progetto, prezzario, altro progetto", onclick: 'lvPzApri()' },
-      { etichetta: '≣ Elenco', titolo: "L'elenco prezzi a tutta pagina: si consulta, si cerca e (se la revisione è aperta) si corregge", onclick: `lvElRev('${r.id}')` },
-      ...(scrive ? [{ etichetta: '＋ Voce libera', titolo: 'Una voce nuova: codice, descrizione e prezzo si scrivono con ✎', onclick: 'lvVoceLibera()' }, { etichetta: '★ Libreria', titolo: 'Una voce o un\'analisi dalla libreria dello studio', onclick: 'lvLibInserisci()' }] : []),
+      { etichetta: '≡ Prezzi', attiva: !!vista.prezziAperti, titolo: vista.prezziAperti ? "Chiudi la colonna dei prezzi a destra" : "Apri a destra i prezzi da cui pescare: elenco del progetto, prezzario, altro progetto", onclick: 'lvPzAlterna()' },
+      ...(scrive ? [{ etichetta: '＋ Voce libera', titolo: 'Una voce nuova: codice, descrizione e prezzo si scrivono con ✎', onclick: 'lvVoceLibera()' }, { etichetta: '★ Dalla libreria', titolo: 'Una voce salvata nella libreria dello studio', onclick: "lvLibInserisci('voci')" }] : []),
     ],
     dati: scrive && (r.tipo === 'computo' || perizia) ? [{ etichetta: '⇩ XPWE', titolo: perizia ? 'Importa la perizia preparata con un altro programma (XPWE): i prezzi di contratto restano, gli articoli nuovi sono NP' : 'Importa un computo XPWE (da un altro programma) in questa revisione', onclick: 'lvImportaXpwe()', stile: 'ghost' }] : [],
     strumenti: perizia && scrive ? [
@@ -286,6 +284,7 @@ export function paginaRevisione(l: Lavoro, r: Revisione, vista: Vista): string {
       ...(r.contratto?.prezziOfferti || r.contratto?.libero ? [] : [{ etichetta: '€ Prezzi unitari…', titolo: "Offerta a prezzi unitari: si scrive il prezzo offerto di ogni articolo, e il ribasso non si applica più", onclick: 'lvPrezziUnitari()', stile: 'ghost' as const }]),
     ] : [],
     extra,
+    altro: { onclick: 'lvMenuAltro(event)', titolo: 'Tutte le azioni della revisione: elenco prezzi, struttura, quadro economico, varia i prezzi… (anche col tasto destro)' },
     aiuto: { onclick: 'lvAiuto()', titolo: 'Come si lavora in questa schermata' },
   })
   const ic = r.tipo === 'contratto' ? importiContratto(r) : null
@@ -465,10 +464,11 @@ export function paginaAvanzamento(l: Lavoro, a: Avanzamento, vista: Vista): stri
         : !cre ? [{ etichetta: '⇄ XPWE', titolo: 'Confronta le misure di questo avanzamento con una contabilità XPWE: voce per voce e nei totali, senza cambiare niente', onclick: 'lvConfrontaXpwe()', stile: 'ghost' }] : [],
     espandi: { tutteAperte: !vista.soloVoci, onclick: 'lvEspandiTutte()' },
     aggiungi: [
-      { etichetta: vista.prezziAperti ? '≡ Prezzi ✓' : '≡ Prezzi', titolo: cre ? "L'elenco prezzi vigente, a destra" : libero ? 'I prezzi a destra: contratto, prezzario, altro progetto — «＋» misura la voce nel SAL' : "L'elenco prezzi di contratto, a destra: «＋» porta la voce nel libretto", onclick: 'lvPzApri()' },
+      { etichetta: '≡ Prezzi', attiva: !!vista.prezziAperti, titolo: cre ? "L'elenco prezzi vigente, a destra" : libero ? 'I prezzi a destra: contratto, prezzario, altro progetto — «＋» misura la voce nel SAL' : "L'elenco prezzi di contratto, a destra: «＋» porta la voce nel libretto", onclick: 'lvPzAlterna()' },
       ...(libero && scrive ? [{ etichetta: '＋ Voce libera', titolo: 'Un articolo nuovo: entra nel contratto e si misura in questo SAL', onclick: 'lvVoceLibera()' }] : []),
     ],
     extra,
+    altro: { onclick: 'lvMenuAltro(event)', titolo: 'Tutte le azioni di questo avanzamento: stampe, dati, confronto XPWE, riapri… (anche col tasto destro)' },
     aiuto: { onclick: 'lvAiuto()', titolo: 'Come si lavora in questa schermata' },
   })
   const righe: RigaGriglia[] = vis.map((x) => rigaSal(a, r, x.v, x.ar, vista, x.n, contratto(l)))

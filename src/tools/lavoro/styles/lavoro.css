@@ -109,6 +109,7 @@ tr.lv-voce:hover .lv-voce-az, tr.lv-voce:focus-within .lv-voce-az { visibility: 
 .lv-ct-tab input { width: 100%; box-sizing: border-box; font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--line2); border-radius: var(--radius-sm); padding: 4px 6px; }
 .lv-ct-tab td:nth-child(1), .lv-ct-tab td:nth-child(2) { width: 120px; }
 .lv-ct-n { white-space: nowrap; color: var(--muted); text-align: right; width: 90px; }
+.lv-ct-tab th.lv-ct-n { text-align: right; } /* le intestazioni dei numeri stanno sopra i numeri */
 .lv-ct-quadro { max-width: 520px; }
 
 /* Gli atti del cantiere (cantiere.ts): schede di verbali, riserve, liste. */

@@ -47,7 +47,7 @@ export function azioniTappa(L: Lavoro, id: string): AzioneTappa[] {
         ? [t('voce', '＋ Nuovo prezzo…'), t('xpwe', '⇩ Importa la perizia XPWE…'), t('ribasso-np', '% Ribasso NP…'), t('consegna', '✓ Approva…', 'La perizia approvata diventa il contratto vigente')]
         : []) : []),
       'sep',
-      ...(r.tipo !== 'contratto' ? [t('descrivi', '✎ Numero, fase, nome e data…')] : []),
+      t('descrivi', r.tipo === 'contratto' ? '✎ Numero, nome e data…' : '✎ Numero, fase, nome e data…'),
       ...(!aperta && r.tipo !== 'contratto' ? [t('riapri', '↺ Riapri', 'Torna in lavorazione, se niente ci poggia sopra', true)] : []),
     ]
   }

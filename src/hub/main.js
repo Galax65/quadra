@@ -48,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Render iniziale (prima della risoluzione file)
   renderList(enabledApps());
   renderWelcomeCards();
-  document.getElementById('stat-n').textContent = enabledApps().length;
   initHubExtras();   // include il footer edizione via refreshProfileUI()
   // .exe desktop NON firmato (solo Electron): avviso minimal d'uso all'avvio.
   // Nella web build servita sulla VM il bridge non c'è → nessun toast.

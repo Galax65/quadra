@@ -51,11 +51,11 @@ export function prezzoInLettere(p: number): string {
   return `${interoInLettere(Math.floor(c / 100))}/${String(c % 100).padStart(2, '0')}`
 }
 
-/** Voci distinte dell'elenco prezzi (una per codice, nell'ordine in cui compaiono). */
+/** Voci distinte dell'elenco prezzi (una per codice), in ordine di codice (A.2 prima di A.10). */
 export function vociElenco(voci: VoceComputo[]): VoceComputo[] {
   const m = new Map<string, VoceComputo>()
   for (const v of voci) if (!m.has(v.codice)) m.set(v.codice, v)
-  return [...m.values()]
+  return [...m.values()].sort((a, b) => (a.codice || '').localeCompare(b.codice || '', 'it', { numeric: true, sensitivity: 'base' }))
 }
 
 const qtaVoce = (v: VoceComputo): number =>

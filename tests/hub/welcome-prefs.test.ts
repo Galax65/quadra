@@ -42,9 +42,9 @@ describe('welcome hub: nessun toggle tema duplicato', () => {
     expect(appearance!.querySelectorAll('[data-palette-opt]').length).toBe(5)
   })
 
-  it('le azioni progetto (.proj-act) restano FUORI dal welcome', () => {
-    expect(doc.querySelector('#welcome .proj-act')).toBeNull()
-    expect(doc.querySelectorAll('.proj-act').length).toBeGreaterThan(0)
+  it('le azioni progetto restano FUORI dal welcome (stanno nella sidebar)', () => {
+    expect(doc.querySelector('#welcome .side-proj-btn')).toBeNull()
+    expect(doc.querySelectorAll('#side-proj .side-proj-btn').length).toBeGreaterThan(0)
   })
 })
 

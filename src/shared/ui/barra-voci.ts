@@ -18,6 +18,8 @@ export interface AzioneBarra {
   onclick: string
   stile?: 'normale' | 'ghost' | 'accent'
   disabilitata?: boolean
+  /** Un interruttore acceso (es. la colonna dei prezzi aperta): aria-pressed. */
+  attiva?: boolean
 }
 
 export interface OpzioneOrdine { valore: string; etichetta: string; titolo: string }
@@ -43,6 +45,8 @@ export interface BarraVociOpts {
   campi?: string
   /** Azioni proprie della pagina, dopo gli slot comuni. */
   extra?: AzioneBarra[]
+  /** ⋯ Altro: tutte le azioni della pagina (le stesse del tasto destro), in un menu. */
+  altro?: { onclick: string; titolo?: string }
   /** ? aiuto contestuale. */
   aiuto?: { onclick: string; titolo?: string }
 }
@@ -60,7 +64,7 @@ function etichettaHtml(t: string): string {
 }
 function btn(a: AzioneBarra): string {
   const cls = a.stile === 'accent' ? ' ehb-btn--accent-soft' : a.stile === 'ghost' ? ' ehb-btn--ghost' : ''
-  return `<button class="ehb-btn ehb-btn--sm${cls}" onclick="${esc(a.onclick)}" title="${esc(a.titolo || a.etichetta)}" aria-label="${esc(a.etichetta)}"${a.disabilitata ? ' disabled' : ''}>${etichettaHtml(a.etichetta)}</button>`
+  return `<button class="ehb-btn ehb-btn--sm${cls}" onclick="${esc(a.onclick)}" title="${esc(a.titolo || a.etichetta)}" aria-label="${esc(a.etichetta)}"${a.attiva != null ? ` aria-pressed="${a.attiva}"` : ''}${a.disabilitata ? ' disabled' : ''}>${etichettaHtml(a.etichetta)}</button>`
 }
 
 /** La barra, identica su computo, libretto e perizia. */
@@ -80,10 +84,11 @@ export function barraVoci(o: BarraVociOpts): string {
     ? btn({ etichetta: o.espandi.tutteAperte ? '☰ Solo voci' : '▤ Con le misure', titolo: o.espandi.tutteAperte ? 'Nasconde le misure: una riga per voce' : 'Mostra le misure di tutte le voci, come nel foglio di computo', onclick: o.espandi.onclick, stile: 'ghost' })
     : ''
   const grp = (a: AzioneBarra[] | undefined, nome = ''): string => (a && a.length ? `<span class="ehb-barra__g${nome ? ' ehb-barra__g--' + nome : ''}">${a.map(btn).join('')}</span>` : '')
+  const altro = o.altro ? btn({ etichetta: '⋯ Altro', titolo: o.altro.titolo || 'Tutte le azioni di questa pagina (anche col tasto destro)', onclick: o.altro.onclick, stile: 'ghost' }) : ''
   const aiuto = o.aiuto ? btn({ etichetta: '?', titolo: o.aiuto.titolo || 'Come funziona questa schermata', onclick: o.aiuto.onclick, stile: 'ghost' }) : ''
   /* Due righe, sempre le stesse: sopra come si guarda (cerca, vista, ordine,
      mostra), sotto che cosa si fa. I comandi stanno su UNA riga sola, che non va
      mai a capo: quando lo spazio manca si compattano (vedi components.css). */
   return `<div class="ehb-barra"><div class="ehb-barra__r1">${cerca}${viste}${ordine}${mostra}${espandi}</div>`
-    + `<div class="ehb-barra__r2">${grp(o.aggiungi, 'aggiungi')}${grp(o.dati, 'dati')}${grp(o.strumenti, 'strumenti')}${o.campi || ''}${grp(o.extra, 'extra')}${aiuto}</div></div>`
+    + `<div class="ehb-barra__r2">${grp(o.aggiungi, 'aggiungi')}${grp(o.dati, 'dati')}${grp(o.strumenti, 'strumenti')}${o.campi || ''}${grp(o.extra, 'extra')}${altro}${aiuto}</div></div>`
 }

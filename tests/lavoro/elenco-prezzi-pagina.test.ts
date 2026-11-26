@@ -73,3 +73,20 @@ describe('elenco prezzi a tutta pagina', () => {
     expect(sez.nodi[0]).toMatchObject({ apre: { cosa: 'pagina', id: `elenco:${rev}` }, etichetta: 'Elenco prezzi del lavoro' })
   })
 })
+
+describe('l\'elenco prezzi è in ordine di codice', () => {
+  it('ordine alfanumerico naturale, i senza codice in fondo', async () => {
+    const { cmpCodici } = await import('../../src/shared/lavoro')
+    const codici = ['B.01', '', 'A.10', 'a.2', 'A.1', 'NP.001']
+    expect([...codici].sort(cmpCodici)).toEqual(['A.1', 'a.2', 'A.10', 'B.01', 'NP.001', ''])
+  })
+})
+
+describe('l\'elenco prezzi segue i codici, non l\'ordine d\'inserimento', () => {
+  it('un articolo aggiunto dopo con un codice che viene prima sta prima, anche nel numero d\'ordine', () => {
+    const { l: l0, rev } = lavoro()
+    const l = aggiungiArticolo(l0, rev, { codice: 'A.002', descrizione: 'Demolizione', um: 'm3', prezzo: 7, origine: 'manuale' }).lavoro
+    const r = righeElenco(revisione(l, rev), 'tutti')
+    expect(r.map((x) => [x.n, x.codice])).toEqual([[1, 'A.01'], [2, 'A.002'], [3, 'S.01']])
+  })
+})

@@ -23,13 +23,12 @@ describe('Salva rosso, contrasto sicuro', () => {
     expect(css).not.toContain('#e0951c')
   })
 
-  it('l\'icona su rosso è inchiostro (non grigia): sidebar e app-bar', () => {
+  it('l\'icona su rosso è inchiostro (non grigia)', () => {
     expect(css).toMatch(/\.side-proj-btn\.js-save-project\.dirty svg\{color:var\(--hub-red-ink\)/)
     expect(css).toMatch(/\.js-save-project\.dirty svg\{color:var\(--hub-red-ink\)/)
   })
 
-  it('a riposo l\'icona è rossa (accento) in entrambi i contesti', () => {
+  it('a riposo l\'icona è rossa (accento)', () => {
     expect(css).toMatch(/\.side-proj-btn\.js-save-project svg\{color:var\(--hub-red\)/)
-    expect(css).toMatch(/\.proj-act\.js-save-project svg\{color:var\(--hub-red\)/)
   })
 })
