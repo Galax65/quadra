@@ -48,6 +48,8 @@ export interface OpzioniComputoPdf {
   rigaWbs?: boolean
   /** Riepiloghi in fondo: per categorie, per WBS, entrambi (default) o nessuno. */
   riepilogo?: 'categorie' | 'wbs' | 'entrambi' | 'nessuno'
+  /** Righe di misura sotto ogni voce (default sì). Senza: la voce porta solo la quantità — stampa sintetica. */
+  misure?: boolean
   /** Computo metrico NON estimativo: solo misure e quantità, senza prezzi né importi. */
   senzaPrezzi?: boolean
   /** Titolo del documento al posto di «COMPUTO METRICO ESTIMATIVO» (es. «COMPUTO CONSUNTIVO»). */
@@ -164,7 +166,7 @@ export function righeComputo(voci: VoceComputo[], nodiWbs: Record<string, string
       righe.push({ celle: { desc: `WBS ${v.wbs}${d ? ' — ' + d : ''}` }, corsivo: true, legaASeguente: true })
     }
     const richiamo = { n: String(n), tariffa: v.codice, desc: 'segue: ' + (v.desc_short || v.codice) }
-    for (const m of v.misurazioni ?? []) {
+    for (const m of opz.misure === false ? [] : v.misurazioni ?? []) {
       righe.push({
         richiamo,
         celle: {

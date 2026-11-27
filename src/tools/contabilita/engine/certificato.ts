@@ -1,5 +1,5 @@
 /**
- * Contabilità — CERTIFICATO DI PAGAMENTO (art. 17, All. II.14). Emesso dal RUP entro
+ * Contabilità — CERTIFICATO DI PAGAMENTO (art. 125 c. 1 D.Lgs. 36/2023; art. 12 c. 1 lett. d) All. II.14). Emesso dal RUP entro
  * 7 giorni dal SAL, previa verifica della regolarità contributiva (DURC). Il
  * credito dell'impresa coincide col netto del SAL.
  */
@@ -86,7 +86,7 @@ export function certificatoHTML(appalto: Appalto, partite: Partita[], sals: Sal[
       ${res?.detrazioni ? `<tr><td>a dedurre: detrazioni per lavorazioni non conformi</td><td class="num">− ${eur(res.detrazioni)}</td></tr>` : ''}
       <tr><td>Totale contabilizzato a tutto il SAL n. ${escHtml(String(numero))}</td><td class="num">${eur(res?.totaleContabilizzato ?? null)}</td></tr>
       ${res?.revisioneProgressiva ? `<tr><td>di cui compensazione per revisione prezzi (art. 60), a tutto il SAL${res.variazioneIndicePct != null ? ` — variazione indice ${num(res.variazioneIndicePct)}%` : ''}</td><td class="num">${eur(res.revisioneProgressiva)}</td></tr>` : ''}
-      <tr><td>a dedurre: ritenuta di garanzia 0,50%</td><td class="num">− ${eur(res?.ritenuta ?? null)}</td></tr>
+      <tr><td>a dedurre: ritenuta di garanzia 0,50% (art. 11 c. 6)</td><td class="num">− ${eur(res?.ritenuta ?? null)}</td></tr>
       ${res?.anticipazione ? `<tr><td>a dedurre: recupero dell'anticipazione (progressivo, art. 125 c.1)</td><td class="num">− ${eur(res.recuperoAnticipazione)}</td></tr>` : ''}
       <tr><td>a dedurre: certificati / SAL precedenti</td><td class="num">− ${eur(res?.salPrecedenti ?? null)}</td></tr>
       ${res && res.creditoSal !== res.importoSal ? `<tr><td>credito dell'impresa</td><td class="num">${eur(res.creditoSal)}</td></tr><tr><td>credito arrotondato per difetto a ${eur(appalto.arrotondamentoCertificato ?? 0)} (la differenza matura nei certificati successivi)</td><td class="num">${eur(res.importoSal)}</td></tr>` : ''}
@@ -96,7 +96,7 @@ export function certificatoHTML(appalto: Appalto, partite: Partita[], sals: Sal[
     </tbody></table>
 
     ${termineHTML(sals.find((x) => x.numero === numero))}
-    <p class="prose" style="margin-top:6mm">Il RUP, verificata la regolarità contributiva (DURC) dell'impresa esecutrice,
+    <p class="prose" style="margin-top:6mm">Il RUP, verificata la regolarità contributiva (DURC) dell'esecutore e dei subappaltatori,
     <b>CERTIFICA</b> che ai termini dell'articolo ${orTodo(art)} del capitolato speciale d'appalto si può pagare all'impresa
     <b>${orTodo(appalto.impresa?.denominazione)}</b> la rata di <b>${eur(credito)}</b> oltre IVA.</p>
     <p class="prose"><i>Diconsi euro ${escHtml(importoInLettere(credito))} oltre IVA.</i></p>
@@ -110,7 +110,7 @@ export function certificatoHTML(appalto: Appalto, partite: Partita[], sals: Sal[
     sub: `per il pagamento della rata relativa al SAL n. ${numero}`,
     headMeta: [{ k: 'SAL', v: escHtml(String(numero)) }, { k: 'CIG', v: escHtml(appalto.cig || '—') }],
     bodyHTML: body,
-    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 17 Allegato II.14 D.Lgs. 36/2023 — emesso dal RUP entro 7 giorni dal SAL, previa verifica DURC.', page: `Certificato ${numero}` },
+    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 125 c. 1 D.Lgs. 36/2023; art. 12 c. 1 lett. d) Allegato II.14 — emesso dal RUP, previa verifica della regolarità contributiva (DURC), e annotato nel registro di contabilità.', page: `Certificato ${numero}` },
     docTitle: `Certificato di Pagamento n. ${numero}`,
   })
 }
@@ -127,7 +127,7 @@ function termineHTML(sal?: Sal): string {
   const g = giorniTra(itToISO(sal.data), itToISO(sal.dataCertificato))
   const emesso = sal.dataCertificato
     ? `Il presente certificato è emesso in data <b>${escHtml(sal.dataCertificato)}</b>${g != null ? ` (${escHtml(String(g))} giorni dall'adozione dello stato di avanzamento${g > 7 ? ', oltre il termine di sette giorni' : ''})` : ''}.`
-    : `La data di emissione del presente certificato non è stata indicata: il termine di sette giorni dall'adozione dello stato di avanzamento (art. 17 All. II.14) non è verificabile.`
+    : `La data di emissione del presente certificato non è stata indicata: il termine di sette giorni dall'adozione dello stato di avanzamento (art. 12 c. 1 lett. d) All. II.14) non è verificabile.`
   const pagato = sal.dataPagamento
     ? ` Pagamento disposto in data ${escHtml(sal.dataPagamento)}.`
     : ''

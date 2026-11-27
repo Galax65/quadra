@@ -70,8 +70,8 @@ senza l'avviso SmartScreen.
 
 ### B) Automatica con GitHub Actions (alla pubblicazione di una release)
 È configurata in [.github/workflows/release.yml](../.github/workflows/release.yml). Si avvia
-alla **creazione di un tag `vX.Y.Z`** (vedi §5) e builda **sia** l'installer macOS che quello
-Windows dai sorgenti, allegandoli alla GitHub Release corrispondente. Le build sono **non
+alla **creazione di un tag `vX.Y.Z`** (vedi §5) e builda gli installer macOS, Windows e
+Linux (AppImage e tar.gz, x64 e arm64) dai sorgenti, allegandoli alla GitHub Release corrispondente. Le build sono **non
 firmate** (vedi §8): la release ne riporta l'avviso.
 
 ## 4. Capire le versioni (convenzione Quadra)
@@ -158,6 +158,7 @@ npm test               # test dei motori di calcolo (come la CI)
 # build
 npm run build:mac      # → dist/*.dmg, *.zip   (in locale, su Mac)
 npm run build:win      # → dist/*.exe          (in locale, su Windows)
+npm run build:linux    # → dist/*.AppImage, *.tar.gz (in locale, su Linux o Mac)
 
 # release (automatica: push su main, l'hook pre-push crea versione+tag da solo)
 git checkout main && git merge dev && git push origin main   # ripetere il push se l'hook lo richiede
@@ -181,7 +182,8 @@ Tutti i comandi disponibili, generati da [package.json](../package.json):
 | Build | `npm run build:prezzari` | `vite-node scripts/build-prezzari.ts` |
 | Build | `npm run build:mac` | `electron-builder --mac` |
 | Build | `npm run build:win` | `electron-builder --win` |
-| Build | `npm run build:all` | `electron-builder --mac --win` |
+| Build | `npm run build:linux` | `electron-builder --linux` |
+| Build | `npm run build:all` | `electron-builder --mac --win --linux` |
 | Dati e asset | `npm run bundle:prezzari` | `node scripts/bundle-prezzari.mjs` |
 | Versioni e documentazione | `npm run bump` | `node scripts/bump.mjs` |
 | Versioni e documentazione | `npm run release` | `node scripts/release.mjs` |

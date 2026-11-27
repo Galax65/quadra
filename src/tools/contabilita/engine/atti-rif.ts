@@ -6,11 +6,11 @@
  * terzo (collaudatore, revisore, giudice).
  *
  *  - il REGISTRO trascrive le partite del LIBRETTO e deve dire da quale
- *    libretto e da quale numero vengono (art. 14 All. II.14);
+ *    libretto e da quale numero vengono (art. 12 c. 1 lett. c) All. II.14);
  *  - il SOMMARIO riepiloga le partite del registro e deve dire a quale SAL e a
  *    quale numero d'ordine del registro corrispondono (art. 15);
  *  - libretto e registro sono UN SOLO registro a pagine numerate e vidimate
- *    (art. 2215 c.c.): al secondo SAL non ricominciano da pagina 1 né
+ *    (prassi; la vidimazione se la chiede la stazione appaltante): al secondo SAL non ricominciano da pagina 1 né
  *    ristampano il frontespizio, continuano.
  *
  * Qui stanno le due funzioni pure che servono a tutti gli atti: il numero
@@ -118,5 +118,5 @@ export function notaSeguito(consegne: Consegna[] | undefined, tipo: string, salN
   const da = prec != null ? ` n. ${prec}` : ''
   return pag == null
     ? `Segue dal ${etichetta}${da}: fogli dello stesso registro, numerati di seguito.`
-    : `Segue dal ${etichetta}${da} — pagine da ${pag + 1}. Fogli dello stesso registro, numerati di seguito (art. 2215 c.c.).`
+    : `Segue dal ${etichetta}${da} — pagine da ${pag + 1}. Fogli dello stesso registro, numerati di seguito.`
 }

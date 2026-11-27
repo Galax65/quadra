@@ -1,5 +1,5 @@
 /**
- * Contabilità — LAVORI IN ECONOMIA (art. 181 D.Lgs. 36/2023 / All. II.14; D.M. 49/2018
+ * Contabilità — LAVORI IN ECONOMIA (liste settimanali: prassi dell'ex D.M. 49/2018
  * art. 14). Le lavorazioni disposte dal DL e non contabilizzabili a misura/corpo
  * si computano per risorse impiegate tramite le LISTE SETTIMANALI: operai
  * (ore × tariffa), mezzi/noli (ore × tariffa), provviste (quantità × prezzo).
@@ -116,7 +116,7 @@ export function listaEconomiaHTML(appalto: Appalto, lista: ListaEconomia): strin
     title: titolo,
     headMeta: headMetaDi(appalto),
     bodyHTML: body,
-    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 181 D.Lgs. 36/2023 / All. II.14; D.M. 49/2018 art. 14. Da redigere in duplice copia (una in bollo) e firmare in contraddittorio con l\'esecutore.', page: titolo },
+    footer: { fields: footerFieldsDi(appalto), disc: 'Liste settimanali (prassi dell\'ex D.M. 49/2018, art. 14); confluiscono nel registro di contabilità (art. 12 c. 1 lett. c) All. II.14). Da redigere in duplice copia (una in bollo) e firmare in contraddittorio con l\'esecutore.', page: titolo },
     docTitle: `${titolo} — ${appalto.oggetto || 'Lavori'}`,
   })
 }

@@ -50,3 +50,14 @@ export const loadPdfLib = async (inject?: Injector): Promise<void> => {
   await loadScript('vendor/pdf-lib.min.js', inject)
   await loadScript('vendor/fontkit.min.js', inject).catch(() => undefined)
 }
+/**
+ * pdf.js (Mozilla): disegna le pagine di un PDF in un <canvas>. Serve all'anteprima
+ * di stampa, che così non dipende dal visore PDF del browser — nell'app desktop su
+ * Mac il visore lasciava il riquadro bianco. Il worker è nello stesso vendor/; se
+ * non parte, pdf.js lavora nel thread principale (più lento, ma funziona).
+ */
+export const loadPdfJs = async (inject?: Injector): Promise<void> => {
+  if (!giaPresente('pdfjsLib')) await loadScript('vendor/pdf.min.js', inject)
+  const lib = (globalThis as unknown as { pdfjsLib?: { GlobalWorkerOptions: { workerSrc: string } } }).pdfjsLib
+  if (lib && !lib.GlobalWorkerOptions.workerSrc) lib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js'
+}

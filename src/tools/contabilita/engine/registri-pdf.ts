@@ -122,7 +122,7 @@ export async function librettoPdf(lib: unknown, appalto: Appalto, partite: Parti
 
 /**
  * REGISTRO DI CONTABILITÀ **IN BIANCO**, da far numerare, bollare e vidimare
- * prima dell'inizio dei lavori (art. 2215 c.c.; art. 14 All. II.14).
+ * prima dell'inizio dei lavori (art. 12 c. 1 lett. c) All. II.14).
  *
  * È il foglio che nessun programma stampa e che in cantiere serve davvero: il
  * registro è uno solo, a pagine numerate, e la numerazione va apposta prima,
@@ -146,7 +146,7 @@ export async function registroInBiancoPdf(lib: unknown, appalto: Appalto, fogli:
       `IMPRESA: ${appalto.impresa?.denominazione || '—'}`,
       `STAZIONE APPALTANTE: ${appalto.ente?.denominazione || '—'}`,
       appalto.cup || appalto.cig ? `${appalto.cup ? 'CUP ' + appalto.cup : ''}${appalto.cup && appalto.cig ? ' · ' : ''}${appalto.cig ? 'CIG ' + appalto.cig : ''}` : '',
-      'Fogli numerati e vidimati prima dell\'inizio dei lavori (art. 2215 c.c.; art. 14 Allegato II.14 D.Lgs. 36/2023)',
+      'Fogli numerati di seguito, da vidimare prima dell\'inizio dei lavori se la stazione appaltante lo richiede (art. 12 c. 1 lett. c) Allegato II.14 D.Lgs. 36/2023)',
     ].filter(Boolean),
     testataPagine: `Registro di contabilità — ${appalto.oggetto || 'lavori'}`,
     colonne: [

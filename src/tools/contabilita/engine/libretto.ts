@@ -1,5 +1,5 @@
 /**
- * Contabilità — LIBRETTO DELLE MISURE (art. 13 Allegato II.14).
+ * Contabilità — LIBRETTO DELLE MISURE (art. 12 c. 1 lett. b) Allegato II.14).
  *
  * Il libretto accerta **che cosa è stato eseguito e quanto ne è stato
  * eseguito**: dimensioni, fattori e quantità, rilevate in contraddittorio con
@@ -120,7 +120,7 @@ function librettoAMisuraHTML(partite: Partita[], sal: Sal, ord: Map<string, numb
       </thead>
       <tbody>${body}</tbody>
     </table>
-    <p class="note">Il libretto accerta le quantità eseguite: <b>i prezzi e gli importi non vi compaiono</b>, la valutazione economica è del registro di contabilità (artt. 13 e 14 All. II.14). La colonna «N.» è il numero d'ordine di iscrizione della partita: con esso il registro e il sommario richiamano questa misura.</p>`
+    <p class="note">Il libretto accerta le quantità eseguite: <b>i prezzi e gli importi non vi compaiono</b>, la valutazione economica è del registro di contabilità (art. 12 c. 1 lett. b) e c) All. II.14). La colonna «N.» è il numero d'ordine di iscrizione della partita: con esso il registro e il sommario richiamano questa misura.</p>`
 }
 
 function librettoACorpoHTML(partite: Partita[], sal: Sal, ord: Map<string, number>): string {
@@ -168,7 +168,7 @@ function librettoEconomiaHTML(liste: ListaEconomia[] | undefined, sal: Sal): str
   }).join('')
   return `
     <h2 class="sec-h">Lavorazioni in economia</h2>
-    <p class="note">Lavori disposti dal DL e contabilizzati per risorse impiegate (liste settimanali di operai, mezzi e provviste), art. 181 D.Lgs. 36/2023. Le liste sono allegate al libretto; la loro valorizzazione è riportata nel registro di contabilità.</p>
+    <p class="note">Lavori disposti dal DL e contabilizzati per risorse impiegate (liste settimanali di operai, mezzi e provviste). Le liste sono allegate al libretto; la loro valorizzazione è riportata nel registro di contabilità.</p>
     <table class="dtable">
       <thead><tr><th>Rif. lista</th><th>Designazione</th><th class="num">Ore operai</th><th class="num">Voci di nolo</th><th class="num">Provviste</th></tr></thead>
       <tbody>${body}</tbody>
@@ -200,7 +200,7 @@ export function librettoHTML(appalto: Appalto, partite: Partita[], sal: Sal, lis
     sub: `SAL n. ${sal.numero}${sal.data ? ' del ' + sal.data : ''}`,
     headMeta: headMetaDi(appalto),
     bodyHTML: body,
-    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 13 (a misura) / art. 12 (a corpo) Allegato II.14 D.Lgs. 36/2023. Importi al netto di IVA.', page: `Libretto SAL ${sal.numero}` },
+    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 12 c. 1 lett. b) Allegato II.14 D.Lgs. 36/2023. Importi al netto di IVA.', page: `Libretto SAL ${sal.numero}` },
     docTitle: `Libretto delle Misure — SAL ${sal.numero}`,
   })
 }

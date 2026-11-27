@@ -1,5 +1,5 @@
 /**
- * Contabilità — REGISTRO DI CONTABILITÀ (art. 14, All. II.14). Riassume e accentra la
+ * Contabilità — REGISTRO DI CONTABILITÀ (art. 12 c. 1 lett. c) All. II.14). Riassume e accentra la
  * contabilizzazione: trascrive le partite dai libretti in ordine cronologico,
  * determina il credito progressivo, ospita le riserve dell'esecutore (iscritte
  * alla firma di ogni SAL) e le motivate deduzioni del DL.
@@ -46,7 +46,7 @@ function partiteHTML(appalto: Appalto, partite: Partita[], sals: Sal[], liste?: 
     </tr>`
   }).join('')
   const economiaRow = economia > 0
-    ? `<tr><td class="num">—</td><td class="code">liste</td><td>Lavori in economia (liste settimanali)<span class="sub">art. 181 D.Lgs. 36/2023</span></td><td class="num">—</td><td class="num">a economia</td><td class="num">${eur(economia)}</td></tr>`
+    ? `<tr><td class="num">—</td><td class="code">liste</td><td>Lavori in economia (liste settimanali)<span class="sub">liste settimanali di operai, mezzi e provviste</span></td><td class="num">—</td><td class="num">a economia</td><td class="num">${eur(economia)}</td></tr>`
     : ''
   // Le voci di sicurezza sono già righe del registro; gli oneri contrattuali a
   // corpo (non rappresentati da voci) si iscrivono per quota di avanzamento.
@@ -84,7 +84,7 @@ function anticipazioneRow(appalto: Appalto, importo: number | undefined): string
 
 /**
  * Annotazione dei certificati di pagamento emessi: il registro ne dà atto
- * (art. 14 All. II.14) — è la scrittura che chiude il progressivo e collega il
+ * (art. 12 c. 1 lett. c) All. II.14) — è la scrittura che chiude il progressivo e collega il
  * registro al titolo di spesa.
  */
 function certificatiEmessiHTML(appalto: Appalto, partite: Partita[], sals: Sal[], liste?: ListaEconomia[], ultimoSal?: number): string {
@@ -113,7 +113,7 @@ export function registroHTML(appalto: Appalto, partite: Partita[], sals: Sal[], 
   const segue = notaSeguito(consegne, 'registro', salN, 'Registro di contabilità')
   const body = `
     ${segue ? `<p class="note"><b>${escHtml(segue)}</b></p>` : ''}
-    <p class="note">Registro di contabilità — trascrive le partite dei libretti delle misure in ordine cronologico e individua il credito progressivo dell'impresa. Un solo registro, a fogli numerati e vidimati prima dell'inizio dei lavori (art. 14 All. II.14; art. 2215 c.c.): gli avanzamenti successivi ne continuano le pagine, non ne aprono uno nuovo.</p>
+    <p class="note">Registro di contabilità — trascrive le partite dei libretti delle misure in ordine cronologico e individua il credito progressivo dell'impresa. Un solo registro, a fogli numerati di seguito e, se la stazione appaltante lo richiede, vidimati prima dell'inizio dei lavori (art. 12 c. 1 lett. c) All. II.14): gli avanzamenti successivi ne continuano le pagine, non ne aprono uno nuovo.</p>
     <h2 class="sec-h">Partite contabilizzate</h2>
     ${partiteHTML(appalto, partite, sals, liste, opz)}
     ${certificatiEmessiHTML(appalto, partite, sals, liste, salN)}
@@ -127,7 +127,7 @@ export function registroHTML(appalto: Appalto, partite: Partita[], sals: Sal[], 
     title: 'Registro di Contabilità',
     headMeta: headMetaDi(appalto),
     bodyHTML: body,
-    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 14 Allegato II.14 D.Lgs. 36/2023. La firma del registro è il momento dell\'iscrizione delle riserve, a pena di decadenza.', page: 'Registro' },
+    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 12 c. 1 lett. c) Allegato II.14 D.Lgs. 36/2023. La firma del registro è il momento dell\'iscrizione delle riserve, a pena di decadenza.', page: 'Registro' },
     docTitle: `Registro di Contabilità — ${appalto.oggetto || 'Lavori'}`,
   })
 }

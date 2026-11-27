@@ -152,7 +152,7 @@ export interface SalResult {
   totaleEseguito: number
   detrazioni: number
   totaleContabilizzato: number
-  /** Ritenuta di garanzia 0,5% cumulativa sul progressivo contabilizzato (art. 125). */
+  /** Ritenuta di garanzia 0,5% cumulativa sul progressivo contabilizzato (art. 11 c. 6). */
   ritenuta: number
   /** Revisione prezzi: variazione % dell'indice del SAL rispetto alla base (null se non applicabile). */
   variazioneIndicePct: number | null
@@ -175,7 +175,7 @@ export interface SalResult {
   totaleLordo: number
 }
 
-const RITENUTA_GARANZIA = 0.005 // 0,5% — art. 125 D.Lgs. 36/2023
+const RITENUTA_GARANZIA = 0.005 // 0,5% — art. 11 c. 6 D.Lgs. 36/2023
 
 /** Percentuale di avanzamento dei lavori (eseguito/contrattuale) per ripartire gli oneri sicurezza. */
 function avanzamentoLavori(partite: Partita[], sal: Sal): number {

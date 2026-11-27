@@ -55,7 +55,7 @@ import { azioniTappa, chiaveNodo, type AzioneTappa } from './azioni'
 import { contabilitaMotore } from './motore-contabilita'
 import {
   librettoPdf, registroPdf, sommarioPdf, statoFinalePdf, quadroComparativoPdf,
-  salHTML, certificatoHTML, contoFinaleHTML, relazioneFinaleHTML, attoSottomissioneHTML, verbaleHTML, elencoNuoviPrezziHTML,
+  salHTML, certificatoHTML, contoFinaleHTML, creHTML, relazioneFinaleHTML, attoSottomissioneHTML, verbaleHTML, elencoNuoviPrezziHTML,
 } from '../contabilita/engine'
 import { periziaHTML } from '../contabilita/engine/perizia-atto'
 import { enteDi, kickerDi, headMetaDi, footerFieldsDi } from '../contabilita/engine/doc-common'
@@ -96,11 +96,11 @@ import { leggiNumeroTesto } from '../../shared/campo-numero'
 import { leggiCampo } from '../../shared/compositore/misure-edit'
 import { openModal } from '../../shared/ui/components/modal'
 import { apriMenuContestuale, type RigaMenu, type VoceMenu } from '../../shared/ui/components/menu'
-import { CAMPI_DATI_GENERALI, normalizzaDatiGenerali } from '../../shared/dati-generali'
+import { CAMPI_DATI_GENERALI, normalizzaDatiGenerali, intestazioneStampa } from '../../shared/dati-generali'
 import { parseXpwe, xpweToVoci, type VoceComputo } from '../../shared/xpwe/xpwe'
-import { impostaStudioStampe, impostaStileStampaPdf } from '../../shared/stampa/registro-pdf'
+import { impostaStudioStampe, impostaStileStampaPdf, conElaborato, type Chiusura, type Copertina } from '../../shared/stampa/registro-pdf'
 import { leggiPreferenzeStampa } from '../../shared/stampe/preferenze'
-import { computoPdf } from '../../shared/stampa/computo-pdf'
+import { computoPdf, type OpzioniComputoPdf } from '../../shared/stampa/computo-pdf'
 import {
   elencoPrezziPdf, stimaLavoriPdf, incidenzaManodoperaPdf, incidenzaSicurezzaPdf, verbaleNuoviPrezziPdf, listaLavorazioniPdf, quadroEconomicoPdf, quadroComparativoOffertePdf,
 } from '../../shared/stampa/progetto-pdf'
@@ -1981,6 +1981,37 @@ const DOC_STAMPA: Record<string, string> = {
   'elenco-np': 'Elenco dei nuovi prezzi', 'verbale-np-computo': 'Verbale dei nuovi prezzi',
   'quadro-economico': 'Quadro economico', 'lista-lavorazioni': 'Lista delle lavorazioni e forniture', 'quadro-offerte': 'Quadro comparativo delle offerte',
 }
+/** Il contenuto del computo, dalle preferenze di stampa (pannello «Contenuto» dell'anteprima). */
+function opzComputo(): OpzioniComputoPdf {
+  const p = leggiPreferenzeStampa()
+  return { descrizione: p.descrizione, conRidotta: p.conRidotta, righeMax: p.righeMax, righeFinali: p.righeFinali, rigaWbs: p.rigaWbs, riepilogo: p.riepilogo, senzaPrezzi: p.senzaPrezzi, misure: p.misure }
+}
+/**
+ * COPERTINA E FIRME DEGLI ELABORATI. Chi firma dipende dall'elaborato: il
+ * progettista quelli di progetto, il direttore dei lavori il consuntivo, il RUP
+ * (o il tecnico, nei lavori privati) il confronto delle offerte. Le liste e i
+ * verbali che hanno già le loro firme non ne ricevono altre.
+ */
+const SENZA_CHIUSURA = new Set(['lista-lavorazioni', 'verbale-np-computo'])
+function elaboratoDi(tipo: string, titolo: string): { chiusura?: Chiusura; copertina?: Copertina } | null {
+  const p = leggiPreferenzeStampa()
+  const dg = L.dati as Record<string, string | undefined>
+  const data = dg.data || oggi()
+  const luogoData = `${p.luogo || dg.comune || '____________'}, ${data}`
+  const firme: Chiusura['firme'] = tipo === 'consuntivo-pdf' ? [{ ruolo: 'Il Direttore dei Lavori', nome: dg.direttoreLavori }]
+    : tipo === 'quadro-offerte' ? [{ ruolo: dg.rup ? 'Il Responsabile unico del progetto' : 'Il tecnico incaricato', nome: dg.rup || dg.progettista }]
+    : [{ ruolo: 'Il Progettista', nome: dg.progettista }]
+  const chiusura = p.firme && !SENZA_CHIUSURA.has(tipo) ? { luogoData, firme } : undefined
+  const copertina = p.copertina ? { titolo: titolo.toUpperCase(), ente: dg.committente, righe: intestazioneStampa(L.dati as never, data).filter((r) => !r.startsWith('Data:')), luogoData } : undefined
+  return chiusura || copertina ? { chiusura, copertina } : null
+}
+/** Gli atti in pagina che portano le declaratorie: per loro il pannello offre il contenuto. */
+const ATTI_CON_DESCRIZIONE = new Set(['fascicolo', 'consuntivo'])
+/** Le stesse scelte per gli atti contabili in pagina (libretto, registro, sommario del fascicolo). */
+function opzAtto(): { descrizione: 'estesa' | 'ridotta' | 'parziale'; date: boolean; righeIniziali: number; righeFinali: number } {
+  const p = leggiPreferenzeStampa()
+  return { descrizione: p.descrizione === 'compatta' ? 'parziale' : p.descrizione, date: p.date, righeIniziali: p.righeMax, righeFinali: p.righeFinali }
+}
 /** I file che escono dalla revisione: si salvano, non si stampano. */
 const FILE_REVISIONE: Record<string, string> = { 'computo-excel': 'Computo in Excel', 'computo-xpwe': 'Computo in XPWE', 'analisi-excel': 'Fascicolo delle analisi in Excel' }
 /* ── Le stampe della contabilità: le fa il motore della Contabilità ──────── */
@@ -2021,6 +2052,7 @@ async function documentoContabile(tipo: string): Promise<{ titolo: string; gener
       certificato: async () => ({ html: certificatoHTML(m.appalto, m.partite, m.sals, n, m.liste) }),
       'stato-finale': async () => pdf(await statoFinalePdf(await lib(), m.appalto, m.partite, m.sals, m.liste)),
       'conto-finale': async () => ({ html: contoFinaleHTML(m.appalto, m.partite, m.sals, m.verbali, m.liste, m.riserve) }),
+      cre: async () => ({ html: creHTML(m.appalto, m.partite, m.sals, m.verbali, m.liste, { data: a.tipo === 'cre' ? (a.emessoIl || a.data) : undefined, note: a.tipo === 'cre' ? a.note : undefined, oggi: oggi() }) }),
       'relazione-conto-finale': async () => ({ html: relazioneFinaleHTML(m.appalto, m.partite, m.sals, m.riserve, a.tipo === 'cre' ? a.note : L.avanzamenti.find((x) => x.tipo === 'cre')?.note, m.verbali, m.liste) }),
       sottocomputi: async () => {
         if (!corpiConSottoComputo(m.partite, n).length) throw new Error('Nessun lavoro a corpo con sotto-computo in questo SAL')
@@ -2030,7 +2062,7 @@ async function documentoContabile(tipo: string): Promise<{ titolo: string; gener
         const voci = vociConsuntivo(L, a.id)
         if (!voci.length) throw new Error('Niente di contabilizzato in questo SAL')
         const st = strutturaDi(revDiAv(a))
-        return pdf(await computoPdf(await lib(), voci, L.dati as Record<string, never>, { titolo: 'COMPUTO CONSUNTIVO', wbsNodi: st.wbsNodi, descrizione: leggiPreferenzeStampa().descrizione === 'ridotta' ? 'ridotta' : 'estesa' }))
+        return pdf(await conElaborato(elaboratoDi('consuntivo-pdf', 'Computo consuntivo'), async () => computoPdf(await lib(), voci, L.dati as Record<string, never>, { ...opzComputo(), senzaPrezzi: false, titolo: 'COMPUTO CONSUNTIVO', wbsNodi: st.wbsNodi })))
       },
       situazione: async () => pdf(await situazioneContabilePdf(await lib(), m.appalto, m.partite, m.sals, m.liste)),
       confronto: async () => pdf(await confrontoProgettoEseguitoPdf(await lib(), m.appalto, m.partite, m.sals, n, m.liste)),
@@ -2047,10 +2079,10 @@ async function documentoContabile(tipo: string): Promise<{ titolo: string; gener
       fascicolo: async () => {
         const pv = partiteVigenti(m.partite, m.perizie, n)
         return { html: fondiAtti([
-          librettoHTML(m.appalto, pv, sal!, m.liste, m.consegne, undefined, m.sals),
+          librettoHTML(m.appalto, pv, sal!, m.liste, m.consegne, opzAtto(), m.sals),
           ...(corpiConSottoComputo(m.partite, n).length ? [librettoSottoComputiHTML(m.appalto, m.partite, sal!)] : []),
-          registroHTML(m.appalto, pv, m.sals, m.riserve, m.liste, m.consegne, oggiISO()),
-          sommarioHTML(m.appalto, pv, m.sals, n, m.liste),
+          registroHTML(m.appalto, pv, m.sals, m.riserve, m.liste, m.consegne, oggiISO(), opzAtto()),
+          sommarioHTML(m.appalto, pv, m.sals, n, m.liste, opzAtto()),
           salHTML(m.appalto, m.partite, m.sals, n, m.liste, m.verbali, a.data),
           certificatoHTML(m.appalto, m.partite, m.sals, n, m.liste),
         ]) }
@@ -2120,7 +2152,6 @@ async function lvFormatoAperto(): Promise<void> {
 
 async function stampaContabile(tipo: string, formato = 'anteprima'): Promise<boolean> {
   if (tipo.endsWith('-excel') && av()) return salvaExcelContabile(tipo)
-  if (tipo === 'cre') { toast('Il certificato di regolare esecuzione non ha ancora una stampa: c\'è la relazione sul conto finale'); return true }
   const d = await documentoContabile(tipo)
   if (!d) return false
   const nomeFile = d.titolo.replace(/[^\w.àèéìòù-]+/gi, '-')
@@ -2132,6 +2163,7 @@ async function stampaContabile(tipo: string, formato = 'anteprima'): Promise<boo
     if (formato === 'docx' || formato === 'odt') toast('Questo atto esce solo in PDF: si apre l\'anteprima')
     if ('pdf' in out) {
       anteprimaPdf(out.pdf, {
+        ...(tipo === 'consuntivo-pdf' ? { contenuto: 'computo' as const } : ['libretto', 'registro', 'sommario', 'stato-finale'].includes(tipo) ? { contenuto: 'atto' as const } : {}),
         titolo: d.titolo, nomeFile, nota: `${out.pagine} pagin${out.pagine === 1 ? 'a' : 'e'}${d.bozza ? ` · BOZZA: ${d.bozza}` : ''}`,
         rifai: async () => { const x = await d.genera(); return 'pdf' in x ? x.pdf : new Uint8Array() },
       })
@@ -2140,7 +2172,13 @@ async function stampaContabile(tipo: string, formato = 'anteprima'): Promise<boo
       const html = d.bozza ? marcaBozza(out.html, d.bozza) : out.html
       anteprimaHTML(applicaStileStampa(html, leggiPreferenzeStampa().stile), {
         titolo: d.titolo, nomeFile, estensione: 'html',
-        rifai: async () => applicaStileStampa(html, leggiPreferenzeStampa().stile),
+        ...(ATTI_CON_DESCRIZIONE.has(tipo) ? { contenuto: 'atto' as const } : {}),
+        // si rifà l'atto, non solo il foglio: le scelte di contenuto cambiano il testo
+        rifai: async () => {
+          const x = await d.genera()
+          const h = 'html' in x ? x.html : out.html
+          return applicaStileStampa(d.bozza ? marcaBozza(h, d.bozza) : h, leggiPreferenzeStampa().stile)
+        },
       })
     }
   } catch (e) { toast('Errore nella stampa: ' + ((e as Error).message || e)) }
@@ -2189,13 +2227,15 @@ async function stampaDocumento(tipo: string, formato = 'anteprima'): Promise<voi
     if (tipo === 'lista-lavorazioni') return listaLavorazioniPdf(lib, voci, dg)
     if (tipo === 'quadro-economico') { const imp = importiRevisione(r); return quadroEconomicoPdf(lib, calcolaQE(normalizzaQE(r.qe), imp.lavori, imp.sicurezza), dg) }
     if (tipo === 'quadro-offerte') { if (!(r.offerte || []).length) throw new Error('Nessuna offerta registrata su questa revisione: «⌸ Offerte…»'); return quadroComparativoOffertePdf(lib, voci, r.offerte!, dg) }
-    return computoPdf(lib, voci, dg, { descrizione: leggiPreferenzeStampa().descrizione === 'ridotta' ? 'ridotta' : 'estesa', wbsNodi: strutturaDi(r).wbsNodi })
+    return computoPdf(lib, voci, dg, { ...opzComputo(), wbsNodi: strutturaDi(r).wbsNodi })
   }
+  const generaElaborato = (): Promise<{ bytes: Uint8Array; pagine: number }> => conElaborato(elaboratoDi(tipo, DOC_STAMPA[tipo]), genera)
   try {
-    const out = await genera()
+    const out = await generaElaborato()
     anteprimaPdf(out.bytes, {
+      contenuto: tipo === 'computo-metrico' ? 'computo' : 'elaborato',
       titolo: `${DOC_STAMPA[tipo]} — ${sigla(r.numero)}`, nomeFile: `${DOC_STAMPA[tipo]}-${sigla(r.numero)}`.replace(/\s+/g, '-'),
-      nota: `${out.pagine} pagin${out.pagine === 1 ? 'a' : 'e'}`, rifai: async () => (await genera()).bytes,
+      nota: `${out.pagine} pagin${out.pagine === 1 ? 'a' : 'e'}`, rifai: async () => (await generaElaborato()).bytes,
     })
   } catch (e) { toast('Errore nella stampa: ' + ((e as Error).message || e)) }
 }

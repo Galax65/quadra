@@ -12,7 +12,7 @@
  * «non calcolabile», e si dice quale dato manca), e nessun adempimento si dà
  * per fatto se non risulta dagli atti.
  *
- * Riferimenti: art. 125 D.Lgs. 36/2023 (anticipazione, pagamenti); artt. 7, 17,
+ * Riferimenti: art. 125 D.Lgs. 36/2023 (anticipazione, pagamenti); artt. 7, 12,
  * 18 e 23 Allegato II.14 (riserve, certificato di pagamento, conto finale,
  * collaudo).
  */
@@ -107,7 +107,7 @@ export function scadenze(d: Ingressi, oggi = oggiISO()): Scadenza[] {
     // ── certificato di pagamento: entro 7 giorni dall'adozione del SAL ──
     out.push(s.dataCertificato
       ? certificatoFattoInTempo(s, rif, oggi)
-      : termine(`cert-${s.numero}`, `Emettere il certificato di pagamento del SAL n. ${s.numero}`, 'art. 17 All. II.14 (previa verifica DURC)', rif, s.data, GIORNI_CERTIFICATO, oggi, `la data del SAL n. ${s.numero}`, s.numero))
+      : termine(`cert-${s.numero}`, `Emettere il certificato di pagamento del SAL n. ${s.numero}`, 'art. 125 c. 1 D.Lgs. 36/2023; art. 12 c. 1 lett. d) All. II.14 (previa verifica DURC)', rif, s.data, GIORNI_CERTIFICATO, oggi, `la data del SAL n. ${s.numero}`, s.numero))
     // ── pagamento: di regola entro 30 giorni dall'adozione del SAL ──
     out.push(s.dataPagamento
       ? assolto(`pag-${s.numero}`, `Pagamento della rata del SAL n. ${s.numero}`, 'art. 125 D.Lgs. 36/2023', rif, s.dataPagamento, `Pagato il ${s.dataPagamento}.`, s.numero)
@@ -150,7 +150,7 @@ function certificatoFattoInTempo(s: Sal, rif: string, _oggi: string): Scadenza {
   const g = giorniTra(itToISO(s.data), itToISO(s.dataCertificato))
   const tardi = g != null && g > GIORNI_CERTIFICATO
   return {
-    id: `cert-${s.numero}`, cosa: `Certificato di pagamento del SAL n. ${s.numero}`, norma: 'art. 17 All. II.14',
+    id: `cert-${s.numero}`, cosa: `Certificato di pagamento del SAL n. ${s.numero}`, norma: 'art. 125 c. 1 D.Lgs. 36/2023; art. 12 c. 1 lett. d) All. II.14',
     decorre: rif, entro: s.dataCertificato || '', giorni: null, stato: tardi ? 'scaduta' : 'fatto', salNumero: s.numero,
     nota: tardi ? `Emesso il ${s.dataCertificato}, ${g} giorni dopo il SAL: oltre i ${GIORNI_CERTIFICATO} giorni di legge.` : `Emesso il ${s.dataCertificato}${g != null ? ` (${g} giorni dal SAL)` : ''}.`,
   }
@@ -189,7 +189,7 @@ export function scadenziarioHTML(appalto: Appalto, lista: Scadenza[], oggi: stri
       <thead><tr><th>Adempimento</th><th class="num">Entro il</th><th class="num">Giorni</th><th>Stato</th></tr></thead>
       <tbody>${righe || '<tr><td colspan="4"><i>Nessun termine da sorvegliare: non risultano SAL, riserve né anticipazione.</i></td></tr>'}</tbody>
     </table>
-    <p class="note">Termini richiamati: certificato di pagamento ${GIORNI_CERTIFICATO} giorni dal SAL (art. 17 All. II.14); pagamento ${GIORNI_PAGAMENTO} giorni, salvo diverso termine pattuito e comunque non oltre 60 (art. 125 D.Lgs. 36/2023); anticipazione ${GIORNI_ANTICIPAZIONE} giorni dall'effettivo inizio della prestazione (art. 125 c. 1); esplicitazione delle riserve ${GIORNI_ESPLICITAZIONE} giorni dall'iscrizione e conferma al conto finale, a pena di decadenza (art. 7 All. II.14); sottoscrizione del conto finale entro un termine non superiore a ${GIORNI_FIRMA_CONTO_FINALE} giorni dall'invito del RUP; sottoscrizione del certificato di collaudo provvisorio entro ${GIORNI_FIRMA_COLLAUDO} giorni dalla trasmissione (art. 23). La ritenuta dello 0,50% si svincola in sede di liquidazione finale, dopo l'approvazione del collaudo o del certificato di regolare esecuzione, previo documento unico di regolarità contributiva.</p>`
+    <p class="note">Termini richiamati: certificato di pagamento ${GIORNI_CERTIFICATO} giorni dal SAL (art. 125 D.Lgs. 36/2023; art. 12 c. 1 lett. d) All. II.14); pagamento ${GIORNI_PAGAMENTO} giorni, salvo diverso termine pattuito e comunque non oltre 60 (art. 125 D.Lgs. 36/2023); anticipazione ${GIORNI_ANTICIPAZIONE} giorni dall'effettivo inizio della prestazione (art. 125 c. 1); esplicitazione delle riserve ${GIORNI_ESPLICITAZIONE} giorni dall'iscrizione e conferma al conto finale, a pena di decadenza (art. 7 All. II.14); sottoscrizione del conto finale entro un termine non superiore a ${GIORNI_FIRMA_CONTO_FINALE} giorni dall'invito del RUP; sottoscrizione del certificato di collaudo provvisorio entro ${GIORNI_FIRMA_COLLAUDO} giorni dalla trasmissione (art. 23). La ritenuta dello 0,50% si svincola in sede di liquidazione finale, dopo l'approvazione del collaudo o del certificato di regolare esecuzione, previo documento unico di regolarità contributiva.</p>`
   return renderDocPage({
     tool: 'contabilita', brand: 'none', enteHeader: enteDi(appalto),
     kicker: kickerDi(appalto, 'Scadenziario'),

@@ -87,7 +87,7 @@ export interface Appalto {
    *  contrattuale: il contratto la fissa fra 0,3 e 1 (art. 126 c. 1). */
   penalePerMille?: number | null
   /** Collaudo o certificato di regolare esecuzione: senza la sua APPROVAZIONE
-   *  la ritenuta di garanzia non si svincola (art. 125 c. 2). */
+   *  la ritenuta di garanzia non si svincola (art. 11 c. 6). */
   collaudo?: { tipo?: 'collaudo' | 'cre'; data?: string; dataApprovazione?: string }
   /** DURC: lo svincolo della ritenuta è subordinato alla regolarità contributiva. */
   durc?: { regolare?: boolean; data?: string }
@@ -116,7 +116,7 @@ export interface Appalto {
   tipologia?: TipologiaAppalto
   /** Clausola di revisione dei prezzi (art. 60 e Allegato II.2-bis D.Lgs. 36/2023). */
   revisione?: RevisionePrezzi
-  /** Iter di sottoscrizione del conto finale (date e esito): art. 7 c. 3, art. 18 All. II.14. */
+  /** Iter di sottoscrizione del conto finale (date e esito): art. 7 c. 3, art. 12 c. 1 lett. e) All. II.14. */
   contoFinale?: ContoFinaleIter
   /**
    * CONTABILITÀ SEMPLIFICATA (art. 12 c. 11-bis All. II.14, introdotto dal
@@ -135,7 +135,7 @@ export interface Appalto {
 export type TipologiaAppalto = 'lavori' | 'servizi' | 'forniture'
 
 /**
- * SOTTOSCRIZIONE DEL CONTO FINALE (art. 7 c. 3 e art. 18 All. II.14).
+ * SOTTOSCRIZIONE DEL CONTO FINALE (art. 7 c. 3 e art. 12 c. 1 lett. e) All. II.14).
  *
  * È l'ultimo passaggio in cui una pretesa dell'impresa può restare viva: il RUP
  * invita l'esecutore a prendere cognizione del conto finale e a firmarlo entro
@@ -413,7 +413,7 @@ export interface Sal {
   indiceRevisione?: number | null
   /**
    * Data del CERTIFICATO DI PAGAMENTO di questo SAL. Il RUP lo emette entro
-   * SETTE GIORNI dall'adozione dello stato di avanzamento (art. 17 All. II.14),
+   * SETTE GIORNI dall'adozione dello stato di avanzamento (art. 12 c. 1 lett. d) All. II.14),
    * previa verifica della regolarità contributiva: da questa data decorre il
    * termine di pagamento.
    */
@@ -562,7 +562,7 @@ export interface Verbale {
 }
 
 /**
- * LAVORI IN ECONOMIA (art. 181 D.Lgs. 36/2023 / All. II.14; D.M. 49/2018 art. 14):
+ * LAVORI IN ECONOMIA (liste settimanali: prassi dell'ex D.M. 49/2018 art. 14):
  * lavorazioni eseguite su ordine del DL e contabilizzate non a misura/corpo ma
  * per risorse effettivamente impiegate, tramite le LISTE SETTIMANALI di operai,
  * mezzi/noli e provviste, valorizzate e firmate in contraddittorio (duplice copia,

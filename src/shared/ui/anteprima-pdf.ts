@@ -14,7 +14,7 @@
   all'impianto standard (doc/stile-stampa.ts).
 */
 import { IMPIANTO_STANDARD, eImpiantoStandard, type StileStampa } from '../doc/stile-stampa'
-import { leggiPreferenzeStampa, salvaPreferenzeStampa } from '../stampe/preferenze'
+import { leggiPreferenzeStampa, salvaPreferenzeStampa, type PreferenzeStampa } from '../stampe/preferenze'
 
 export interface AnteprimaPdfOpts {
   /** Titolo mostrato in testa all'anteprima. */
@@ -30,6 +30,12 @@ export interface AnteprimaPdfOpts {
    * oppure il testo HTML. Senza, il pannello «Aspetto» non c'è.
    */
   rifai?: () => Promise<Uint8Array | ArrayBuffer | Blob | string>
+  /**
+   * Quali scelte di CONTENUTO offre il pannello, oltre al foglio: 'computo'
+   * (descrizione, misure, WBS, riepiloghi, prezzi, più copertina e firme),
+   * 'elaborato' (copertina e firme). Senza, solo l'aspetto del foglio.
+   */
+  contenuto?: 'computo' | 'elaborato' | 'atto'
 }
 
 /** Il PDF si dichiara PDF/A nei suoi metadati XMP, che non sono compressi: basta leggerli. */
@@ -61,7 +67,7 @@ export function anteprimaHTML(html: string, o: AnteprimaPdfOpts): void {
   chiudiAnteprimaPdf()
   const blob = new Blob([html], { type: 'text/html' })
   const url = URL.createObjectURL(blob)
-  montaAnteprima(url, o, (frame) => { frame.src = url }, false)
+  montaAnteprima(url, o, (frame, wrap) => { wrap.dataset.tipo = 'html'; frame.src = url }, false)
 }
 
 /** Mostra il PDF a tutta pagina, con «Stampa» e «Salva PDF». */
@@ -70,36 +76,101 @@ export function anteprimaPdf(bytes: Uint8Array | ArrayBuffer | Blob, o: Anteprim
   const blob = bytes instanceof Blob ? bytes : new Blob([bytes as BlobPart], { type: 'application/pdf' })
   const url = URL.createObjectURL(blob)
   const pdfa = !(bytes instanceof Blob) && ePdfA(bytes as Uint8Array)
-  montaAnteprima(url, o, (frame, wrap) => {
-    const senzaVisore = (): void => {
-      if (!frame.isConnected) return
-      const avviso = document.createElement('div')
-      avviso.className = 'ehb-anteprima__no'
-      avviso.innerHTML = '<p><b>Il documento è pronto.</b></p><p>Qui non si riesce a mostrarlo in anteprima, perché manca il visore PDF. Usa <b>Stampa</b> oppure <b>Salva PDF</b>: il file è completo.</p>'
-      // al posto del documento, non sotto: il pannello «Aspetto» resta dov'è
-      frame.replaceWith(avviso)
-      void wrap
+  montaAnteprima(url, o, (frame, wrap) => { wrap.dataset.tipo = 'pdf'; void mostraPdf(wrap, frame, blob) }, pdfa)
+}
+
+/* ── Le pagine del PDF, disegnate da noi ───────────────────────────────────
+   Il visore PDF del browser è un plugin, e nell'app desktop su Mac lasciava il
+   riquadro BIANCO (con o senza `plugins: true`, prima e dopo Electron 45): il
+   documento c'era, l'anteprima no. Le pagine si disegnano quindi con pdf.js
+   (vendor/pdf.min.js) in una colonna di <canvas>, uguale in ogni guscio: app
+   desktop, browser, iPad. Solo se pdf.js non si carica si torna al visore. */
+
+interface PdfJsPagina { getViewport(o: { scale: number }): { width: number; height: number }; render(o: { canvasContext: CanvasRenderingContext2D; viewport: unknown }): { promise: Promise<void> } }
+interface PdfJsDoc { numPages: number; getPage(n: number): Promise<PdfJsPagina>; destroy(): Promise<void> }
+interface PdfJs { getDocument(o: { data: Uint8Array }): { promise: Promise<PdfJsDoc> } }
+
+async function mostraPdf(wrap: HTMLElement, frame: HTMLIFrameElement, blob: Blob): Promise<void> {
+  const vecchia = wrap.querySelector('.ehb-anteprima__pagine')
+  try {
+    const { loadPdfJs } = await import('../vendor')
+    await loadPdfJs()
+    const lib = (globalThis as unknown as { pdfjsLib?: PdfJs }).pdfjsLib
+    if (!lib) throw new Error('pdf.js assente')
+    const doc = await lib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise
+    if (!wrap.isConnected) { void doc.destroy(); return }
+    // la nota in testata dice le pagine del documento com'è ORA (cambia col foglio e col contenuto)
+    const nota = wrap.querySelector('.ehb-anteprima__t small')
+    if (nota) nota.textContent = (nota.textContent || '').replace(/^\d+ pagin[ae]/, `${doc.numPages} pagin${doc.numPages === 1 ? 'a' : 'e'}`)
+    const col = document.createElement('div')
+    col.className = 'ehb-anteprima__v ehb-anteprima__pagine'
+    col.tabIndex = 0
+    const largo = Math.max(320, (frame.isConnected ? frame : (vecchia as HTMLElement | null) ?? wrap).clientWidth - 48)
+    const dpr = Math.min(3, Math.max(1, window.devicePixelRatio || 1))
+    const pagine: { canvas: HTMLCanvasElement; n: number; scala: number; fatta: boolean }[] = []
+    for (let n = 1; n <= doc.numPages; n++) {
+      const pg = await doc.getPage(n)
+      const v1 = pg.getViewport({ scale: 1 })
+      const scala = Math.min(largo / v1.width, 2)
+      const canvas = document.createElement('canvas')
+      canvas.className = 'ehb-anteprima__pagina'
+      canvas.style.width = `${Math.round(v1.width * scala)}px`
+      canvas.style.height = `${Math.round(v1.height * scala)}px`
+      canvas.setAttribute('aria-label', `Pagina ${n} di ${doc.numPages}`)
+      col.appendChild(canvas)
+      pagine.push({ canvas, n, scala, fatta: false })
     }
-    /* Non si chiede PRIMA a navigator.pdfViewerEnabled: nell'app desktop
-       risponde «no» anche dove il visore poi funziona, e l'anteprima restava
-       bianca per prudenza. Si prova sempre, e se dopo un attimo non è comparso
-       niente si dice com'è (sotto). */
-    frame.src = url
-    /* Il visore PDF è un plugin: dove è spento l'iframe resta BIANCO senza dare
-       errore, e sembra che il documento sia vuoto. Si controlla poco dopo che
-       qualcosa sia davvero comparso; in caso contrario si dice com'è. */
-    setTimeout(() => {
-      try {
-        const d = frame.contentDocument
-        /* Da Electron 45 (Chromium col visore «fuori processo») il documento
-           PDF ha il corpo VUOTO anche quando il visore funziona: il visore sta
-           in un riquadro a parte. Se il documento si dichiara PDF, il visore
-           l'ha preso: si avvisa solo quando non è così. */
-        const vuoto = d && d.contentType !== 'application/pdf' && d.body && d.body.childElementCount === 0 && !d.querySelector('embed')
-        if (vuoto) senzaVisore()
-      } catch { /* documento non ispezionabile: il visore l'ha preso in carico */ }
-    }, 2500)
-  }, pdfa)
+    const disegna = async (p: typeof pagine[number]): Promise<void> => {
+      if (p.fatta) return
+      p.fatta = true
+      const pg = await doc.getPage(p.n)
+      const vp = pg.getViewport({ scale: p.scala * dpr })
+      p.canvas.width = Math.round(vp.width); p.canvas.height = Math.round(vp.height)
+      const ctx = p.canvas.getContext('2d')
+      if (ctx) await pg.render({ canvasContext: ctx, viewport: vp }).promise
+    }
+    // si disegnano le pagine che si vedono (e le vicine): un computo di 200 pagine non blocca nulla
+    const io = typeof IntersectionObserver !== 'undefined'
+      ? new IntersectionObserver((voci) => { for (const e of voci) if (e.isIntersecting) { const p = pagine.find((x) => x.canvas === e.target); if (p) void disegna(p) } }, { root: col, rootMargin: '600px 0px' })
+      : null
+    if (io) pagine.forEach((p) => io.observe(p.canvas)); else for (const p of pagine) await disegna(p)
+    // al posto del riquadro (o delle pagine di prima, se si è cambiato l'aspetto)
+    const scroll = vecchia ? (vecchia as HTMLElement).scrollTop : 0
+    if (vecchia) vecchia.replaceWith(col); else frame.replaceWith(col)
+    col.scrollTop = scroll
+    if (pagine[0]) void disegna(pagine[0])
+  } catch {
+    // pdf.js non disponibile: si prova col visore del browser
+    if (vecchia) vecchia.replaceWith(frame)
+    frame.src = wrap.dataset.url || ''
+  }
+}
+
+/** L'API del guscio desktop, se c'è (lo strumento vive in un riquadro dell'hub). */
+function nativo(): { openPdf?: (dati: Uint8Array, nome: string) => Promise<{ path?: string; error?: string }> } | null {
+  const w = window as unknown as { ehubNative?: unknown; top?: { ehubNative?: unknown } | null }
+  try { return (w.ehubNative || w.top?.ehubNative || null) as ReturnType<typeof nativo> } catch { return (w.ehubNative || null) as ReturnType<typeof nativo> }
+}
+
+/** Stampa un PDF: nell'app desktop lo apre nel visore del sistema (Anteprima su Mac),
+ *  con tutte le opzioni della stampante; nel browser lo stampa da un riquadro nascosto. */
+async function stampaPdf(url: string, nome: string, salva: () => void): Promise<void> {
+  const n = nativo()
+  if (n?.openPdf) {
+    const dati = new Uint8Array(await (await fetch(url)).arrayBuffer())
+    const r = await n.openPdf(dati, nome)
+    if (!r?.error) return
+  }
+  try {
+    const f = document.createElement('iframe')
+    f.style.cssText = 'position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0'
+    f.src = url
+    f.onload = () => {
+      try { f.contentWindow?.focus(); f.contentWindow?.print() } catch { salva() }
+      setTimeout(() => f.remove(), 60000)
+    }
+    document.body.appendChild(f)
+  } catch { salva() }
 }
 
 /** Il guscio dell'anteprima: testata con i comandi, documento sotto. */
@@ -113,14 +184,14 @@ function montaAnteprima(url: string, o: AnteprimaPdfOpts, riempi: (frame: HTMLIF
       <div class="ehb-anteprima__t"><b></b><small></small></div>
       ${pdfa ? '<span class="ehb-pastiglia ehb-anteprima__pdfa" title="Il PDF è PDF/A-2b: caratteri incorporati, profilo colore e metadati dentro il file. È il formato da conservazione.">PDF/A-2b</span>' : ''}
       <span class="ehb-anteprima__sp"></span>
-      ${o.rifai ? `<button class="ehb-btn ehb-btn--sm ehb-btn--ghost${_aspettoAperto ? ' is-on' : ''}" data-az="aspetto" title="Foglio, margini, carattere e corpo: si cambiano qui e il documento si rifà" aria-expanded="${_aspettoAperto}">Aa Aspetto</button>` : ''}
+      ${o.rifai ? `<button class="ehb-btn ehb-btn--sm ehb-btn--ghost${_aspettoAperto ? ' is-on' : ''}" data-az="aspetto" title="Foglio, margini, carattere e corpo: si cambiano qui e il documento si rifà" aria-expanded="${_aspettoAperto}">${o.contenuto ? 'Aa Opzioni' : 'Aa Aspetto'}</button>` : ''}
       <button class="ehb-btn ehb-btn--sm ehb-btn--accent-soft" data-az="stampa">⎙ Stampa</button>
       <button class="ehb-btn ehb-btn--sm" data-az="salva">⇩ Salva</button>
       <button class="ehb-btn ehb-btn--sm ehb-btn--ghost" data-az="chiudi">Esc ✕</button>
     </div>
     <div class="ehb-anteprima__corpo">
       <iframe class="ehb-anteprima__v" title="Anteprima di stampa"></iframe>
-      ${o.rifai ? `<aside class="ehb-anteprima__aspetto"${_aspettoAperto ? '' : ' hidden'}>${pannelloAspettoHTML(leggiPreferenzeStampa().stile)}</aside>` : ''}
+      ${o.rifai ? `<aside class="ehb-anteprima__aspetto"${_aspettoAperto ? '' : ' hidden'}>${pannelloAspettoHTML(leggiPreferenzeStampa().stile)}${o.contenuto ? `<div class="ehb-aspetto__contenuto">${pannelloContenutoHTML(leggiPreferenzeStampa(), o.contenuto)}</div>` : ''}</aside>` : ''}
     </div>`
   const t = wrap.querySelector('.ehb-anteprima__t') as HTMLElement
   ;(t.querySelector('b') as HTMLElement).textContent = o.titolo
@@ -135,10 +206,12 @@ function montaAnteprima(url: string, o: AnteprimaPdfOpts, riempi: (frame: HTMLIF
     const rifai = o.rifai
     wrap.addEventListener('change', (ev) => {
       const el = ev.target as HTMLInputElement | HTMLSelectElement
+      const pref = el.getAttribute('data-pref')
+      if (pref) { cambiaPreferenza(pref, el.value); void rigenera(wrap, frame, rifai, o.contenuto); return }
       const campo = el.getAttribute('data-stile')
       if (!campo) return
       cambiaStile(campo, el.value)
-      void rigenera(wrap, frame, rifai)
+      void rigenera(wrap, frame, rifai, o.contenuto)
     })
   }
   wrap.addEventListener('click', (ev) => {
@@ -154,15 +227,15 @@ function montaAnteprima(url: string, o: AnteprimaPdfOpts, riempi: (frame: HTMLIF
     if (az === 'standard' && o.rifai) {
       const p = leggiPreferenzeStampa()
       salvaPreferenzeStampa({ ...p, stile: { ...IMPIANTO_STANDARD, margini: { ...IMPIANTO_STANDARD.margini } } })
-      void rigenera(wrap, frame, o.rifai)
+      void rigenera(wrap, frame, o.rifai, o.contenuto)
       return
     }
     if (az === 'chiudi') chiudiAnteprimaPdf()
     else if (az === 'salva') salva()
     else if (az === 'stampa') {
-      /* Se il visore non si lascia stampare si SALVA il file, non si apre una
-         finestra nuova: nell'app desktop un blob in finestra separata resta
-         bianco, e sembrava che la stampa non producesse niente. */
+      const corrente = wrap.dataset.url || url
+      // il PDF si stampa dal visore; l'HTML (atti in pagina) dal suo riquadro
+      if (wrap.dataset.tipo === 'pdf') { void stampaPdf(corrente, `${o.nomeFile}.pdf`, salva); return }
       try {
         if (frame.isConnected && frame.contentWindow) { frame.contentWindow.focus(); frame.contentWindow.print() }
         else salva()
@@ -211,6 +284,57 @@ export function pannelloAspettoHTML(st: StileStampa): string {
     <button class="ehb-btn ehb-btn--sm ehb-btn--ghost" data-az="standard"${std ? ' disabled' : ''} title="A4 verticale, margini 15 mm e 20 a sinistra, lineare 10 pt, testata e piè">↺ Impianto standard</button>`
 }
 
+/**
+ * IL CONTENUTO, come nelle opzioni di stampa dei programmi di computo: quanto
+ * della voce si stampa, le misure o solo le quantità, i riepiloghi, i prezzi;
+ * per ogni elaborato copertina e firme in calce. Non cambia gli importi.
+ */
+export function pannelloContenutoHTML(p: PreferenzeStampa, quale: 'computo' | 'elaborato' | 'atto'): string {
+  const sel = (campo: string, val: string, voci: [string, string][]): string =>
+    `<select data-pref="${campo}">${voci.map(([v, et]) => `<option value="${v}"${v === val ? ' selected' : ''}>${escA(et)}</option>`).join('')}</select>`
+  const sn = (campo: string, v: boolean, si = 'sì', no = 'no'): string => sel(campo, v ? 'si' : 'no', [['si', si], ['no', no]])
+  const num = (campo: string, val: number): string => `<input type="number" data-pref="${campo}" value="${val}" min="0" max="20" step="1">`
+  const descr = `
+    <label class="ehb-aspetto__f"><span>Descrizione</span>${sel('descrizione', p.descrizione, [['estesa', 'estesa (intera)'], ['compatta', 'inizio e fine'], ['ridotta', 'solo la breve']])}</label>
+    ${p.descrizione === 'compatta' ? `<div class="ehb-aspetto__m">
+      <label class="ehb-aspetto__f"><span>Righe all'inizio</span>${num('righeMax', p.righeMax)}</label>
+      <label class="ehb-aspetto__f"><span>alla fine</span>${num('righeFinali', p.righeFinali)}</label>
+    </div>` : ''}`
+  if (quale === 'atto') return `
+    <div class="ehb-aspetto__h">Contenuto</div>
+    <p class="ehb-aspetto__nota">Quanto testo delle voci entra negli atti. Importi, quantità e firme non cambiano.</p>
+    ${descr}
+    <label class="ehb-aspetto__f"><span>Date dei rilevamenti</span>${sn('date', p.date)}</label>`
+  const computo = quale === 'computo' ? `
+    ${descr}
+    <label class="ehb-aspetto__f"><span>Titolo breve in grassetto</span>${sn('conRidotta', p.conRidotta)}</label>
+    <label class="ehb-aspetto__f"><span>Misure</span>${sn('misure', p.misure, 'righe di misura', 'solo quantità')}</label>
+    <label class="ehb-aspetto__f"><span>Riga WBS</span>${sn('rigaWbs', p.rigaWbs)}</label>
+    <label class="ehb-aspetto__f"><span>Riepiloghi</span>${sel('riepilogo', p.riepilogo, [['entrambi', 'categorie e WBS'], ['categorie', 'categorie'], ['wbs', 'WBS'], ['nessuno', 'nessuno']])}</label>
+    <label class="ehb-aspetto__f"><span>Prezzi</span>${sn('senzaPrezzi', !p.senzaPrezzi, 'estimativo', 'solo quantità')}</label>` : ''
+  return `
+    <div class="ehb-aspetto__h">Contenuto</div>
+    <p class="ehb-aspetto__nota">Che cosa entra nella stampa. Gli importi non cambiano.</p>
+    ${computo}
+    <label class="ehb-aspetto__f"><span>Copertina</span>${sn('copertina', p.copertina)}</label>
+    <label class="ehb-aspetto__f"><span>Luogo, data e firme</span>${sn('firme', p.firme)}</label>
+    ${p.firme ? `<label class="ehb-aspetto__f"><span>Luogo della firma</span><input data-pref="luogo" value="${escA(p.luogo)}" placeholder="il comune dei lavori"></label>` : ''}`
+}
+
+/** Una scelta di contenuto cambiata: si scrive nelle preferenze di stampa. */
+export function cambiaPreferenza(campo: string, v: string): PreferenzeStampa {
+  const p = leggiPreferenzeStampa()
+  let n: PreferenzeStampa = p
+  if (campo === 'righeMax' || campo === 'righeFinali') n = { ...p, [campo]: Math.max(campo === 'righeMax' ? 1 : 0, Math.min(20, Math.round(Number(v) || 0))) }
+  else if (campo === 'senzaPrezzi') n = { ...p, senzaPrezzi: v === 'no' }
+  else if (campo === 'conRidotta' || campo === 'misure' || campo === 'rigaWbs' || campo === 'firme' || campo === 'copertina' || campo === 'date') n = { ...p, [campo]: v === 'si' }
+  else if (campo === 'luogo') n = { ...p, luogo: String(v).trim().slice(0, 60) }
+  else if (campo === 'descrizione' && ['estesa', 'compatta', 'ridotta'].includes(v)) n = { ...p, descrizione: v as PreferenzeStampa['descrizione'] }
+  else if (campo === 'riepilogo' && ['entrambi', 'categorie', 'wbs', 'nessuno'].includes(v)) n = { ...p, riepilogo: v as PreferenzeStampa['riepilogo'] }
+  salvaPreferenzeStampa(n)
+  return n
+}
+
 /** Una voce del pannello cambiata: si scrive nelle preferenze di stampa. */
 export function cambiaStile(campo: string, v: string): StileStampa {
   const p = leggiPreferenzeStampa()
@@ -226,7 +350,7 @@ export function cambiaStile(campo: string, v: string): StileStampa {
 }
 
 /** Rifà il documento con le impostazioni nuove e lo rimette nell'anteprima. */
-async function rigenera(wrap: HTMLElement, frame: HTMLIFrameElement, rifai: NonNullable<AnteprimaPdfOpts['rifai']>): Promise<void> {
+async function rigenera(wrap: HTMLElement, frame: HTMLIFrameElement, rifai: NonNullable<AnteprimaPdfOpts['rifai']>, contenuto?: AnteprimaPdfOpts['contenuto']): Promise<void> {
   wrap.classList.add('is-rifa')
   try {
     const r = await rifai()
@@ -235,9 +359,12 @@ async function rigenera(wrap: HTMLElement, frame: HTMLIFrameElement, rifai: NonN
     const vecchio = wrap.dataset.url
     const url = URL.createObjectURL(blob)
     wrap.dataset.url = url
-    frame.src = url
-    if (vecchio) setTimeout(() => URL.revokeObjectURL(vecchio), 1000)
+    wrap.dataset.tipo = typeof r === 'string' ? 'html' : 'pdf'
+    // il pannello si aggiorna subito: non aspetta che le pagine siano disegnate
     const pan = wrap.querySelector('.ehb-anteprima__aspetto')
-    if (pan) pan.innerHTML = pannelloAspettoHTML(leggiPreferenzeStampa().stile)
+    if (pan) pan.innerHTML = pannelloAspettoHTML(leggiPreferenzeStampa().stile) + (contenuto ? `<div class="ehb-aspetto__contenuto">${pannelloContenutoHTML(leggiPreferenzeStampa(), contenuto)}</div>` : '')
+    if (vecchio) setTimeout(() => URL.revokeObjectURL(vecchio), 1000)
+    if (typeof r === 'string') frame.src = url
+    else await mostraPdf(wrap, frame, blob)
   } finally { wrap.classList.remove('is-rifa') }
 }

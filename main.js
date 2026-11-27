@@ -77,6 +77,22 @@ ipcMain.handle('ehub:save-project-to', async (_e, { path: p, content }) => {
 })
 
 // Cambia la cartella di salvataggio progetti.
+/* La STAMPA di un PDF passa dal visore del sistema (Anteprima su Mac): ha
+   tutte le opzioni della stampante e non dipende dal visore PDF di Chromium,
+   che nell'app lasciava il riquadro bianco. Il file va in una cartella
+   temporanea di Quadra, col nome del documento. */
+ipcMain.handle('ehub:apri-pdf', async (_e, { data, filename }) => {
+  try {
+    const dir = path.join(app.getPath('temp'), 'Quadra-stampe')
+    fs.mkdirSync(dir, { recursive: true })
+    const nome = path.basename(String(filename || 'stampa.pdf')).replace(/[^\w.\- àèéìòù]/gi, '_')
+    const p = path.join(dir, nome.toLowerCase().endsWith('.pdf') ? nome : nome + '.pdf')
+    fs.writeFileSync(p, Buffer.from(data))
+    const err = await shell.openPath(p)
+    return err ? { error: err } : { path: p }
+  } catch (e) { return { error: String(e && e.message || e) } }
+})
+
 ipcMain.handle('ehub:choose-project-dir', async () => {
   const dir = await pickProjectDir()
   if (!dir) return { canceled: true }

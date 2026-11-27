@@ -28,6 +28,14 @@ export interface PreferenzeStampa {
   riepilogo: 'entrambi' | 'categorie' | 'wbs' | 'nessuno'
   /** Date dei rilevamenti accanto alla tariffa (libretto delle misure). */
   date: boolean
+  /** Righe di misura sotto ogni voce del computo: senza, la voce porta la sola quantità (stampa sintetica). */
+  misure: boolean
+  /** Luogo, data e firme in calce agli elaborati di progetto. */
+  firme: boolean
+  /** Luogo della firma («Udine»): vuoto = il comune dei lavori. */
+  luogo: string
+  /** Copertina (frontespizio) in testa agli elaborati di progetto. */
+  copertina: boolean
   /** Foglio, margini, carattere, testata e cartiglio. */
   stile: StileStampa
 }
@@ -35,6 +43,7 @@ export interface PreferenzeStampa {
 export const PREFERENZE_STAMPA_DEFAULT: PreferenzeStampa = {
   descrizione: 'compatta', righeMax: 3, righeFinali: 2, conRidotta: true,
   senzaPrezzi: false, rigaWbs: true, riepilogo: 'entrambi', date: true,
+  misure: true, firme: true, luogo: '', copertina: false,
   stile: { ...STILE_STAMPA_DEFAULT },
 }
 

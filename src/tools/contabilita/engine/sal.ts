@@ -1,5 +1,5 @@
 /**
- * Contabilità — STATO DI AVANZAMENTO LAVORI (art. 16, All. II.14). Riepiloga le
+ * Contabilità — STATO DI AVANZAMENTO LAVORI (art. 12 c. 1 lett. d) All. II.14). Riepiloga le
  * lavorazioni eseguite dall'inizio dell'appalto a tutto il SAL e ne ricava
  * l'importo del presente stato: cascata acconto − ritenuta 0,5% − SAL precedenti.
  */
@@ -60,7 +60,7 @@ export function salHTML(appalto: Appalto, partite: Partita[], sals: Sal[], numer
         ${res.detrazioni ? rigaKv('a dedurre: detrazioni per lavorazioni non conformi', '− ' + eur(res.detrazioni)) : ''}
         ${rigaKv('Totale contabilizzato (conforme)', eur(res.totaleContabilizzato), 'sub')}
         ${res.revisioneProgressiva ? rigaKv(`compensazione revisione prezzi (art. 60)${res.variazioneIndicePct != null ? ' — indice ' + num(res.variazioneIndicePct) + '%' : ''}`, eur(res.revisioneProgressiva)) : ''}
-        ${rigaKv('a dedurre: ritenuta di garanzia 0,50% (art. 125)', '− ' + eur(res.ritenuta))}
+        ${rigaKv('a dedurre: ritenuta di garanzia 0,50% (art. 11 c. 6)', '− ' + eur(res.ritenuta))}
         ${res.anticipazione ? rigaKv('a dedurre: recupero anticipazione (progressivo)', '− ' + eur(res.recuperoAnticipazione)) : ''}
         ${rigaKv('Netto progressivo a tutto il SAL', eur(res.nettoProgressivo), 'sub')}
         ${rigaKv('a dedurre: importo dei SAL precedenti', '− ' + eur(res.salPrecedenti))}
@@ -89,7 +89,7 @@ export function salHTML(appalto: Appalto, partite: Partita[], sals: Sal[], numer
     sub: res.data ? `Lavori a tutto il ${res.data}` : undefined,
     headMeta: headMetaDi(appalto),
     bodyHTML: body,
-    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 16 Allegato II.14 D.Lgs. 36/2023. Ritenuta di garanzia 0,50% (art. 125). Importi al netto di IVA.', page: `SAL ${res.numero}` },
+    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 12 c. 1 lett. d) Allegato II.14 D.Lgs. 36/2023. Ritenuta di garanzia 0,50% (art. 11 c. 6). Importi al netto di IVA.', page: `SAL ${res.numero}` },
     docTitle: `SAL n. ${res.numero} — ${appalto.oggetto || 'Lavori'}`,
   })
 }

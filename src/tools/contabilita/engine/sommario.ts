@@ -1,5 +1,5 @@
 /**
- * Contabilità — SOMMARIO DEL REGISTRO (art. 15, All. II.14). Sintesi per gruppi di
+ * Contabilità — SOMMARIO DEL REGISTRO (art. 12 c. 2 All. II.14, facoltativo). Sintesi per gruppi di
  * lavorazioni omogenee (categoria): importo contrattuale, importo a tutto il SAL
  * corrente, importo dei SAL precedenti, importo nel SAL corrente (differenza).
  */
@@ -176,7 +176,7 @@ export function sommarioHTML(appalto: Appalto, partite: Partita[], sals: Sal[], 
     sub: `al SAL n. ${numero}`,
     headMeta: headMetaDi(appalto),
     bodyHTML: body,
-    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 15 Allegato II.14 D.Lgs. 36/2023. Importi al netto di IVA.', page: `Sommario SAL ${numero}` },
+    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 12 c. 2 Allegato II.14 D.Lgs. 36/2023. Importi al netto di IVA.', page: `Sommario SAL ${numero}` },
     docTitle: `Sommario del Registro — SAL ${numero}`,
   })
 }

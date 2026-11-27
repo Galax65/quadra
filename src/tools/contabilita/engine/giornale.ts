@@ -1,5 +1,5 @@
 /**
- * GIORNALE DEI LAVORI (art. 13 All. II.14 D.Lgs. 36/2023).
+ * GIORNALE DEI LAVORI (art. 12 c. 1 lett. a) All. II.14 D.Lgs. 36/2023).
  *
  * Il direttore dei lavori, o l'assistente delegato, annota «in ciascun giorno»
  * l'ordine e la progressione delle lavorazioni, la manodopera e i mezzi
@@ -97,7 +97,7 @@ export function giornaleHTML(appalto: Appalto, righe: RigaGiornale[], sals?: Sal
   const quante = voci.filter((v) => v.origine === 'annotazione').length
   const atti = voci.length - quante
   const body = `
-    <p class="note">Giornale dei lavori — il direttore dei lavori, o l'assistente delegato, annota in ciascun giorno l'ordine e la progressione delle lavorazioni, la manodopera e i mezzi impiegati e le circostanze che influiscono sull'andamento dei lavori (art. 13 All. II.14 D.Lgs. 36/2023).${periodo?.dal || periodo?.al ? ` Periodo: ${escHtml(periodo?.dal || 'inizio')} — ${escHtml(periodo?.al || 'oggi')}.` : ''}</p>
+    <p class="note">Giornale dei lavori — il direttore dei lavori, o l'assistente delegato, annota in ciascun giorno l'ordine e la progressione delle lavorazioni, la manodopera e i mezzi impiegati e le circostanze che influiscono sull'andamento dei lavori (art. 12 c. 1 lett. a) All. II.14 D.Lgs. 36/2023).${periodo?.dal || periodo?.al ? ` Periodo: ${escHtml(periodo?.dal || 'inizio')} — ${escHtml(periodo?.al || 'oggi')}.` : ''}</p>
     <table class="dtable">
       <thead><tr><th>Data</th><th>Condizioni</th><th>Manodopera</th><th>Mezzi e provviste</th><th>Lavorazioni, atti e annotazioni</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -110,7 +110,7 @@ export function giornaleHTML(appalto: Appalto, righe: RigaGiornale[], sals?: Sal
     title: 'Giornale dei Lavori',
     headMeta: headMetaDi(appalto),
     bodyHTML: body,
-    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 13 Allegato II.14 D.Lgs. 36/2023.', page: 'Giornale dei lavori' },
+    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 12 c. 1 lett. a) Allegato II.14 D.Lgs. 36/2023.', page: 'Giornale dei lavori' },
     docTitle: `Giornale dei Lavori — ${appalto.oggetto || 'Lavori'}`,
   })
 }

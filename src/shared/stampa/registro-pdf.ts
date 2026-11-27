@@ -70,6 +70,23 @@ type PdfLib = any
 type PdfFont = { widthOfTextAtSize(t: string, s: number): number }
 type PdfPage = any
 
+/**
+ * L'ELABORATO: copertina e chiusura (luogo, data, firme). Gli elaborati di
+ * progetto li hanno, gli atti contabili che continuano no. Chi stampa un
+ * elaborato li imposta per la durata di quella stampa (`conElaborato`), così
+ * computo, elenco prezzi, stima, quadro economico… li ricevono senza che ogni
+ * generatore debba passarli. Esplicitati in `OpzioniRegistro` hanno la precedenza.
+ */
+export interface Firma { ruolo: string; nome?: string }
+export interface Chiusura { luogoData?: string; firme: Firma[] }
+export interface Copertina { titolo?: string; righe: string[]; ente?: string; luogoData?: string }
+let _elaborato: { chiusura?: Chiusura; copertina?: Copertina } | null = null
+export async function conElaborato<T>(e: { chiusura?: Chiusura; copertina?: Copertina } | null, fn: () => Promise<T>): Promise<T> {
+  const prima = _elaborato
+  _elaborato = e
+  try { return await fn() } finally { _elaborato = prima }
+}
+
 /** Studio che firma le stampe (dai dati di Amministrazione → Azienda): va nel piè di pagina. */
 let studioStampe = ''
 export function impostaStudioStampe(nome: string | null | undefined): void { studioStampe = String(nome ?? '').trim() }
@@ -143,7 +160,7 @@ export interface OpzioniRegistro {
   /**
    * UN SOLO REGISTRO A PAGINE NUMERATE. Libretto e registro di contabilità non
    * sono un documento nuovo a ogni SAL: sono fogli che continuano, numerati di
-   * seguito (art. 14 All. II.14, art. 2215 c.c.). Qui si dice da quale numero
+   * seguito (art. 12 c. 1 lett. c) All. II.14). Qui si dice da quale numero
    * riprende la numerazione: 1 (o assente) = primo foglio, e allora il piè
    * scrive «Pag. k di N»; oltre 1 = l'atto continua, e il piè scrive «Pag. k»
    * senza totale, perché il totale lo conosce solo il registro intero.
@@ -158,10 +175,14 @@ export interface OpzioniRegistro {
   /**
    * FOGLI IN BIANCO da aggiungere in coda fino ad arrivare a questo numero di
    * pagine: serve al registro da far **numerare, bollare e vidimare prima
-   * dell'inizio dei lavori** (art. 2215 c.c.). Sono pagine vere, con la
+   * dell'inizio dei lavori** (prassi, se la stazione appaltante lo richiede). Sono pagine vere, con la
    * testata delle colonne e la griglia vuota, non spazi lasciati a caso.
    */
   pagineVuoteMinime?: number
+  /** Luogo, data e firme in calce, dopo l'ultima riga (o su una pagina sua se non ci stanno). */
+  chiusura?: Chiusura
+  /** Copertina: una pagina iniziale non numerata con titolo e dati dell'opera. */
+  copertina?: Copertina
 }
 
 const MM = 72 / 25.4
@@ -464,6 +485,41 @@ export async function creaRegistroPdf(lib: PdfLib, opz: OpzioniRegistro, righe: 
   }
   chiudiBordi(page, yTabellaTop - hTestata, y)
 
+  // chiusura: luogo e data, firme in calce (sull'ultima pagina, se ci stanno)
+  const chiusura = opz.chiusura ?? _elaborato?.chiusura
+  if (chiusura && (chiusura.firme.length || chiusura.luogoData)) {
+    const firme = chiusura.firme
+    const hChiusura = 6 * MM + (chiusura.luogoData ? 11 + 4 * MM : 0) + (firme.length ? 9 + 14 * MM + 9 : 0)
+    if (y - hChiusura < MARGINE.basso + 6 * MM) {
+      page = doc.addPage([A4.w, A4.h]); pagine.push(page)
+      y = A4.h - MARGINE.alto
+      if (opz.testataPagine) {
+        page.drawText(spezzaTesto(opz.testataPagine, F.i, 7, utile)[0], { x: MARGINE.sx, y: y - 7, size: 7, font: F.i, color: grigio })
+        y -= 7 + 2.5 * MM
+      }
+    }
+    y -= 6 * MM
+    if (chiusura.luogoData) {
+      page.drawText(testoStampabile(chiusura.luogoData), { x: MARGINE.sx, y: y - 9, size: 9, font: F.n, color: nero })
+      y -= 11 + 4 * MM
+    }
+    if (firme.length) {
+      const colW = utile / firme.length
+      firme.forEach((f, i) => {
+        const cx = MARGINE.sx + colW * i + colW / 2
+        const centra = (t: string, yy: number, size: number, font: PdfFont): void => {
+          const tt = spezzaTesto(t, font, size, colW - 4 * MM)[0] || ''
+          page.drawText(tt, { x: cx - font.widthOfTextAtSize(tt, size) / 2, y: yy, size, font, color: nero })
+        }
+        centra(f.ruolo, y - 9, 8.5, F.b)
+        const yl = y - 9 - 12 * MM
+        page.drawLine({ start: { x: cx - colW * 0.36, y: yl }, end: { x: cx + colW * 0.36, y: yl }, thickness: 0.5, color: nero })
+        if (f.nome) centra(f.nome, yl - 9, 8, F.i)
+      })
+      y -= 9 + 14 * MM + 9
+    }
+  }
+
   // fogli in bianco in coda: il registro da vidimare prima dell'inizio dei lavori
   const minime = Math.max(0, Math.floor(opz.pagineVuoteMinime ?? 0))
   while (pagine.length < minime) {
@@ -482,10 +538,33 @@ export async function creaRegistroPdf(lib: PdfLib, opz: OpzioniRegistro, righe: 
     if (piede) p.drawText(spezzaTesto(piede, F.n, 7, utile * 0.7)[0], { x: MARGINE.sx, y: MARGINE.basso - 2, size: 7, font: F.n, color: grigio })
   })
 
+  // copertina: prima pagina, fuori dalla numerazione
+  const copertina = opz.copertina ?? _elaborato?.copertina
+  if (copertina) {
+    const c = doc.insertPage(0, [A4.w, A4.h])
+    const centra = (t: string, yy: number, size: number, font: PdfFont): number => {
+      let y2 = yy
+      for (const l of spezzaTesto(t, font, size, utile * 0.9)) {
+        c.drawText(l, { x: (A4.w - font.widthOfTextAtSize(l, size)) / 2, y: y2, size, font, color: nero })
+        y2 -= size * 1.3
+      }
+      return y2
+    }
+    let yc = A4.h - MARGINE.alto - 14
+    if (copertina.ente) yc = centra(copertina.ente.toUpperCase(), yc, 12, F.b) - 4 * MM
+    c.drawLine({ start: { x: MARGINE.sx, y: yc }, end: { x: A4.w - MARGINE.dx, y: yc }, thickness: 0.6, color: nero })
+    yc = A4.h * 0.62
+    yc = centra(copertina.titolo || opz.titolo, yc, 20, F.b) - 8 * MM
+    for (const r of copertina.righe) yc = centra(r, yc, 10.5, F.n) - 2.5 * MM
+    if (copertina.luogoData) centra(copertina.luogoData, MARGINE.basso + 18 * MM, 10, F.n)
+  }
+  const totPagine = N + (copertina ? 1 : 0)
+  if (copertina) for (const k of Object.keys(paginaDi)) paginaDi[k] += 1
+
   if (incorporati) {
     rendiPdfA(doc, lib, { titolo: testoStampabile(opz.titolo), creatore: 'Quadra', produttore: 'Quadra (pdf-lib)', data: opz.data ?? new Date() })
-    return { bytes: await salvaPdfA(doc), pagine: N, paginaDi, pdfa: true }
+    return { bytes: await salvaPdfA(doc), pagine: totPagine, paginaDi, pdfa: true }
   }
-  return { bytes: await doc.save(), pagine: N, paginaDi, pdfa: false }
+  return { bytes: await doc.save(), pagine: totPagine, paginaDi, pdfa: false }
 }
 

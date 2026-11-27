@@ -52,7 +52,7 @@ export interface DatiContabilita {
   /** Articolo del capitolato richiamato nel certificato di pagamento. */
   articoloCapitolato?: string
   /* La chiusura. */
-  /** Iter del conto finale (art. 7 c. 3 e art. 18 All. II.14). */
+  /** Iter del conto finale (art. 7 c. 3 e art. 12 c. 1 lett. e) All. II.14). */
   contoFinale?: { dataCompilazione?: string; dataInvito?: string; giorniTermine?: number | null; dataFirma?: string; esito?: 'firmatoConConferma' | 'firmatoSenzaConferma' | 'nonFirmato' }
   /** DURC: lo svincolo della ritenuta è subordinato alla regolarità contributiva. */
   durcRegolare?: boolean

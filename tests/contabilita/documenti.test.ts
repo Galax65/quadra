@@ -81,7 +81,7 @@ describe('Contabilità lavori in economia — documenti', () => {
     expect(html).not.toContain('>Quadra<')
     expect(html).toContain('Mano d\'opera')
     expect(html).toContain('bt-firme')
-    expect(html.toLowerCase()).toContain('art. 181')
+    expect(html).toContain('art. 12 c. 1 lett. c) All. II.14')
   })
 })
 

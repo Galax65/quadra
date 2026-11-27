@@ -1,5 +1,5 @@
 /**
- * SVINCOLO DELLA RITENUTA DI GARANZIA (art. 125 c. 2 D.Lgs. 36/2023).
+ * SVINCOLO DELLA RITENUTA DI GARANZIA (art. 11 c. 6 D.Lgs. 36/2023).
  *
  * Lo 0,50% trattenuto su ogni certificato non è dell'impresa finché non
  * ricorrono due condizioni, entrambe: l'APPROVAZIONE del certificato di
@@ -50,6 +50,6 @@ export function svincoloHTML(s: StatoSvincolo): string {
       <tr class="tot"><td>${s.svincolabile ? 'Somma da svincolare in favore dell\'esecutore' : 'Somma che resta trattenuta'}</td><td class="num">${eur(s.maturata)}</td></tr>
     </tbody></table>
     ${s.svincolabile
-      ? `<p class="note">Ricorrono le condizioni dell'art. 125 c. 2 D.Lgs. 36/2023: le ritenute possono essere svincolate in sede di liquidazione finale.</p>`
+      ? `<p class="note">Ricorrono le condizioni dell'art. 11 c. 6 D.Lgs. 36/2023: le ritenute possono essere svincolate in sede di liquidazione finale.</p>`
       : `<p class="warn"><b>Le ritenute non si svincolano:</b> manca ${s.mancano.join(' e manca ')}. Lo svincolo avviene soltanto in sede di liquidazione finale, dopo l'approvazione del ${escHtml(s.attoLabel)} e previo rilascio del DURC (art. 125 c. 2 D.Lgs. 36/2023).</p>`}`
 }

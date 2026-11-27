@@ -47,8 +47,10 @@
     "build:win": "electron-builder --win",
     "predist:win": "npm run build",
     "dist:win": "npm run build:win",
+    "prebuild:linux": "npm run build:web && npm run bundle:prezzari",
+    "build:linux": "electron-builder --linux",
     "prebuild:all": "npm run build:web && npm run bundle:prezzari",
-    "build:all": "electron-builder --mac --win"
+    "build:all": "electron-builder --mac --win --linux"
   },
   "devDependencies": {
     "@types/jsdom": "^30.0.0",
@@ -98,6 +100,28 @@
           "target": "nsis",
           "arch": [
             "x64"
+          ]
+        }
+      ]
+    },
+    "linux": {
+      "icon": "assets/icon.png",
+      "category": "Office",
+      "synopsis": "Computo metrico e contabilità dei lavori",
+      "artifactName": "${productName}-${version}-${arch}.${ext}",
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "tar.gz",
+          "arch": [
+            "x64",
+            "arm64"
           ]
         }
       ]

@@ -1,5 +1,5 @@
 /**
- * Contabilità — CONTO FINALE + RELAZIONE FINALE (art. 18, All. II.14). Compilati dal
+ * Contabilità — CONTO FINALE + RELAZIONE FINALE (art. 12 c. 1 lett. e) e c. 5 All. II.14). Compilati dal
  * Direttore dei Lavori dopo l'ultimazione: importi finali complessivi, credito
  * residuo dell'impresa; la relazione descrive le vicende dell'esecuzione e il
  * giudizio motivato sulle domande (riserve) non transatte.
@@ -65,7 +65,7 @@ export function contoFinaleHTML(appalto: Appalto, partite: Partita[], sals: Sal[
     title: 'Conto Finale dei Lavori',
     headMeta: headMetaDi(appalto),
     bodyHTML: body,
-    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 18 Allegato II.14 D.Lgs. 36/2023. La ritenuta di garanzia si svincola in sede di conto finale/collaudo, previo DURC regolare.', page: 'Conto finale' },
+    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 12 c. 1 lett. e) Allegato II.14 D.Lgs. 36/2023. La ritenuta di garanzia (art. 11 c. 6) si svincola in sede di liquidazione finale, dopo il collaudo o il CRE, previo DURC regolare.', page: 'Conto finale' },
     docTitle: `Conto Finale — ${appalto.oggetto || 'Lavori'}`,
   })
 }
@@ -143,7 +143,7 @@ export function relazioneFinaleHTML(appalto: Appalto, partite: Partita[], sals: 
     title: 'Relazione Finale del Direttore dei Lavori',
     headMeta: headMetaDi(appalto),
     bodyHTML: body,
-    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 18 Allegato II.14 D.Lgs. 36/2023 — allegata al conto finale.', page: 'Relazione finale' },
+    footer: { fields: footerFieldsDi(appalto), disc: 'Art. 12 c. 1 lett. e) e c. 5 Allegato II.14 D.Lgs. 36/2023 — allegata al conto finale.', page: 'Relazione finale' },
     docTitle: `Relazione Finale — ${appalto.oggetto || 'Lavori'}`,
   })
 }

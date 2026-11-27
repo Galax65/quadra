@@ -46,6 +46,10 @@ contextBridge.exposeInMainWorld('ehubNative', {
   saveProjectTo(absPath, content) {
     return ipcRenderer.invoke('ehub:save-project-to', { path: absPath, content })
   },
+  /** Apre un PDF nel visore del sistema (Anteprima su Mac), da cui si stampa. Ritorna { path } | { error }. */
+  openPdf(data, filename) {
+    return ipcRenderer.invoke('ehub:apri-pdf', { data, filename })
+  },
   /** Forza la scelta di una nuova cartella di salvataggio progetti. */
   chooseProjectDir() {
     return ipcRenderer.invoke('ehub:choose-project-dir')

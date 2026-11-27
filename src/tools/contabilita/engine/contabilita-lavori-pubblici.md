@@ -5,11 +5,16 @@ e **mista** ai sensi del **D.Lgs. 36/2023** e del suo **Allegato II.14**. Tutti 
 importi degli atti contabili sono **al netto di IVA** (l'IVA compare solo nel
 certificato di pagamento e a titolo informativo nel SAL).
 
-> ⚠️ **Nota normativa da verificare.** La bozza iniziale citava «art. 184-194»; le
-> fonti tecniche di settore collocano gli atti contabili nell'**Allegato II.14,
-> art. 12-18**. Contabilità usa i riferimenti verificati (art. 12-18) e li espone; prima
-> dell'uso in atti ufficiali va sempre riscontrato il **testo vigente** del Codice e
-> dell'Allegato.
+> **Riferimenti verificati sul testo vigente (27/11/2026, dopo il D.Lgs. 209/2024).**
+> Tutti gli atti contabili stanno nell'**art. 12** dell'Allegato II.14 (non negli
+> artt. 12-18, come diceva la prima stesura): giornale c. 1 lett. a), libretto
+> lett. b), registro lett. c), SAL e certificato di pagamento lett. d), conto finale
+> e relazione lett. e) e c. 5; sommario c. 2 (facoltativo); contabilità semplificata
+> c. 11-bis; programmi di contabilità digitale c. 10. Riserve art. 7; consegna art. 3;
+> sospensione e ripresa art. 8; **CRE dei lavori art. 28**. Nel Codice: ritenuta 0,50%
+> **art. 11 c. 6**; anticipazione e certificato di pagamento (RUP, previa verifica DURC
+> di esecutore e subappaltatori) art. 125. Prima dell'uso in atti ufficiali va
+> comunque riscontrato il testo in Gazzetta Ufficiale.
 
 ## 1. Le due modalità
 
@@ -25,34 +30,34 @@ certificato di pagamento e a titolo informativo nel SAL).
 ## 2. Catena documentale (Allegato II.14)
 
 ```
-Giornale dei lavori (art.12)
+Giornale dei lavori (art. 12 c. 1 lett. a)
    ↓
-Libretti di misura (art.13) → Registro di contabilità (art.14) → Sommario (art.15, se previsto)
+Libretti di misura (lett. b) → Registro di contabilità (lett. c) → Sommario (c. 2, facoltativo)
                                       ↓
-                                SAL (art.16) → Certificato di pagamento (art.17, RUP entro 7 gg)
+                                SAL (lett. d) → Certificato di pagamento (lett. d; art. 125 Codice, RUP)
                                       ↓
-                                Conto finale (art.18) → Relazione finale (art.18)
+                                Conto finale + relazione (lett. e, c. 5) → CRE (art. 28) o collaudo
 ```
 Regola d'oro: **ogni atto a valle deriva i propri importi dall'atto a monte** (mai
 reinserimento manuale).
 
 ## 3. Struttura colonne (dalla prassi di settore)
 
-- **Libretto A MISURA** (art. 13): N. ordine · Codice tariffa · Data · Designazione
+- **Libretto A MISURA** (art. 12 c. 1 lett. b): N. ordine · Codice tariffa · Data · Designazione
   (dizione dell'elenco prezzi) · **Fattori** (lunghezza, larghezza, altezza/peso) ·
   **Prodotti** (quantità eseguita) · Prezzo unitario · Importo. Contiene figure quotate,
   profili ante/post, punti di saggi/scandagli/misure.
-- **Libretto A CORPO** (art. 12): per categoria, **quota % dell'aliquota** della voce
+- **Libretto A CORPO** (art. 12 c. 1 lett. b): per categoria, **quota % dell'aliquota** della voce
   disaggregata eseguita a ogni SAL (colonna «Prodotti» = quote %, non quantità assolute).
-- **Registro** (art. 14): frontespizio (oggetto, ragione sociale impresa, n. fogli) +
+- **Registro** (art. 12 c. 1 lett. c): frontespizio (oggetto, ragione sociale impresa, n. fogli) +
   riferimento al libretto · prezzo · importo · quantità (a misura) / percentuali (a
   corpo). Iscrizioni in **ordine cronologico**; firma dell'esecutore **a ogni SAL**;
-  fogli numerati e bollati (art. 2215 c.c.).
-- **SAL** (art. 16): frontespizio (lavori, impresa, n. progressivo, data, dati
+  fogli numerati di seguito (vidimati se la stazione appaltante lo chiede: l'Allegato non lo prescrive).
+- **SAL** (art. 12 c. 1 lett. d): frontespizio (lavori, impresa, n. progressivo, data, dati
   contratto) + n. ordine · codice · descrizione/corpo · quantità/percentuale · prezzo ·
   importo a credito.
-- **Certificato di pagamento** (art. 17): emesso dal RUP entro 7 gg dal SAL, previa
-  verifica DURC; annotato nel registro.
+- **Certificato di pagamento** (art. 12 c. 1 lett. d; art. 125 Codice): emesso dal RUP
+  (di prassi entro 7 gg dal SAL), previa verifica DURC; annotato nel registro.
 
 ## 4. Regole di calcolo (codificate in engine/contabilita.ts)
 
@@ -61,7 +66,7 @@ reinserimento manuale).
 - A misura: `importo_voce = prezzo_unitario × quantità_progressiva_misurata`.
 - A corpo: `importo_maturato = importo_corpo × quota%`; `aliquota_eseguita = aliquota × quota%`.
 - Quadratura corpi disaggregati: `Σ importi_voce = importo_corpo` (tolleranza 0,01 €).
-- Ritenuta di garanzia: `0,005 × totale_contabilizzato_conforme` (art. 125 — unica tipizzata).
+- Ritenuta di garanzia: `0,005 × totale_contabilizzato_conforme` (art. 11 c. 6 D.Lgs. 36/2023).
 - **Cascata SAL**: totale eseguito (misura + corpo) + oneri sicurezza − detrazioni −
   ritenuta 0,5% − SAL precedenti = **importo del presente SAL** (netto IVA).
 - Oneri sicurezza: **non ribassati**, liquidati per quota di avanzamento, riga autonoma.
@@ -147,8 +152,19 @@ regola di tracciabilità: una lista già confluita in un libretto prodotto non s
 
 ## 10. Contabilità semplificata
 
-Lavori sotto **40.000 €**: tenuta semplificata; il CRE può essere sostituito dal visto
-del DL sulle fatture.
+Lavori sotto **40.000 €** (art. 12 c. 11-bis): tenuta semplificata; il CRE può essere
+sostituito dal visto del DL sulle fatture.
+
+## 11. Certificato di regolare esecuzione (art. 28)
+
+- **Quando** (c. 1): a scelta della stazione appaltante fino a 1 milione di euro; oltre,
+  fino alla soglia europea, salvo i casi della lett. b) (classe d'uso III e IV, opere
+  strutturali particolari, interventi sismici, RUP anche progettista o DL…).
+- **Contenuto minimo** (c. 2): estremi del contratto e atti aggiuntivi; esecutore; DL;
+  tempo prescritto e date di effettiva esecuzione; importo totale o a saldo; la
+  certificazione di regolare esecuzione. Stampa: `engine/cre.ts`.
+- **Termini e firme** (c. 3): emesso dal DL entro tre mesi dall'ultimazione; il RUP ne
+  prende atto e ne conferma la completezza. Poi rata di saldo e svincolo (c. 4, art. 27).
 
 ## Fonti
 
@@ -157,7 +173,8 @@ del DL sulle fatture.
   (correzioni, partite in detrazione, quantità progressive per voce).
 - INFOBUILD: [I documenti contabili utili al Direttore dei Lavori](https://www.infobuild.it/approfondimenti/direttore-dei-lavori-documenti-contabili-amministrativi/).
 - Pedago: [Liste settimanali degli operai, mezzi e provviste](https://www.pedago.it/blog/liste-settimanali-operai-mezzi-provviste.htm) (lavori in economia, art. 181).
-- D.Lgs. 36/2023 (Codice dei contratti pubblici) e Allegato II.14 — testo vigente.
+- D.Lgs. 36/2023 (Codice dei contratti pubblici) e Allegato II.14 — testo vigente
+  (consultato su [codiceappalti.it](https://www.codiceappalti.it/DLGS_36_2023/Allegato_II_14_Direzione_dei_lavori_e_direzione_dell%E2%80%99esecuzione_dei_contratti__Modalit%C3%A0_di_svolgimento_delle_attivit%C3%A0_della_fase_esecutiva__Collaudo_e_verifica_di_conformit%C3%A0_/12904), non ufficiale).
 
 *Le fonti secondarie riflettono lo stato interpretativo alla data del documento; per
 l'uso in atti verificare sempre il testo vigente.*
